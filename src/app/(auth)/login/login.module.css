@@ -1,0 +1,45 @@
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.container main,
+.container aside {
+    width: 100%;
+}
+
+.container main {
+    display: grid;
+    align-content: center;
+    padding: 24px;
+}
+
+.container main > * {
+    width: min(100%, 420px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.container aside {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 28%),
+        linear-gradient(135deg, #3454d1 0%, #233b96 100%);
+}
+
+.titles {
+    margin-bottom: 24px;
+}
+
+.titles h1 {
+    font-size: clamp(2rem, 4vw, 2.45rem);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    color: #0f172a;
+    margin-bottom: 10px;
+}
+
+.titles p {
+    color: #6b7280;
+    font-size: 0.98rem;
+    line-height: 1.5;
+}

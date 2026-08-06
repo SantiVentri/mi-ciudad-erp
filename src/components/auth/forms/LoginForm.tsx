@@ -9,13 +9,14 @@ import { useState } from "react";
 // Utils
 import { createClient } from "@/utils/supabase/client";
 
-// Components
-import Link from "next/link";
+// Icons
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginForm() {
     // Form state
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     // Form submission state
     const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +26,6 @@ export default function LoginForm() {
 
     // Supabase client
     const supabase = createClient();
-
 
     const validateForm = () => {
         if (!email || !password) {
@@ -84,6 +84,7 @@ export default function LoginForm() {
                 <input
                     type="email"
                     id="email"
+                    placeholder="ej: juan@ejemplo.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -91,21 +92,31 @@ export default function LoginForm() {
             </div>
             <div className={styles.formGroup}>
                 <label htmlFor="password">Contraseña:</label>
-                <input
-                    type="password"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
+                <div className={styles.inputContainer}>
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        id="password"
+                        placeholder="ej: Juan1234"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                    <button type="button" onClick={(e) => {
+                        e.preventDefault();
+                        setShowPassword(!showPassword)
+                    }}>
+                        {showPassword ? (
+                            <Eye />
+                        ) : (
+                            <EyeOff />
+                        )}
+                    </button>
+                </div>
             </div>
             {error && <p className={styles.error}>{error}</p>}
             <button type="submit" disabled={isLoading}>
                 {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
             </button>
-            <Link href="/register" className={styles.link}>
-                ¿No tenés una cuenta? Regístrate
-            </Link>
         </form>
     )
 }

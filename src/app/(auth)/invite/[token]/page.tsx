@@ -1,4 +1,10 @@
+// Styles
+import styles from "./invite.module.css";
+
+// Components
 import RegisterForm from "@/components/auth/forms/RegisterForm";
+
+// Utils
 import { getServerClient } from "@/utils/supabase/getServerClient";
 
 type InvitationValidation = {
@@ -33,10 +39,15 @@ export default async function InvitePage({
     }
 
     return (
-        <div>
-            <h1>Crear cuenta</h1>
-            <p>Te invitaron con el email <strong>{data.email}</strong></p>
-            <RegisterForm email={data.email} token={token} />
+        <div className={styles.container}>
+            <main>
+                <div className={styles.titles}>
+                    <h1>Completá tu perfil</h1>
+                    <p>Ingresá tus datos para crear tu cuenta</p>
+                </div>
+                <RegisterForm email={data.email} token={token} />
+            </main>
+            <aside />
         </div>
-    );
+    )
 }
