@@ -1,7 +1,12 @@
+import AdminPageHeader from "@/components/ui/admin/header/AdminPageHeader";
+
 export default function TransportsPage() {
     return (
         <div>
-            <h1>Vehículos y conductores</h1>
+            <AdminPageHeader
+                title="Vehículos y conductores"
+                description="Controlá la flota y asigná conductores desde un mismo lugar."
+            />
         </div>
     )
 }

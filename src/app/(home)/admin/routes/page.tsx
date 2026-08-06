@@ -1,7 +1,12 @@
+import AdminPageHeader from "@/components/ui/admin/header/AdminPageHeader";
+
 export default function RoutesPage() {
     return (
         <div>
-            <h1>Rutas</h1>
+            <AdminPageHeader
+                title="Rutas"
+                description="Visualizá y organizá las rutas disponibles para la operación diaria."
+            />
         </div>
     )
 }

@@ -1,7 +1,12 @@
+import AdminPageHeader from "@/components/ui/admin/header/AdminPageHeader";
+
 export default function ClientsPage() {
     return (
         <div>
-            <h1>Clientes</h1>
+            <AdminPageHeader
+                title="Clientes"
+                description="Consultá y administrá los clientes registrados en el sistema."
+            />
         </div>
     )
 }
