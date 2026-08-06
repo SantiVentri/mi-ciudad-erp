@@ -1,0 +1,284 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 16px;
+}
+
+/* --- Tabs de días --- */
+.dayTabs {
+    display: flex;
+    gap: 8px;
+    /* overflow-x: auto; */
+    padding-bottom: 4px;
+}
+
+.dayTab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 64px;
+    padding: 10px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #ffffff;
+    cursor: pointer;
+    color: #111827;
+    position: relative;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.dayTab:hover {
+    border-color: #3454d1;
+}
+
+.dayTabWeekday {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+.dayTabDate {
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.dayTabToday:not(.dayTabActive) {
+    border-color: #3454d1;
+    color: #3454d1;
+}
+
+.dayTabActive {
+    background: #3454d1;
+    border-color: #3454d1;
+    color: #ffffff;
+}
+
+.dayTabCount {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #0b1524;
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 999px;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+
+.dayTabActive .dayTabCount {
+    background: #ffffff;
+    color: #3454d1;
+}
+
+/* --- Barra de búsqueda y filtros --- */
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.searchBox {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 0 14px;
+    background: #ffffff;
+    color: #9ca3af;
+}
+
+.searchBox input {
+    flex: 1;
+    height: 46px;
+    border: 0;
+    outline: none;
+    font-size: 0.95rem;
+    color: #111827;
+    background: transparent;
+}
+
+.select {
+    height: 48px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 0 12px;
+    background: #ffffff;
+    color: #111827;
+    font-size: 0.92rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.select:focus {
+    border-color: #6366f1;
+}
+
+/* --- Lista de pedidos --- */
+.ordersList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 30px 0;
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.orderCard {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.orderRow {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1.2fr 1.6fr 110px 120px 20px;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.92rem;
+    color: #111827;
+}
+
+.orderRow:hover {
+    background: #f9fafb;
+}
+
+.orderTime {
+    font-weight: 700;
+    color: #3454d1;
+}
+
+.orderClient {
+    font-weight: 600;
+}
+
+.orderAddress {
+    color: #6b7280;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.orderItems {
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.stateBadge {
+    display: inline-flex;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.statePendiente {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.stateCompletada {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.stateCancelada {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.stateReprogramada {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.chevron {
+    transition: transform 0.2s ease;
+    color: #9ca3af;
+    justify-self: end;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+/* --- Detalle expandible --- */
+.orderDetail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding: 16px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.detailSection {
+    flex: 1;
+    min-width: 200px;
+}
+
+.detailSection h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.detailSection p {
+    font-size: 0.92rem;
+    color: #111827;
+    margin-bottom: 2px;
+}
+
+.itemsList {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.itemsList li {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.92rem;
+    color: #111827;
+    padding: 6px 10px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+@media (max-width: 720px) {
+    .orderRow {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+
+    .chevron {
+        display: none;
+    }
+}
