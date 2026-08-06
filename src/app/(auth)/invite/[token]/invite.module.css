@@ -43,3 +43,9 @@
     font-size: 0.98rem;
     line-height: 1.5;
 }
+
+@media (max-width: 600px) {
+    .container aside {
+        display: none;
+    }
+}
