@@ -4,10 +4,14 @@
 import styles from "./orders.module.css";
 
 // Hooks
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 // Icons
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, PencilLine, RefreshCw, Search } from "lucide-react";
+
+// Actions
+import { updateOrderArrivalDate } from "@/modules/orders/orders.actions";
 
 // Types
 import type { Order } from "@/modules/orders/orders.dal";
@@ -21,13 +25,12 @@ type SortOption = "hora-asc" | "hora-desc" | "cliente-asc" | "cliente-desc";
 const DAYS_BEFORE = 7;
 const DAYS_AFTER = 8;
 
-const STATE_OPTIONS = ["Todos", "Pendiente", "Completada", "Cancelada", "Reprogramada"];
+const STATE_OPTIONS = ["Todos", "Pendiente", "Completada", "Cancelada"];
 
 const STATE_STYLES: Record<string, string> = {
     Pendiente: styles.statePendiente,
     Completada: styles.stateCompletada,
     Cancelada: styles.stateCancelada,
-    Reprogramada: styles.stateReprogramada,
 };
 
 const WEEKDAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -54,7 +57,38 @@ function dayKey(date: Date) {
     return `${y}-${m}-${d}`;
 }
 
+// arrival_date viene de Postgres como "YYYY-MM-DD" (columna `date`, sin hora).
+// `new Date("YYYY-MM-DD")` lo interpreta como medianoche UTC, lo que en timezones
+// negativos (ej. Argentina, UTC-3) lo corre un dia para atras al pasarlo a hora local.
+// Por eso parseamos los componentes a mano y construimos la fecha en hora LOCAL.
+function parseDateOnly(dateValue: string) {
+    const [year, month, day] = dateValue.split("-").map(Number);
+    return new Date(year, month - 1, day);
+}
+
+function toDateTimeLocalValue(dateValue: string) {
+    const date = new Date(dateValue);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function toDateInputValue(dateValue: string) {
+    const date = parseDateOnly(dateValue);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
 export default function OrdersView({ orders }: OrdersViewProps) {
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
     const today = useMemo(() => startOfDay(new Date()), []);
 
     const days = useMemo(() => {
@@ -72,12 +106,16 @@ export default function OrdersView({ orders }: OrdersViewProps) {
     const [stateFilter, setStateFilter] = useState<string>("Todos");
     const [sortBy, setSortBy] = useState<SortOption>("hora-asc");
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+    const [nextArrivalDate, setNextArrivalDate] = useState("");
+    const [modalError, setModalError] = useState("");
+    const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
 
     const ordersByDay = useMemo(() => {
         const map = new Map<string, Order[]>();
 
         for (const order of orders) {
-            const key = dayKey(startOfDay(new Date(order.arrival_date)));
+            const key = dayKey(startOfDay(parseDateOnly(order.arrival_date)));
             const list = map.get(key) ?? [];
             list.push(order);
             map.set(key, list);
@@ -87,6 +125,73 @@ export default function OrdersView({ orders }: OrdersViewProps) {
     }, [orders]);
 
     const dayOrders = ordersByDay.get(dayKey(selectedDay)) ?? [];
+
+    const closeModal = () => {
+        setEditingOrder(null);
+        setNextArrivalDate("");
+        setModalError("");
+    };
+
+    const openBulkModal = () => {
+        if (selectedOrders.length === 0) {
+            setModalError("Seleccioná al menos un pedido.");
+            return;
+        }
+
+        setEditingOrder(selectedOrders[0]);
+        setNextArrivalDate(toDateInputValue(selectedOrders[0].arrival_date));
+        setModalError("");
+    };
+
+    const toggleOrderSelection = (orderId: string) => {
+        setSelectedOrderIds((current) =>
+            current.includes(orderId)
+                ? current.filter((selectedId) => selectedId !== orderId)
+                : [...current, orderId],
+        );
+    };
+
+    const clearSelection = () => {
+        setSelectedOrderIds([]);
+    };
+
+    const handleConfirmDateChange = () => {
+        if (!nextArrivalDate) {
+            setModalError("Elegí una nueva fecha.");
+            return;
+        }
+
+        if (selectedOrders.length === 0) {
+            setModalError("Seleccioná al menos un pedido.");
+            return;
+        }
+
+        if (parseDateOnly(nextArrivalDate).getTime() < today.getTime()) {
+            setModalError("No podés elegir una fecha pasada.");
+            return;
+        }
+
+        setModalError("");
+
+        startTransition(async () => {
+            // arrival_date es una columna `date` (sin hora/timezone): mandamos el
+            // string "YYYY-MM-DD" del input tal cual, sin pasarlo por Date/UTC.
+            const responses = await Promise.all(
+                selectedOrders.map((order) => updateOrderArrivalDate(order.id, nextArrivalDate)),
+            );
+
+            const firstError = responses.find((response) => response?.error)?.error;
+
+            if (firstError) {
+                setModalError(firstError);
+                return;
+            }
+
+            closeModal();
+            clearSelection();
+            router.refresh();
+        });
+    };
 
     const filteredOrders = useMemo(() => {
         const term = search.trim().toLowerCase();
@@ -114,9 +219,9 @@ export default function OrdersView({ orders }: OrdersViewProps) {
         return [...filtered].sort((a, b) => {
             switch (sortBy) {
                 case "hora-asc":
-                    return new Date(a.arrival_date).getTime() - new Date(b.arrival_date).getTime();
+                    return parseDateOnly(a.arrival_date).getTime() - parseDateOnly(b.arrival_date).getTime();
                 case "hora-desc":
-                    return new Date(b.arrival_date).getTime() - new Date(a.arrival_date).getTime();
+                    return parseDateOnly(b.arrival_date).getTime() - parseDateOnly(a.arrival_date).getTime();
                 case "cliente-asc":
                     return (a.client?.name ?? "").localeCompare(b.client?.name ?? "");
                 case "cliente-desc":
@@ -126,6 +231,11 @@ export default function OrdersView({ orders }: OrdersViewProps) {
             }
         });
     }, [dayOrders, search, stateFilter, sortBy]);
+
+    const selectedOrders = useMemo(
+        () => filteredOrders.filter((order) => selectedOrderIds.includes(order.id)),
+        [filteredOrders, selectedOrderIds],
+    );
 
     return (
         <div className={styles.container}>
@@ -148,6 +258,7 @@ export default function OrdersView({ orders }: OrdersViewProps) {
                             onClick={() => {
                                 setSelectedDay(day);
                                 setExpandedId(null);
+                                setSelectedOrderIds([]);
                             }}
                         >
                             <span className={styles.dayTabWeekday}>{WEEKDAY_LABELS[day.getDay()]}</span>
@@ -191,6 +302,25 @@ export default function OrdersView({ orders }: OrdersViewProps) {
                     <option value="cliente-asc">Cliente (A-Z)</option>
                     <option value="cliente-desc">Cliente (Z-A)</option>
                 </select>
+
+                <button
+                    type="button"
+                    className={styles.refreshButton}
+                    onClick={router.refresh}
+                >
+                    <RefreshCw size={16} />
+                    Refrescar
+                </button>
+
+                <button
+                    type="button"
+                    className={styles.bulkEditButton}
+                    onClick={openBulkModal}
+                    disabled={selectedOrders.length === 0}
+                >
+                    <PencilLine size={16} />
+                    Editar fechas ({selectedOrders.length})
+                </button>
             </div>
 
             <div className={styles.ordersList}>
@@ -201,14 +331,44 @@ export default function OrdersView({ orders }: OrdersViewProps) {
                 {filteredOrders.map((order) => {
                     const isExpanded = expandedId === order.id;
                     const itemsCount = order.order_details?.length ?? 0;
+                    const isSelected = selectedOrderIds.includes(order.id);
 
                     return (
                         <div key={order.id} className={styles.orderCard}>
-                            <button
-                                type="button"
+                            <div
                                 className={styles.orderRow}
-                                onClick={() => setExpandedId(isExpanded ? null : order.id)}
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                    const target = e.target as HTMLElement;
+
+                                    if (target.closest(`[data-selection-checkbox="true"]`)) {
+                                        return;
+                                    }
+
+                                    setExpandedId(isExpanded ? null : order.id);
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        const target = e.target as HTMLElement;
+
+                                        if (target.closest(`[data-selection-checkbox="true"]`)) {
+                                            return;
+                                        }
+
+                                        e.preventDefault();
+                                        setExpandedId(isExpanded ? null : order.id);
+                                    }
+                                }}
                             >
+                                <label className={styles.rowCheckbox} data-selection-checkbox="true">
+                                    <input
+                                        type="checkbox"
+                                        checked={isSelected}
+                                        onChange={() => toggleOrderSelection(order.id)}
+                                    />
+                                    <span />
+                                </label>
                                 <span className={styles.orderClient}>{order.client?.name}</span>
                                 <span className={styles.orderAddress}>
                                     {order.client?.street} {order.client?.number}, {order.client?.city}
@@ -225,7 +385,7 @@ export default function OrdersView({ orders }: OrdersViewProps) {
                                     className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ""}`}
                                     size={18}
                                 />
-                            </button>
+                            </div>
 
                             {isExpanded && (
                                 <div className={styles.orderDetail}>
@@ -258,6 +418,63 @@ export default function OrdersView({ orders }: OrdersViewProps) {
                     );
                 })}
             </div>
+
+            {editingOrder && (
+                <div
+                    className={styles.modalOverlay}
+                    onClick={closeModal}
+                    role="presentation"
+                >
+                    <div
+                        className={styles.modal}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="edit-order-date-title"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className={styles.modalHeader}>
+                            <h3 id="edit-order-date-title">
+                                Editar fecha de {selectedOrders.length} pedido{selectedOrders.length === 1 ? "" : "s"}
+                            </h3>
+                            <p>
+                                {selectedOrders
+                                    .slice(0, 3)
+                                    .map((order) => order.client?.name)
+                                    .filter(Boolean)
+                                    .join(", ")}
+                                {selectedOrders.length > 3 ? "..." : ""}
+                            </p>
+                        </div>
+
+                        <label className={styles.modalField} htmlFor="newArrivalDate">
+                            Nueva fecha
+                            <input
+                                id="newArrivalDate"
+                                type="date"
+                                min={dayKey(today)}
+                                value={nextArrivalDate}
+                                onChange={(e) => setNextArrivalDate(e.target.value)}
+                            />
+                        </label>
+
+                        {modalError && <p className={styles.modalError}>{modalError}</p>}
+
+                        <div className={styles.modalActions}>
+                            <button type="button" className={styles.secondaryButton} onClick={closeModal}>
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.primaryButton}
+                                onClick={handleConfirmDateChange}
+                                disabled={isPending}
+                            >
+                                {isPending ? "Guardando..." : "Confirmar"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
