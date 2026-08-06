@@ -68,6 +68,8 @@ export default function LoginForm() {
 
         if (logInError) {
             console.log("Error: No se pudo iniciar sesión. ", logInError)
+            setError("No se pudo iniciar sesión. Por favor, revisá tus credenciales e intentá nuevamente.");
+            setIsLoading(false);
             return;
         }
 
