@@ -13,9 +13,10 @@ export default function RegisterForm({
     email,
     token,
 }: {
-    email: string;
-    token: string;
+    email?: string;
+    token?: string;
 }) {
+    const [formEmail, setFormEmail] = useState(email ?? "");
     const [displayName, setDisplayName] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
@@ -26,7 +27,7 @@ export default function RegisterForm({
     const supabase = createClient();
 
     const validateForm = () => {
-        if (!displayName || !firstName || !lastName || !password) {
+        if (!formEmail || !displayName || !firstName || !lastName || !password) {
             setError("Completá todos los campos.");
             return false;
         }
@@ -60,14 +61,14 @@ export default function RegisterForm({
         }
 
         const { error: signUpError } = await supabase.auth.signUp({
-            email,
+            email: formEmail,
             password,
             options: {
                 data: {
                     display_name: displayName,
                     first_name: firstName,
                     last_name: lastName,
-                    invite_token: token,
+                    ...(token ? { invite_token: token } : {}),
                 },
             },
         });
@@ -79,7 +80,7 @@ export default function RegisterForm({
         }
 
         const { error: logInError } = await supabase.auth.signInWithPassword({
-            email,
+            email: formEmail,
             password,
         });
 
@@ -95,8 +96,16 @@ export default function RegisterForm({
     return (
         <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.formGroup}>
-                <label>Email:</label>
-                <input type="email" value={email} disabled readOnly />
+                <label htmlFor="email">Email:</label>
+                <input
+                    type="email"
+                    id="email"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                    disabled={Boolean(email)}
+                    readOnly={Boolean(email)}
+                    required
+                />
             </div>
             <div className={styles.formGroup}>
                 <label htmlFor="displayName">Nombre de usuario:</label>
