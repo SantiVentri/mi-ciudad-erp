@@ -1,0 +1,18 @@
+.button {
+    background: none;
+    border: none;
+    border-radius: 5px;
+    color: red;
+    padding: 8px;
+    cursor: pointer;
+}
+
+.button:not(.loading):hover {
+    background-color: rgba(255, 0, 0, 0.1);
+}
+
+.loading {
+    cursor: wait;
+    background-color: rgba(0, 0, 0, 0.1);
+    color: gray;
+}
