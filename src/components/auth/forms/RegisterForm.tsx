@@ -117,25 +117,27 @@ export default function RegisterForm({
                     required
                 />
             </div>
-            <div className={styles.formGroup}>
-                <label htmlFor="firstName">Primer nombre:</label>
-                <input
-                    type="text"
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                />
-            </div>
-            <div className={styles.formGroup}>
-                <label htmlFor="lastName">Apellido:</label>
-                <input
-                    type="text"
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                />
+            <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                    <label htmlFor="firstName">Primer nombre:</label>
+                    <input
+                        type="text"
+                        id="firstName"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                    />
+                </div>
+                <div className={styles.formGroup}>
+                    <label htmlFor="lastName">Apellido:</label>
+                    <input
+                        type="text"
+                        id="lastName"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                    />
+                </div>
             </div>
             <div className={styles.formGroup}>
                 <label htmlFor="password">Contraseña:</label>
