@@ -237,6 +237,12 @@ export default function OrdersView({ orders }: OrdersViewProps) {
         [filteredOrders, selectedOrderIds],
     );
 
+    const handleRefresh = () => {
+        startTransition(() => {
+            router.refresh();
+        });
+    }
+
     return (
         <div className={styles.container}>
             <div className={styles.dayTabs}>
@@ -306,10 +312,11 @@ export default function OrdersView({ orders }: OrdersViewProps) {
                 <button
                     type="button"
                     className={styles.refreshButton}
-                    onClick={router.refresh}
+                    onClick={handleRefresh}
+                    disabled={isPending}
                 >
                     <RefreshCw size={16} />
-                    Refrescar
+                    {isPending ? "Refrezcando..." : "Refrescar"}
                 </button>
 
                 <button
