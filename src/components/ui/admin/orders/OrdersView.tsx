@@ -66,17 +66,6 @@ function parseDateOnly(dateValue: string) {
     return new Date(year, month - 1, day);
 }
 
-function toDateTimeLocalValue(dateValue: string) {
-    const date = new Date(dateValue);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
 function toDateInputValue(dateValue: string) {
     const date = parseDateOnly(dateValue);
     const year = date.getFullYear();
