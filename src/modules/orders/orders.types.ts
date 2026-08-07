@@ -1,0 +1,1 @@
+export type SortOption = "hora-asc" | "hora-desc" | "cliente-asc" | "cliente-desc";
