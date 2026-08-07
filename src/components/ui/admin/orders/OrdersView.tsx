@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, PencilLine, RefreshCw, Search } from "lucide-react";
 
 // Actions
-import { updateOrderArrivalDate } from "@/modules/orders/orders.actions";
+import { updateOrderArrivalDate, setOrderState } from "@/modules/orders/orders.actions";
 
 // Types
 import type { Order } from "@/modules/orders/orders.dal";
@@ -50,17 +50,12 @@ function isSameDay(a: Date, b: Date) {
 }
 
 function dayKey(date: Date) {
-    // Clave estable en horario local (evita el corrimiento de dia de toISOString con UTC)
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
     const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
 }
 
-// arrival_date viene de Postgres como "YYYY-MM-DD" (columna `date`, sin hora).
-// `new Date("YYYY-MM-DD")` lo interpreta como medianoche UTC, lo que en timezones
-// negativos (ej. Argentina, UTC-3) lo corre un dia para atras al pasarlo a hora local.
-// Por eso parseamos los componentes a mano y construimos la fecha en hora LOCAL.
 function parseDateOnly(dateValue: string) {
     const [year, month, day] = dateValue.split("-").map(Number);
     return new Date(year, month - 1, day);
@@ -99,6 +94,9 @@ export default function OrdersView({ orders }: OrdersViewProps) {
     const [nextArrivalDate, setNextArrivalDate] = useState("");
     const [modalError, setModalError] = useState("");
     const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+
+    // Cambiamos el nombre a updatingIds ya que ahora procesa ambos cambios
+    const [updatingIds, setUpdatingIds] = useState<string[]>([]);
 
     const ordersByDay = useMemo(() => {
         const map = new Map<string, Order[]>();
@@ -163,8 +161,6 @@ export default function OrdersView({ orders }: OrdersViewProps) {
         setModalError("");
 
         startTransition(async () => {
-            // arrival_date es una columna `date` (sin hora/timezone): mandamos el
-            // string "YYYY-MM-DD" del input tal cual, sin pasarlo por Date/UTC.
             const responses = await Promise.all(
                 selectedOrders.map((order) => updateOrderArrivalDate(order.id, nextArrivalDate)),
             );
@@ -178,6 +174,23 @@ export default function OrdersView({ orders }: OrdersViewProps) {
 
             closeModal();
             clearSelection();
+            router.refresh();
+        });
+    };
+
+    const isUpdating = (order: Order) => updatingIds.includes(order.id);
+    const isOldOrder = (order: Order) => parseDateOnly(order.arrival_date).getTime() < today.getTime();
+
+    // Esta función ahora alterna el estado del pedido
+    const handleToggleOrderState = (order: Order) => {
+        // Determinamos el nuevo estado en base al estado actual
+        const newState = order.state === "Pendiente" ? "Cancelada" : "Pendiente";
+
+        setUpdatingIds((prev) => [...prev, order.id]);
+
+        startTransition(async () => {
+            await setOrderState(order.id, newState);
+            setUpdatingIds((prev) => prev.filter((id) => id !== order.id));
             router.refresh();
         });
     };
@@ -230,7 +243,7 @@ export default function OrdersView({ orders }: OrdersViewProps) {
         startTransition(() => {
             router.refresh();
         });
-    }
+    };
 
     return (
         <div className={styles.container}>
@@ -384,30 +397,51 @@ export default function OrdersView({ orders }: OrdersViewProps) {
                             </div>
 
                             {isExpanded && (
-                                <div className={styles.orderDetail}>
-                                    <div className={styles.detailSection}>
-                                        <h4>Cliente</h4>
-                                        <p>{order.client?.name}</p>
-                                        <p>{order.client?.email}</p>
-                                        <p>{order.client?.phone}</p>
-                                        <p>
-                                            {order.client?.street} {order.client?.number}, {order.client?.city},{" "}
-                                            {order.client?.province}
-                                        </p>
+                                <div className={styles.orderDetailContainer}>
+                                    <div className={styles.orderDetail}>
+                                        <div className={styles.detailSection}>
+                                            <h4>Cliente</h4>
+                                            <p>{order.client?.name}</p>
+                                            <p>{order.client?.email}</p>
+                                            <p>{order.client?.phone}</p>
+                                            <p>
+                                                {order.client?.street} {order.client?.number}, {order.client?.city},{" "}
+                                                {order.client?.province}
+                                            </p>
+                                        </div>
+
+                                        <div className={styles.detailSection}>
+                                            <h4>Productos</h4>
+                                            <ul className={styles.itemsList}>
+                                                {order.order_details?.map((detail) => (
+                                                    <li key={detail.id}>
+                                                        <span>{detail.product?.name}</span>
+                                                        <span>x{detail.quantity}</span>
+                                                    </li>
+                                                ))}
+                                                {itemsCount === 0 && <li>Sin productos cargados</li>}
+                                            </ul>
+                                        </div>
                                     </div>
 
-                                    <div className={styles.detailSection}>
-                                        <h4>Productos</h4>
-                                        <ul className={styles.itemsList}>
-                                            {order.order_details?.map((detail) => (
-                                                <li key={detail.id}>
-                                                    <span>{detail.product?.name}</span>
-                                                    <span>x{detail.quantity}</span>
-                                                </li>
-                                            ))}
-                                            {itemsCount === 0 && <li>Sin productos cargados</li>}
-                                        </ul>
-                                    </div>
+                                    {order.state != "Completada" && !isOldOrder(order) && (
+                                        <button
+                                            name="ToggleButton"
+                                            className={`
+                                                ${styles.toggleStateButton}
+                                                ${order.state == "Pendiente" ? styles.cancelButton : styles.restoreButton}
+                                                ${isUpdating(order) ? styles.toggleButtonDisabled : ""}`
+                                            }
+                                            onClick={() => handleToggleOrderState(order)}
+                                            disabled={isUpdating(order) || order.state === "Completada"}
+                                        >
+                                            {isUpdating(order)
+                                                ? "Procesando..."
+                                                : order.state === "Cancelada"
+                                                    ? "Restaurar"
+                                                    : "Cancelar pedido"}
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>

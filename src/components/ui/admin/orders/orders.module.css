@@ -319,13 +319,21 @@
 }
 
 /* --- Detalle expandible --- */
+.orderDetailContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    border-top: 1px solid #e5e7eb;
+    padding: 16px;
+    background: #f9fafb;
+}
+
 .orderDetail {
     display: flex;
     flex-wrap: wrap;
+    width: 100%;
     gap: 24px;
-    padding: 16px;
-    border-top: 1px solid #e5e7eb;
-    background: #f9fafb;
 }
 
 .detailSection {
@@ -363,6 +371,31 @@
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
+}
+
+.toggleStateButton {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+}
+
+.cancelButton {
+    background-color: red;
+}
+
+.restoreButton {
+    background-color: #000;
+}
+
+.toggleButtonDisabled {
+    background-color: grey !important;
+}
+
+.toggleStateButton:not(.toggleButtonDisabled):hover {
+    opacity: 0.8;
 }
 
 .modalOverlay {

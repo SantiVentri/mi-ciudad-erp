@@ -41,3 +41,19 @@ export async function updateOrderArrivalDate(orderId: string, arrivalDate: strin
 
     return { ok: true };
 }
+
+export async function setOrderState(orderId: string, newState: string) {
+    const supabase = await getServerClient();
+    const {error} = await supabase
+        .from("orders")
+        .update({ state: newState })
+        .eq("id", orderId)
+
+    if (error) {
+        return { error: "No se pudo actualizar la fecha: " + error.message };
+    }
+
+    revalidatePath("/admin/orders");
+
+    return { ok: true };
+}
