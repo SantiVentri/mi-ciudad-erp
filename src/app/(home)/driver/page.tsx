@@ -1,10 +1,16 @@
-import SignOutButton from "@/components/auth/signOutButton/SignOutButton";
+// Styles
+import { getCurrentRoute } from "@/modules/routes/routes.dal";
+import styles from "./home.module.css";
 
-export default function DriverHomePage() {
+// Components
+import RouteDetails from "@/components/ui/driver/home/routeDetails/RouteDetails";
+
+export default async function DriverHomePage() {
+    const currentRoute = await getCurrentRoute();
+
     return (
-        <div>
-            <h1>Sos conductor</h1>
-            <SignOutButton />
+        <div className={styles.container}>
+            <RouteDetails currentRoute={currentRoute ? currentRoute : null} />
         </div>
     )
 }
