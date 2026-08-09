@@ -5,11 +5,14 @@ import { useState, useTransition } from "react";
 // Styles
 import styles from "./routeDetails.module.css";
 
+// Hooks
+import { useRouter } from "next/navigation";
+
 // Components
 import StopCard from "@/components/ui/driver/home/stopCard/StopCard";
 
 // Actions and utils
-import { setStopState } from "@/modules/routes/routes.actions";
+import { setCompletedRoute, setStopState } from "@/modules/routes/routes.actions";
 import {
     sortStopsByVisitOrder,
     formatRouteDate,
@@ -19,7 +22,7 @@ import {
 } from "@/modules/routes/routes.utils";
 
 // Icons
-import { Navigation } from "lucide-react";
+import { Navigation, CheckCircle2 } from "lucide-react";
 
 // Constants
 import { DIRECCION_EMBOTELLADORA } from "@/modules/routes/routes.constants";
@@ -38,6 +41,9 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
     const [pendingStopId, setPendingStopId] = useState<RouteStop["id"] | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
+    const [isFinishingRoute, setIsFinishingRoute] = useState(false);
+
+    const router = useRouter();
 
     if (!currentRoute) {
         return (
@@ -50,7 +56,20 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
         );
     }
 
+    if (currentRoute.state === "Finalizada") {
+        return (
+            <div className={styles.container}>
+                <div className={styles.emptyState}>
+                    <h2>Ruta finalizada</h2>
+                    <p>Ya finalizaste tu ruta de hoy. ¡Buen trabajo!</p>
+                </div>
+            </div>
+        );
+    }
+
     const { completed, total, percentage } = getRouteProgress(stops);
+    const isRouteCompleted = total > 0 && completed === total;
+
     const mapsUrl = buildGoogleMapsRouteUrl(getPendingStopAddresses(stops), {
         origin: DIRECCION_EMBOTELLADORA,
         destination: DIRECCION_EMBOTELLADORA,
@@ -81,6 +100,22 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
 
             setPendingStopId(null);
         });
+    };
+
+    const handleFinishRoute = async () => {
+        setIsFinishingRoute(true);
+        setErrorMessage(null);
+
+        if (!isRouteCompleted) {
+            setErrorMessage("No se puede finalizar la ruta. Todavía hay paradas pendientes.");
+            return;
+        }
+
+        await setCompletedRoute(currentRoute.id);
+
+        router.refresh();
+
+        setIsFinishingRoute(false);
     };
 
     return (
@@ -129,6 +164,26 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
                         />
                     ))}
                 </ul>
+            )}
+
+            {isRouteCompleted && (
+                <div className={styles.completionContainer}>
+                    <div className={styles.completionHeader}>
+                        <CheckCircle2 size={40} className={styles.completionIcon} />
+                        <h3>¡Todas las paradas fueron completadas!</h3>
+                    </div>
+                    <p className={styles.completionText}>
+                        Ya podés volver a la embotelladora para finalizar la jornada.
+                    </p>
+                    <button
+                        type="button"
+                        className={styles.finishRouteButton}
+                        disabled={isFinishingRoute}
+                        onClick={handleFinishRoute}
+                    >
+                        {isFinishingRoute ? "Finalizando..." : "Finalizar ruta"}
+                    </button>
+                </div>
             )}
         </div>
     );
