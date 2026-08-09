@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 
 // Utils
 import {
-    formatClientAddress,
+    formatRouteClientAddress,
     getRouteCrew,
     getRouteMapData,
     getRouteUnits,
@@ -21,9 +21,9 @@ import {
 // Constants and types
 import {
     ROUTE_STATE_STYLES,
-    STOP_STATE_STYLES,
+    ADMIN_STOP_STATE_STYLES,
 } from "@/modules/routes/routes.constants";
-import type { AdminRoute, RouteStop } from "@/modules/routes/routes.dal";
+import type { AdminRoute, AdminRouteStop } from "@/modules/routes/routes.dal";
 
 // Icons
 import { ChevronDown, MapPinOff, Pencil, Trash2, X } from "lucide-react";
@@ -41,7 +41,7 @@ type RouteCardProps = {
     onToggleExpand: () => void;
     onEdit: () => void;
     onDelete: () => void;
-    onRemoveStop: (stop: RouteStop) => void;
+    onRemoveStop: (stop: AdminRouteStop) => void;
 };
 
 export default function RouteCard({
@@ -135,7 +135,7 @@ export default function RouteCard({
                                                     {client?.name ?? "Cliente eliminado"}
                                                 </p>
                                                 <p className={styles.stopAddress}>
-                                                    {formatClientAddress(client)}
+                                                    {formatRouteClientAddress(client)}
                                                 </p>
                                                 <p className={styles.stopMeta}>
                                                     {stopUnits} {stopUnits === 1 ? "unidad" : "unidades"}
@@ -153,7 +153,7 @@ export default function RouteCard({
                                                 )}
                                             </div>
                                             <span
-                                                className={`${styles.stateBadge} ${STOP_STATE_STYLES[stop.state ?? ""] ?? ""}`}
+                                                className={`${styles.stateBadge} ${ADMIN_STOP_STATE_STYLES[stop.state ?? ""] ?? ""}`}
                                             >
                                                 {stop.state ?? "Sin estado"}
                                             </span>

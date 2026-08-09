@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 
 // Data and actions
 import { deleteRoute, removeOrderFromRoute } from "@/modules/routes/routes.actions";
-import type { AdminRoute, RouteStop } from "@/modules/routes/routes.dal";
+import type { AdminRoute, AdminRouteStop } from "@/modules/routes/routes.dal";
 import type { DayOrdersStatus, SelectOption } from "@/modules/routes/routes.types";
 
 // Constants and utils
@@ -40,7 +40,7 @@ type RoutesViewProps = {
 
 type Dialog =
     | { kind: "confirmDelete"; route: AdminRoute }
-    | { kind: "confirmRemoveStop"; route: AdminRoute; stop: RouteStop }
+    | { kind: "confirmRemoveStop"; route: AdminRoute; stop: AdminRouteStop }
     | { kind: "info"; title: string; message: string };
 
 function liveStopsCount(route: AdminRoute) {
@@ -150,7 +150,7 @@ export default function RoutesView({
         });
     };
 
-    const runRemoveStop = (route: AdminRoute, stop: RouteStop) => {
+    const runRemoveStop = (route: AdminRoute, stop: AdminRouteStop) => {
         setDialog(null);
         if (!stop.order) return;
 

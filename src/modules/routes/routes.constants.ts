@@ -1,4 +1,5 @@
 import styles from "@/modules/routes/components/routes.module.css";
+import stopCardStyles from "@/components/ui/driver/home/stopCard/stopCard.module.css";
 
 export const DAYS_BEFORE = 7;
 export const DAYS_AFTER = 8;
@@ -21,7 +22,7 @@ export const ROUTE_STATE_STYLES: Record<string, string> = {
     Cancelada: styles.stateCancelada,
 };
 
-export const STOP_STATE_STYLES: Record<string, string> = {
+export const ADMIN_STOP_STATE_STYLES: Record<string, string> = {
     Pendiente: styles.statePendiente,
     Completada: styles.stateCompletada,
     Cancelada: styles.stateCancelada,
@@ -34,3 +35,10 @@ export const MAP_TILE_ATTRIBUTION =
 
 // Vueltas posibles por día (la base solo admite 1 y 2)
 export const TRIP_NUMBERS = [1, 2] as const;
+
+// --- Conductor: ruta del día ---
+
+export const STOP_STATE_STYLES: Record<string, string> = {
+  Pendiente: stopCardStyles.statePendiente,
+  Completada: stopCardStyles.stateCompletada,
+};

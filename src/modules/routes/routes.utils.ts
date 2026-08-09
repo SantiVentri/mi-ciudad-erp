@@ -1,8 +1,8 @@
-import type { AdminRoute, RouteStop } from "@/modules/routes/routes.dal";
+import type { AdminRoute, AdminRouteStop, RouteStop } from "@/modules/routes/routes.dal";
 import type { BusySlot, MapStop } from "@/modules/routes/routes.types";
 import { TRIP_NUMBERS } from "@/modules/routes/routes.constants";
 
-type Client = NonNullable<NonNullable<RouteStop["order"]>["client"]>;
+type AdminClient = NonNullable<NonNullable<AdminRouteStop["order"]>["client"]>;
 
 export function getDriverFullName(driver: AdminRoute["driver"]) {
     if (!driver) return "Conductor sin perfil";
@@ -24,16 +24,16 @@ export function getVehiclePatent(vehicle: AdminRoute["vehicle"]) {
     return vehicle?.patent ?? "Vehículo eliminado";
 }
 
-export function formatClientAddress(client?: Client | null) {
+export function formatRouteClientAddress(client?: AdminClient | null) {
     if (!client) return "Sin dirección";
     return `${client.street} ${client.number}, ${client.city}`;
 }
 
-export function getSortedStops(route: AdminRoute): RouteStop[] {
+export function getSortedStops(route: AdminRoute): AdminRouteStop[] {
     return [...(route.stops ?? [])].sort((a, b) => a.visit_order - b.visit_order);
 }
 
-export function getStopUnits(stop: RouteStop) {
+export function getStopUnits(stop: AdminRouteStop) {
     return (
         stop.order?.order_details?.reduce(
             (sum, detail) => sum + (detail.quantity ?? 0),
@@ -46,7 +46,7 @@ export function getRouteUnits(route: AdminRoute) {
     return (route.stops ?? []).reduce((sum, stop) => sum + getStopUnits(stop), 0);
 }
 
-export function hasCoordinates(client?: Client | null) {
+export function hasCoordinates(client?: AdminClient | null) {
     return client?.latitude != null && client?.longitude != null;
 }
 
@@ -67,7 +67,7 @@ export function getRouteMapData(route: AdminRoute) {
                 id: stop.id,
                 number: index + 1,
                 clientName: client.name,
-                address: formatClientAddress(client),
+                address: formatRouteClientAddress(client),
                 latitude: Number(client.latitude),
                 longitude: Number(client.longitude),
             });
@@ -130,4 +130,48 @@ export function nextDayKey(dateKey: string) {
     const [year, month, day] = dateKey.split("-").map(Number);
     const next = new Date(Date.UTC(year, month - 1, day + 1));
     return next.toISOString().slice(0, 10);
+}
+
+// --- Conductor: ruta del día ---
+
+type Client = NonNullable<NonNullable<RouteStop["order"]>["client"]>;
+
+export function sortStopsByVisitOrder(stops: RouteStop[]) {
+  return [...stops].sort((a, b) => a.visitOrder - b.visitOrder);
+}
+
+export function formatRouteDate(dateValue: string) {
+  const datePart = dateValue.slice(0, 10);
+  const [year, month, day] = datePart.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  const formatted = date.toLocaleDateString("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+export function formatClientAddress(client: Client | null | undefined) {
+  if (!client) return "Dirección no disponible";
+
+  const parts = [`${client.street} ${client.number}`, client.city, client.province].filter(
+    Boolean
+  );
+
+  return parts.join(", ");
+}
+
+export function getRouteProgress(stops: RouteStop[]) {
+  const total = stops.length;
+  const completed = stops.filter((stop) => stop.state === "Completada").length;
+  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  return { total, completed, percentage };
+}
+
+export function isStopCompleted(stop: RouteStop) {
+  return stop.state === "Completada";
 }

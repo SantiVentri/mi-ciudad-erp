@@ -1,0 +1,175 @@
+.stopCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e5ec;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.stopCardCompleted {
+  border-color: #bfead0;
+  background: #f5fbf7;
+}
+
+.stopRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  cursor: pointer;
+}
+
+.stopIndex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #eef1fb;
+  color: #3454d1;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.stopCardCompleted .stopIndex {
+  background: #d9f2e3;
+  color: #1e8e4f;
+}
+
+.stopMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.stopClient {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #0b1524;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stopAddress {
+  font-size: 0.82rem;
+  color: #5b6472;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stopItemsCount {
+  font-size: 0.78rem;
+  color: #8a92a1;
+}
+
+.stateBadge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.statePendiente {
+  background: #fff1d6;
+  color: #a35b00;
+}
+
+.stateCompletada {
+  background: #d9f2e3;
+  color: #1e8e4f;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: #8a92a1;
+  transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.stopDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 14px 16px 14px;
+  border-top: 1px solid #eef0f4;
+  padding-top: 14px;
+}
+
+.phoneLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  font-size: 0.85rem;
+  color: #3454d1;
+  font-weight: 600;
+}
+
+.detailSection h4 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #8a92a1;
+  margin-bottom: 6px;
+}
+
+.detailSection p {
+  font-size: 0.88rem;
+  color: #0b1524;
+  line-height: 1.4;
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+}
+
+.itemsList li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  color: #0b1524;
+}
+
+.toggleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.toggleButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.completeButton {
+  background: #3454d1;
+  color: #ffffff;
+}
+
+.undoButton {
+  background: #f1f2f6;
+  color: #444b58;
+}

@@ -64,7 +64,7 @@ export const getRoutes = cache(async (startDate: string, endDate: string) => {
 
 export type AdminRoutes = NonNullable<Awaited<ReturnType<typeof getRoutes>>>;
 export type AdminRoute = AdminRoutes[number];
-export type RouteStop = AdminRoute["stops"][number];
+export type AdminRouteStop = AdminRoute["stops"][number];
 
 // Por día: cuántos pedidos hay y cuántos siguen "Pendiente" (sin ruta)
 export const getOrdersStatusByDay = cache(async (startDate: string, endDate: string) => {
@@ -187,6 +187,60 @@ export type RoutesMetricsData = NonNullable<
     Awaited<ReturnType<typeof getRoutesMetrics>>
 >;
 
+// --- Conductor: ruta del día ---
+
+export type RouteClient = {
+  id: string;
+  name: string;
+  phone: string | null;
+  street: string;
+  number: string;
+  city: string;
+  province: string;
+  observations: string | null;
+};
+
+export type RouteProduct = {
+  id: string;
+  name: string;
+};
+
+export type RouteOrderDetail = {
+  id: string;
+  quantity: number;
+  product: RouteProduct | null;
+};
+
+export type RouteOrder = {
+  id: string;
+  state: string | null;
+  client: RouteClient | null;
+  order_details: RouteOrderDetail[];
+};
+
+export type RouteStop = {
+  id: string;
+  orderId: string;
+  visitOrder: number;
+  state: string | null;
+  order: RouteOrder | null;
+};
+
+export type RouteVehicle = {
+  id: string;
+  patent: string;
+};
+
+export type CurrentRoute = {
+  id: string;
+  driverId: string;
+  vehicleId: string;
+  routeDate: string;
+  state: string | null;
+  vehicle: RouteVehicle | null;
+  stops: RouteStop[];
+};
+
 export const getCurrentRoute = cache(async () => {
   const supabase = await getServerClient();
 
@@ -206,17 +260,39 @@ export const getCurrentRoute = cache(async () => {
       id,
       driverId:driver_id,
       vehicleId:vehicle_id,
+      routeDate:route_date,
       state,
+      vehicle:vehicles ( id, patent ),
       stops (
         id,
         orderId:order_id,
         visitOrder:visit_order,
-        state
+        state,
+        order:orders (
+          id,
+          state,
+          client:clients (
+            id,
+            name,
+            phone,
+            street,
+            number,
+            city,
+            province,
+            observations
+          ),
+          order_details (
+            id,
+            quantity,
+            product:products ( id, name )
+          )
+        )
       )
     `)
     .eq("driver_id", user.id)
     .gte("route_date", `${todayString} 00:00:00`)
     .lte("route_date", `${todayString} 23:59:59`)
+    .order("visit_order", { foreignTable: "stops", ascending: true })
     .maybeSingle();
 
   if (fetchRouteError) {
@@ -224,5 +300,5 @@ export const getCurrentRoute = cache(async () => {
     return null;
   }
 
-  return currentRoute;
+  return currentRoute as unknown as CurrentRoute | null;
 });
