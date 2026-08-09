@@ -14,7 +14,15 @@ import {
     sortStopsByVisitOrder,
     formatRouteDate,
     getRouteProgress,
+    getPendingStopAddresses,
+    buildGoogleMapsRouteUrl,
 } from "@/modules/routes/routes.utils";
+
+// Icons
+import { Navigation } from "lucide-react";
+
+// Constants
+import { DIRECCION_EMBOTELLADORA } from "@/modules/routes/routes.constants";
 
 // Types
 import type { CurrentRoute, RouteStop } from "@/modules/routes/routes.dal";
@@ -43,6 +51,10 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
     }
 
     const { completed, total, percentage } = getRouteProgress(stops);
+    const mapsUrl = buildGoogleMapsRouteUrl(getPendingStopAddresses(stops), {
+        origin: DIRECCION_EMBOTELLADORA,
+        destination: DIRECCION_EMBOTELLADORA,
+    });
 
     const handleToggleStop = (stop: RouteStop) => {
         const wantsCompleted = stop.state !== "Completada";
@@ -91,6 +103,18 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
                     {completed} de {total} paradas completadas
                 </span>
             </div>
+
+            {mapsUrl && (
+                <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.mapsButton}
+                >
+                    <Navigation size={16} />
+                    Abrir ruta en Google Maps
+                </a>
+            )}
 
             {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
 

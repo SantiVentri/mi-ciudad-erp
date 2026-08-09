@@ -42,3 +42,5 @@ export const STOP_STATE_STYLES: Record<string, string> = {
   Pendiente: stopCardStyles.statePendiente,
   Completada: stopCardStyles.stateCompletada,
 };
+
+export const DIRECCION_EMBOTELLADORA = process.env.NEXT_PUBLIC_COMPANY_ADDRESS;
