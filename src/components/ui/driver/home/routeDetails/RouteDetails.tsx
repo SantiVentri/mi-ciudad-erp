@@ -70,8 +70,10 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
     const { completed, total, percentage } = getRouteProgress(stops);
     const isRouteCompleted = total > 0 && completed === total;
 
+    const origin = completed > 0 ? undefined : DIRECCION_EMBOTELLADORA;
+
     const mapsUrl = buildGoogleMapsRouteUrl(getPendingStopAddresses(stops), {
-        origin: DIRECCION_EMBOTELLADORA,
+        origin,
         destination: DIRECCION_EMBOTELLADORA,
     });
 
