@@ -63,7 +63,6 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
         setErrorMessage(null);
         setPendingStopId(stop.id);
 
-        // Actualización optimista de la UI
         setStops((current) =>
             current.map((item) =>
                 item.id === stop.id
@@ -76,7 +75,6 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
             const result = await setStopState(String(stop.id), wantsCompleted);
 
             if ("error" in result) {
-                // Revertimos si falló la actualización en el servidor
                 setStops(previousStops);
                 setErrorMessage(result.error);
             }
@@ -88,7 +86,6 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <h1>Ruta de hoy</h1>
                 <p className={styles.date}>{formatRouteDate(currentRoute.routeDate)}</p>
                 {currentRoute.vehicle?.patent && (
                     <p className={styles.vehicle}>Vehículo: {currentRoute.vehicle.patent}</p>
