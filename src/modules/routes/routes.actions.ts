@@ -77,3 +77,20 @@ export async function setStopState(
 
   return { ok: true, state: newStopState };
 }
+
+export async function setCompletedRoute(routeId: string) {
+  const supabase = await getServerClient();
+
+  const { error: updateStateError } = await supabase
+    .from("routes")
+    .update({ state: "Finalizada" })
+    .eq("id", routeId)
+
+  if (updateStateError) {
+    return {
+      error:
+        "La parada se actualizó pero no se pudo sincronizar el pedido: " +
+        updateStateError.message,
+    };
+  }
+}

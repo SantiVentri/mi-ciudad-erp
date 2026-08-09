@@ -102,3 +102,70 @@
   font-size: 0.85rem;
   font-weight: 600;
 }
+
+.completionContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  margin-top: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.completionHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.completionHeader h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #166534;
+}
+
+.completionIcon {
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.completionText {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #15803d;
+  line-height: 1.4;
+}
+
+.finishRouteButton {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background-color: #16a34a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.finishRouteButton:not(:disabled):hover {
+  background-color: #15803d;
+}
+
+.finishRouteButton:disabled {
+  background-color: gray;
+  cursor: wait;
+}
+
+.finishRouteButton:not(:disabled):active {
+  transform: scale(0.99);
+}
