@@ -170,6 +170,6 @@
 }
 
 .undoButton {
-  background: #f1f2f6;
-  color: #444b58;
+  background: rgb(26, 26, 26);
+  color: white;
 }
