@@ -23,6 +23,7 @@ export default function RegisterForm({
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState(false);
 
     // Solo para feedback instantáneo en el navegador — la validación real está en registerUser().
     const quickClientCheck = () => {
@@ -58,6 +59,7 @@ export default function RegisterForm({
             return;
         }
 
+        setSuccess(true);
         window.location.href = result.redirectTo ?? "/admin/routes";
     };
 
@@ -118,8 +120,8 @@ export default function RegisterForm({
                 />
             </div>
             {error && <p className={styles.error}>{error}</p>}
-            <button type="submit" disabled={isLoading}>
-                {isLoading ? "Creando cuenta..." : "Crear cuenta"}
+            <button type="submit" className={success ? styles.successButton : ""} disabled={isLoading || success}>
+                {success ? "Redireccionando..." : isLoading ? "Creando cuenta..." : "Crear cuenta"}
             </button>
         </form>
     );
