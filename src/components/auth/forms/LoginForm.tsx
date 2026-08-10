@@ -20,6 +20,7 @@ export default function LoginForm() {
 
     // Form submission state
     const [isLoading, setIsLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
 
     // Error state
     const [error, setError] = useState("");
@@ -74,7 +75,7 @@ export default function LoginForm() {
         }
 
         window.location.reload();
-
+        setSuccess(true);
         setIsLoading(false);
         resetForm();
     }
@@ -116,8 +117,8 @@ export default function LoginForm() {
                 </div>
             </div>
             {error && <p className={styles.error}>{error}</p>}
-            <button type="submit" disabled={isLoading}>
-                {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
+            <button type="submit" className={success ? styles.successButton : ""} disabled={isLoading || success}>
+                {success ? "Redireccionando..." : isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
             </button>
         </form>
     )

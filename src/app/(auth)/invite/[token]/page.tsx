@@ -6,6 +6,7 @@ import RegisterForm from "@/components/auth/forms/RegisterForm";
 
 // Utils
 import { getServerClient } from "@/utils/supabase/getServerClient";
+import Image from "next/image";
 
 type InvitationValidation = {
     email: string;
@@ -20,6 +21,7 @@ export default async function InvitePage({
 }) {
     const { token } = await params;
     const supabase = await getServerClient();
+    const backgroundImage = "/auth/AuthBG.jpg";
 
     const { data, error } = await supabase
         .rpc("validate_invitation", { p_token: token })
@@ -47,7 +49,16 @@ export default async function InvitePage({
                 </div>
                 <RegisterForm email={data.email} token={token} />
             </main>
-            <aside />
+            <aside>
+                <Image
+                    src={backgroundImage}
+                    className={styles.image}
+                    height={900}
+                    width={900}
+                    alt="auth background"
+                    priority
+                />
+            </aside>
         </div>
     )
 }
