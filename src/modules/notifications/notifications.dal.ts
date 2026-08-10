@@ -5,6 +5,7 @@ export interface Notification {
     user_id: string;
     type: string;
     message: string;
+    href: string;
     seen: boolean;
     created_at: string;
 }
@@ -19,6 +20,7 @@ export const getNotifications = async (userId: string) => {
         user_id,
         type,
         message,
+        href,
         seen,
         created_at
     `)
