@@ -1,8 +1,8 @@
 .listContainer {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 0 20px;
+    gap: 20px;
+    padding: 0 15px;
     margin-top: 20px;
 }
 
@@ -30,5 +30,51 @@
 }
 
 .notificationsList {
+    display: flex;
+    flex-direction: column;
     list-style-type: none;
+    gap: 10px;
+}
+
+.notificationCard {
+    display: flex;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 10;
+    gap: 14px;
+}
+
+.icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: gray;
+    border-radius: 50%;
+    padding: 6px;
+    height: 40px;
+    width: 40px;
+}
+
+.notificationContent {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.notificationContent .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.notificationDate {
+    font-weight: 500;
+    opacity: 0.5;
+    font-size: 14px;
+}
+
+.notificationContent p {
+    font-size: 14px;
 }
