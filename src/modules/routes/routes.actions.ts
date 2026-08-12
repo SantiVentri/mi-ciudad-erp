@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { getServerClient } from "@/utils/supabase/getServerClient";
-type SetStopStateResult = { ok: true; state: "Pendiente" | "Completada" } | { error: string };
+
+export type StopState = "Pendiente" | "Completada" | "Entrega fallida";
+
+type SetStopStateResult = { ok: true; state: StopState } | { ok: false; error: string };
 
 type StopWithRoute = {
   id: string;
@@ -12,13 +15,13 @@ type StopWithRoute = {
 
 export async function setStopState(
   stopId: string,
-  completed: boolean
+  newState: StopState
 ): Promise<SetStopStateResult> {
   const supabase = await getServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Debés iniciar sesión para actualizar la parada." };
+    return { ok: false, error: "Debés iniciar sesión para actualizar la parada." };
   }
 
   const { data: stop, error: stopError } = await supabase
@@ -32,24 +35,22 @@ export async function setStopState(
     .single();
 
   if (stopError || !stop) {
-    return { error: "No se encontró la parada." };
+    return { ok: false, error: "No se encontró la parada." };
   }
 
   const typedStop = stop as unknown as StopWithRoute;
 
   if (typedStop.route?.driver_id !== user.id) {
-    return { error: "No tenés permisos para actualizar esta parada." };
+    return { ok: false, error: "No tenés permisos para actualizar esta parada." };
   }
-
-  const newStopState = completed ? "Completada" : "Pendiente";
 
   const { error: updateStopError } = await supabase
     .from("stops")
-    .update({ state: newStopState })
+    .update({ state: newState })
     .eq("id", stopId);
 
   if (updateStopError) {
-    return { error: "No se pudo actualizar la parada: " + updateStopError.message };
+    return { ok: false, error: "No se pudo actualizar la parada: " + updateStopError.message };
   }
 
   const { data: order } = await supabase
@@ -61,11 +62,12 @@ export async function setStopState(
   if (order && order.state !== "Cancelada") {
     const { error: updateOrderError } = await supabase
       .from("orders")
-      .update({ state: newStopState })
+      .update({ state: newState })
       .eq("id", stop.orderId);
 
     if (updateOrderError) {
       return {
+        ok: false,
         error:
           "La parada se actualizó pero no se pudo sincronizar el pedido: " +
           updateOrderError.message,
@@ -75,7 +77,7 @@ export async function setStopState(
 
   revalidatePath("/driver");
 
-  return { ok: true, state: newStopState };
+  return { ok: true, state: newState };
 }
 
 export async function setCompletedRoute(routeId: string) {

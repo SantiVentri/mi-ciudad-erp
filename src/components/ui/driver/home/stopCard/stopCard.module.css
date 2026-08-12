@@ -13,6 +13,11 @@
   background: #f5fbf7;
 }
 
+.stopCardFailed {
+  border-color: #eabfbf;
+  background: #fbf5f5;
+}
+
 .stopRow {
   display: flex;
   align-items: center;
@@ -37,6 +42,11 @@
 .stopCardCompleted .stopIndex {
   background: #d9f2e3;
   color: #1e8e4f;
+}
+
+.stopCardFailed .stopIndex {
+  background: rgba(255, 0, 0, 0.1);
+  color: red;
 }
 
 .stopMain {
@@ -98,6 +108,11 @@
   color: #1e8e4f;
 }
 
+.stateFallida {
+  background-color: rgba(255, 0, 0, 0.1);
+  color: red;
+}
+
 .chevron {
   flex-shrink: 0;
   color: #8a92a1;
@@ -155,6 +170,11 @@
   color: #0b1524;
 }
 
+.buttons {
+  display: flex;
+  gap: 5px;
+}
+
 .toggleButton {
   display: flex;
   align-items: center;
@@ -177,9 +197,18 @@
 .completeButton {
   background: #3454d1;
   color: #ffffff;
+  width: 100%;
+}
+
+.failedButton {
+  background-color: rgb(255, 0, 0);
+  border-radius: 8px;
+  color: white;
+  padding: 0 8px;
 }
 
 .undoButton {
-  background: rgb(26, 26, 26);
+  background: rgb(26, 26, 26) !important;
   color: white;
+  width: 100%;
 }

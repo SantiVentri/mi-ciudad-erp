@@ -33,9 +33,10 @@ export function formatClientAddress(client: Client | null | undefined) {
 export function getRouteProgress(stops: RouteStop[]) {
   const total = stops.length;
   const completed = stops.filter((stop) => stop.state === "Completada").length;
+  const failed = stops.filter((stop) => stop.state === "Entrega fallida").length;
   const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
 
-  return { total, completed, percentage };
+  return { total, completed, failed, percentage };
 }
 
 export function isPastRoute(routeDate: string) {

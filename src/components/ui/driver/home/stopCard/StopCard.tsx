@@ -11,15 +11,16 @@ import { STOP_STATE_STYLES } from "@/modules/routes/routes.constants";
 
 // Types
 import type { RouteStop } from "@/modules/routes/routes.dal";
+import type { StopState } from "@/modules/routes/routes.actions";
 
 // Icons
-import { ChevronDown, Check, Phone, Undo2, MapPin } from "lucide-react";
+import { ChevronDown, Check, Phone, Undo2, MapPin, X } from "lucide-react";
 
 interface StopCardProps {
     stop: RouteStop;
     index: number;
     isUpdating?: boolean;
-    onToggle?: () => void;
+    onToggle?: (newState: StopState) => void;
     readOnly?: boolean;
 }
 
@@ -29,10 +30,23 @@ export default function StopCard({ stop, index, isUpdating = false, onToggle, re
     const client = stop.order?.client;
     const orderDetails = stop.order?.order_details ?? [];
     const isCompleted = stop.state === "Completada";
+    const isFailed = stop.state === "Entrega fallida";
     const itemsCount = orderDetails.reduce((total, detail) => total + detail.quantity, 0);
 
+    const handleToggleCompleted = () => {
+        // Sin importar si estaba Completada o Entrega fallida, deshacer vuelve a Pendiente.
+        const targetState: StopState = isCompleted || isFailed ? "Pendiente" : "Completada";
+        onToggle?.(targetState);
+    };
+
+    const handleSetFailedState = () => {
+        if (confirm("¿Estás seguro de marcar esta parada como fallida?")) {
+            onToggle?.("Entrega fallida");
+        }
+    };
+
     return (
-        <li className={`${styles.stopCard} ${isCompleted ? styles.stopCardCompleted : ""}`}>
+        <li className={`${styles.stopCard} ${isCompleted ? styles.stopCardCompleted : isFailed ? styles.stopCardFailed : ""}`}>
             <div
                 className={styles.stopRow}
                 role="button"
@@ -98,28 +112,42 @@ export default function StopCard({ stop, index, isUpdating = false, onToggle, re
                     )}
 
                     {!readOnly && (
-                        <button
-                            type="button"
-                            className={`${styles.toggleButton} ${isCompleted ? styles.undoButton : styles.completeButton
-                                }`}
-                            disabled={isUpdating}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onToggle?.();
-                            }}
-                        >
-                            {isUpdating ? (
-                                "Actualizando..."
-                            ) : isCompleted ? (
-                                <>
-                                    <Undo2 size={16} /> Desmarcar
-                                </>
-                            ) : (
-                                <>
-                                    <Check size={16} /> Marcar como completada
-                                </>
+                        <div className={styles.buttons}>
+                            <button
+                                type="button"
+                                className={`${styles.toggleButton} ${isCompleted || isFailed ? styles.undoButton : styles.completeButton}`}
+                                disabled={isUpdating}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleCompleted();
+                                }}
+                            >
+                                {isUpdating ? (
+                                    "Actualizando..."
+                                ) : isCompleted || isFailed ? (
+                                    <>
+                                        <Undo2 size={16} /> Desmarcar
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check size={16} /> Marcar como completada
+                                    </>
+                                )}
+                            </button>
+                            {!isCompleted && !isFailed && (
+                                <button
+                                    type="button"
+                                    className={styles.failedButton}
+                                    disabled={isUpdating}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSetFailedState();
+                                    }}
+                                >
+                                    <X size={22} />
+                                </button>
                             )}
-                        </button>
+                        </div>
                     )}
                 </div>
             )}
