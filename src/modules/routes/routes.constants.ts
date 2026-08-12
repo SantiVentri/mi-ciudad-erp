@@ -41,6 +41,7 @@ export const TRIP_NUMBERS = [1, 2] as const;
 export const STOP_STATE_STYLES: Record<string, string> = {
   Pendiente: stopCardStyles.statePendiente,
   Completada: stopCardStyles.stateCompletada,
+  "Entrega fallida": stopCardStyles.stateFallida,
 };
 
 export const DIRECCION_EMBOTELLADORA = process.env.NEXT_PUBLIC_COMPANY_ADDRESS;

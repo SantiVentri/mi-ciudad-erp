@@ -30,6 +30,7 @@ import { DIRECCION_EMBOTELLADORA } from "@/modules/routes/routes.constants";
 
 // Types
 import type { Route, RouteStop } from "@/modules/routes/routes.dal";
+import type { StopState } from "@/modules/routes/routes.actions";
 
 interface RouteDetailsProps {
     route: Route | null;
@@ -70,8 +71,8 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
         );
     }
 
-    const { completed, total, percentage } = getRouteProgress(stops);
-    const isRouteCompleted = total > 0 && completed === total;
+    const { total, completed, failed, percentage } = getRouteProgress(stops);
+    const isRouteCompleted = total > 0 && (completed + failed) === total;
 
     const origin = completed > 0 ? undefined : DIRECCION_EMBOTELLADORA;
 
@@ -80,8 +81,7 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
         destination: DIRECCION_EMBOTELLADORA,
     });
 
-    const handleToggleStop = (stop: RouteStop) => {
-        const wantsCompleted = stop.state !== "Completada";
+    const handleToggleStop = (stop: RouteStop, newState: StopState) => {
         const previousStops = stops;
 
         setErrorMessage(null);
@@ -89,16 +89,14 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
 
         setStops((current) =>
             current.map((item) =>
-                item.id === stop.id
-                    ? { ...item, state: wantsCompleted ? "Completada" : "Pendiente" }
-                    : item
+                item.id === stop.id ? { ...item, state: newState } : item
             )
         );
 
         startTransition(async () => {
-            const result = await setStopState(String(stop.id), wantsCompleted);
+            const result = await setStopState(stop.id, newState);
 
-            if ("error" in result) {
+            if (!result.ok) {
                 setStops(previousStops);
                 setErrorMessage(result.error);
             }
@@ -166,7 +164,7 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
                             stop={stop}
                             index={index + 1}
                             isUpdating={isPending && pendingStopId === stop.id}
-                            onToggle={() => handleToggleStop(stop)}
+                            onToggle={(newState) => handleToggleStop(stop, newState)}
                             readOnly={readOnly}
                         />
                     ))}
@@ -180,7 +178,7 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
                         <h3>¡Todas las paradas fueron completadas!</h3>
                     </div>
                     <p className={styles.completionText}>
-                        Ya podés volver a la embotelladora para finalizar la jornada.
+                        Ya podés volver a la embotelladora.
                     </p>
                     <button
                         type="button"
