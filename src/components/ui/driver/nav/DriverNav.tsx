@@ -40,7 +40,7 @@ export default function DriverNav() {
 
     const isActiveRoute = (href: string) => {
         if (href === "/driver") {
-            return pathname === href;
+            return pathname === href || pathname.startsWith("/driver/routes");
         }
 
         return pathname === href || pathname.startsWith(`${href}/`);

@@ -44,8 +44,9 @@ export type RouteVehicle = {
   patent: string;
 };
 
-export type CurrentRoute = {
+export type Route = {
   id: string;
+  routeNumber: number;
   driverId: string;
   vehicleId: string;
   routeDate: string;
@@ -54,23 +55,17 @@ export type CurrentRoute = {
   stops: RouteStop[];
 };
 
-export const getCurrentRoute = cache(async () => {
+export const getRoutes = cache(async () => {
   const supabase = await getServerClient();
-
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return null;
 
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  const todayString = `${year}-${month}-${day}`; // Ej: "2026-08-08"
-
-  const { data: currentRoute, error: fetchRouteError } = await supabase
+  const { data: routes, error: fetchRoutesError } = await supabase
     .from("routes")
     .select(`
       id,
+      routeNumber:route_number,
       driverId:driver_id,
       vehicleId:vehicle_id,
       routeDate:route_date,
@@ -103,15 +98,70 @@ export const getCurrentRoute = cache(async () => {
       )
     `)
     .eq("driver_id", user.id)
-    .gte("route_date", `${todayString} 00:00:00`)
-    .lte("route_date", `${todayString} 23:59:59`)
+    .order("route_date", {ascending: true});
+
+  if (fetchRoutesError) {
+    console.error("Error al obtener las rutas:", fetchRoutesError);
+    return null;
+  }
+
+  return routes as Route[] | [];
+});
+
+export const getRoute = cache(async (routeId: string) => {
+  const supabase = await getServerClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  if (!routeId) return null;
+
+  const { data: route, error: fetchRouteError } = await supabase
+    .from("routes")
+    .select(`
+      id,
+      routeNumber:route_number,
+      driverId:driver_id,
+      vehicleId:vehicle_id,
+      routeDate:route_date,
+      state,
+      vehicle:vehicles ( id, patent ),
+      stops (
+        id,
+        orderId:order_id,
+        visitOrder:visit_order,
+        state,
+        order:orders (
+          id,
+          state,
+          client:clients (
+            id,
+            name,
+            phone,
+            street,
+            number,
+            city,
+            province,
+            observations
+          ),
+          order_details (
+            id,
+            quantity,
+            product:products ( id, name )
+          )
+        )
+      )
+    `)
+    .eq("driver_id", user.id)
+    .eq("id", routeId)
     .order("visit_order", { foreignTable: "stops", ascending: true })
-    .maybeSingle();
+    .single();
 
   if (fetchRouteError) {
     console.error("Error al obtener la ruta actual:", fetchRouteError);
     return null;
   }
 
-  return currentRoute as unknown as CurrentRoute | null;
+  return route as unknown as Route | null;
 });

@@ -28,15 +28,15 @@ import { Navigation, CheckCircle2 } from "lucide-react";
 import { DIRECCION_EMBOTELLADORA } from "@/modules/routes/routes.constants";
 
 // Types
-import type { CurrentRoute, RouteStop } from "@/modules/routes/routes.dal";
+import type { Route, RouteStop } from "@/modules/routes/routes.dal";
 
 interface RouteDetailsProps {
-    currentRoute: CurrentRoute | null;
+    route: Route | null;
 }
 
-export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
+export default function RouteDetails({ route }: RouteDetailsProps) {
     const [stops, setStops] = useState<RouteStop[]>(
-        currentRoute ? sortStopsByVisitOrder(currentRoute.stops ?? []) : []
+        route ? sortStopsByVisitOrder(route.stops ?? []) : []
     );
     const [pendingStopId, setPendingStopId] = useState<RouteStop["id"] | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,23 +45,23 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
 
     const router = useRouter();
 
-    if (!currentRoute) {
+    if (!route) {
         return (
             <div className={styles.container}>
                 <div className={styles.emptyState}>
-                    <h2>No hay ruta asignada</h2>
-                    <p>Todavía no tenés una ruta asignada para hoy. Volvé a revisar más tarde.</p>
+                    <h2>No hay rutas asignadas</h2>
+                    <p>Todavía no tenés rutas asignadas para hoy. Volvé a revisar más tarde.</p>
                 </div>
             </div>
         );
     }
 
-    if (currentRoute.state === "Finalizada") {
+    if (route.state === "Finalizada") {
         return (
             <div className={styles.container}>
                 <div className={styles.emptyState}>
-                    <h2>Ruta finalizada</h2>
-                    <p>Ya finalizaste tu ruta de hoy. ¡Buen trabajo!</p>
+                    <h2>Rutas finalizadas</h2>
+                    <p>Ya finalizaste tus rutas de hoy. ¡Buen trabajo!</p>
                 </div>
             </div>
         );
@@ -113,7 +113,7 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
             return;
         }
 
-        await setCompletedRoute(currentRoute.id);
+        await setCompletedRoute(route.id);
 
         router.refresh();
 
@@ -123,9 +123,10 @@ export default function RouteDetails({ currentRoute }: RouteDetailsProps) {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <p className={styles.date}>{formatRouteDate(currentRoute.routeDate)}</p>
-                {currentRoute.vehicle?.patent && (
-                    <p className={styles.vehicle}>Vehículo: {currentRoute.vehicle.patent}</p>
+                <h1>Ruta N°{route.routeNumber}</h1>
+                <p className={styles.date}>{formatRouteDate(route.routeDate)}</p>
+                {route.vehicle?.patent && (
+                    <p className={styles.vehicle}>Vehículo: <strong>{route.vehicle.patent}</strong></p>
                 )}
             </div>
 
