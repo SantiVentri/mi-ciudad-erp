@@ -13,7 +13,7 @@ import { STOP_STATE_STYLES } from "@/modules/routes/routes.constants";
 import type { RouteStop } from "@/modules/routes/routes.dal";
 
 // Icons
-import { ChevronDown, Check, Phone, Undo2 } from "lucide-react";
+import { ChevronDown, Check, Phone, Undo2, MapPin } from "lucide-react";
 
 interface StopCardProps {
     stop: RouteStop;
@@ -28,7 +28,7 @@ export default function StopCard({ stop, index, isUpdating, onToggle }: StopCard
     const client = stop.order?.client;
     const orderDetails = stop.order?.order_details ?? [];
     const isCompleted = stop.state === "Completada";
-    const itemsCount = orderDetails.length;
+    const itemsCount = orderDetails.reduce((total, detail) => total + detail.quantity, 0);
 
     return (
         <li className={`${styles.stopCard} ${isCompleted ? styles.stopCardCompleted : ""}`}>
@@ -48,7 +48,6 @@ export default function StopCard({ stop, index, isUpdating, onToggle }: StopCard
 
                 <div className={styles.stopMain}>
                     <span className={styles.stopClient}>{client?.name ?? "Cliente sin nombre"}</span>
-                    <span className={styles.stopAddress}>{formatClientAddress(client)}</span>
                     <span className={styles.stopItemsCount}>
                         {itemsCount} {itemsCount === 1 ? "producto" : "productos"}
                     </span>
@@ -66,6 +65,10 @@ export default function StopCard({ stop, index, isUpdating, onToggle }: StopCard
 
             {isExpanded && (
                 <div className={styles.stopDetail}>
+                    <div className={styles.stopAddress}>
+                        <MapPin className={styles.icon} size={16} />
+                        <span>{formatClientAddress(client)}</span>
+                    </div>
                     {client?.phone && (
                         <a className={styles.phoneLink} href={`tel:${client.phone}`}>
                             <Phone size={16} />
