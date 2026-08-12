@@ -18,11 +18,12 @@ import { ChevronDown, Check, Phone, Undo2, MapPin } from "lucide-react";
 interface StopCardProps {
     stop: RouteStop;
     index: number;
-    isUpdating: boolean;
-    onToggle: () => void;
+    isUpdating?: boolean;
+    onToggle?: () => void;
+    readOnly?: boolean;
 }
 
-export default function StopCard({ stop, index, isUpdating, onToggle }: StopCardProps) {
+export default function StopCard({ stop, index, isUpdating = false, onToggle, readOnly = false }: StopCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const client = stop.order?.client;
@@ -96,28 +97,30 @@ export default function StopCard({ stop, index, isUpdating, onToggle }: StopCard
                         </div>
                     )}
 
-                    <button
-                        type="button"
-                        className={`${styles.toggleButton} ${isCompleted ? styles.undoButton : styles.completeButton
-                            }`}
-                        disabled={isUpdating}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onToggle();
-                        }}
-                    >
-                        {isUpdating ? (
-                            "Actualizando..."
-                        ) : isCompleted ? (
-                            <>
-                                <Undo2 size={16} /> Desmarcar
-                            </>
-                        ) : (
-                            <>
-                                <Check size={16} /> Marcar como completada
-                            </>
-                        )}
-                    </button>
+                    {!readOnly && (
+                        <button
+                            type="button"
+                            className={`${styles.toggleButton} ${isCompleted ? styles.undoButton : styles.completeButton
+                                }`}
+                            disabled={isUpdating}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggle?.();
+                            }}
+                        >
+                            {isUpdating ? (
+                                "Actualizando..."
+                            ) : isCompleted ? (
+                                <>
+                                    <Undo2 size={16} /> Desmarcar
+                                </>
+                            ) : (
+                                <>
+                                    <Check size={16} /> Marcar como completada
+                                </>
+                            )}
+                        </button>
+                    )}
                 </div>
             )}
         </li>

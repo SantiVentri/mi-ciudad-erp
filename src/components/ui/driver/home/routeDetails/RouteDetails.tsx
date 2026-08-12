@@ -19,6 +19,7 @@ import {
     getRouteProgress,
     getPendingStopAddresses,
     buildGoogleMapsRouteUrl,
+    isPastRoute,
 } from "@/modules/routes/routes.utils";
 
 // Icons
@@ -56,7 +57,9 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
         );
     }
 
-    if (route.state === "Finalizada") {
+    const readOnly = isPastRoute(route.routeDate);
+
+    if (!readOnly && route.state === "Finalizada") {
         return (
             <div className={styles.container}>
                 <div className={styles.emptyState}>
@@ -139,7 +142,7 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
                 </span>
             </div>
 
-            {mapsUrl && (
+            {!readOnly && mapsUrl && (
                 <a
                     href={mapsUrl}
                     target="_blank"
@@ -164,6 +167,7 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
                             index={index + 1}
                             isUpdating={isPending && pendingStopId === stop.id}
                             onToggle={() => handleToggleStop(stop)}
+                            readOnly={readOnly}
                         />
                     ))}
                 </ul>

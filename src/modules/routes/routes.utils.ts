@@ -38,6 +38,14 @@ export function getRouteProgress(stops: RouteStop[]) {
   return { total, completed, percentage };
 }
 
+export function isPastRoute(routeDate: string) {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const date = new Date(routeDate);
+
+  return date < todayStart;
+}
+
 export function isStopCompleted(stop: RouteStop) {
   return stop.state === "Completada";
 }
