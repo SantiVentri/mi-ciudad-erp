@@ -290,6 +290,7 @@ export const getRoutes = cache(async () => {
       )
     `)
     .eq("driver_id", user.id)
+    .eq("state", "Pendiente")
     .gte("route_date", todayStart)    // Mayor o igual al inicio de hoy
     .lt("route_date", tomorrowStart)  // Estrictamente menor al inicio de mañana
     .order("route_date", {ascending: true});
@@ -365,9 +366,9 @@ export const getPreviousRoutes = cache(async () => {
 
   if (!user) return null;
 
-  // Calcular solo el inicio de hoy
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
 
   const { data: routes, error: fetchRoutesError } = await supabase
     .from("routes")
@@ -406,8 +407,10 @@ export const getPreviousRoutes = cache(async () => {
       )
     `)
     .eq("driver_id", user.id)
-    .lt("route_date", todayStart)
-    .order("route_date", {ascending: false});
+    .or(
+      `route_date.lt.${todayStart},and(route_date.gte.${todayStart},route_date.lt.${tomorrowStart},state.eq.Finalizada)`
+    )
+    .order("route_date", { ascending: false });
 
   if (fetchRoutesError) {
     console.error("Error al obtener las rutas:", fetchRoutesError);
