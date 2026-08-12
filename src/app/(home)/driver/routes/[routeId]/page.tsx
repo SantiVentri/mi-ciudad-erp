@@ -15,9 +15,6 @@ interface RoutePageProps {
 export default async function RoutePage({ params }: RoutePageProps) {
     const { routeId } = await params;
 
-    const supabase = await getServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
     if (!routeId) {
         redirect("/driver/routes");
     }

@@ -1,7 +1,11 @@
 // Styles
-import { Route } from "@/modules/routes/routes.dal";
 import styles from "./routesList.module.css";
+
+// Components
 import RouteCard from "../routeCard/RouteCard";
+
+// Types
+import { Route } from "@/modules/routes/routes.dal";
 
 export default function RoutesList({ routes }: { routes: Route[] | [] }) {
     return (

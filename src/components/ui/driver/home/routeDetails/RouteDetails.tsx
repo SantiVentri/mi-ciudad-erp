@@ -64,8 +64,8 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
         return (
             <div className={styles.container}>
                 <div className={styles.emptyState}>
-                    <h2>Rutas finalizadas</h2>
-                    <p>Ya finalizaste tus rutas de hoy. ¡Buen trabajo!</p>
+                    <h2>Ruta finalizada</h2>
+                    <p>Ya finalizaste todas las paradas de esta ruta. ¡Buen trabajo!</p>
                 </div>
             </div>
         );
