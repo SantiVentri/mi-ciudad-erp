@@ -11,7 +11,7 @@ export default function RoutesList({ routes }: { routes: Route[] | [] }) {
                     <RouteCard key={route.id} route={route} />
                 ))
             ) : (
-                <p>No hay rutas asignadas.</p>
+                <p>No hay rutas para mostrar.</p>
             )}
         </div>
     )
