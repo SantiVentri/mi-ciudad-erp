@@ -90,7 +90,10 @@ export default function RegisterForm({
             return;
         }
 
-        window.location.href = "/admin";
+        const { data: { user } } = await supabase.auth.getUser();
+        const role = user?.app_metadata?.role;
+
+        window.location.href = role === "driver" ? "/driver" : "/admin";
     };
 
     return (
