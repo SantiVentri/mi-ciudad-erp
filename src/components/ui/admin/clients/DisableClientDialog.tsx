@@ -6,7 +6,7 @@ import styles from "./clients.module.css";
 // Types
 import type { Client } from "@/modules/clients/clients.dal";
 
-type DeleteClientDialogProps = {
+type DisableClientDialogProps = {
     client: Client;
     error: string;
     isPending: boolean;
@@ -14,7 +14,7 @@ type DeleteClientDialogProps = {
     onConfirm: () => void;
 };
 
-export default function DeleteClientDialog({ client, error, isPending, onClose, onConfirm }: DeleteClientDialogProps) {
+export default function DisableClientDialog({ client, error, isPending, onClose, onConfirm }: DisableClientDialogProps) {
     return (
         <div className={styles.modalOverlay} onClick={onClose} role="presentation">
             <div
@@ -25,9 +25,9 @@ export default function DeleteClientDialog({ client, error, isPending, onClose, 
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className={styles.modalHeader}>
-                    <h3 id="delete-client-title">Eliminar cliente</h3>
+                    <h3 id="delete-client-title">Desactivar cliente</h3>
                     <p>
-                        ¿Seguro que querés eliminar a <strong>{client.name}</strong>? Vas a poder restaurarlo
+                        ¿Seguro que querés desactivar a <strong>{client.name}</strong>? Vas a poder restaurarlo
                         más adelante desde el filtro de inactivos.
                     </p>
                 </div>
@@ -39,7 +39,7 @@ export default function DeleteClientDialog({ client, error, isPending, onClose, 
                         Cancelar
                     </button>
                     <button type="button" className={styles.dangerButton} onClick={onConfirm} disabled={isPending}>
-                        {isPending ? "Eliminando..." : "Eliminar"}
+                        {isPending ? "Desactivando..." : "Desactivar"}
                     </button>
                 </div>
             </div>

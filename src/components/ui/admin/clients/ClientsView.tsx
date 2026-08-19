@@ -18,7 +18,7 @@ import { getClientStatus, matchesSearch } from "@/modules/clients/clients.utils"
 import ClientsToolbar from "./ClientsToolBar";
 import ClientsTable from "./ClientsTable";
 import ClientFormModal from "./ClientFormModal";
-import DeleteClientDialog from "./DeleteClientDialog";
+import DeleteClientDialog from "./DisableClientDialog";
 import ClientHistoryModal from "./ClientHistoryModal";
 
 type ClientsViewProps = {

@@ -26,7 +26,7 @@ import { buildAssignmentMaps, getVehicleStatus, matchesVehicleSearch, getDriverS
 import VehiclesToolbar from "./VehiclesToolbar";
 import VehiclesTable from "./VehiclesTable";
 import VehicleFormModal from "./VehicleFormModal";
-import DeleteVehicleDialog from "./DeleteVehicleDialog";
+import DeleteVehicleDialog from "./DisableVehicleDialog";
 import DriversToolbar from "./DriversToolbar";
 import DriversTable from "./DriversTable";
 import DriverInviteModal from "./DriverInviteModal";

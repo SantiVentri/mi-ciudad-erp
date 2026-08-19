@@ -11,7 +11,7 @@ import { STATUS_STYLES } from "@/modules/clients/clients.constants";
 import type { Client } from "@/modules/clients/clients.dal";
 
 // Icons
-import { Clock, PencilLine, RotateCcw, Trash2 } from "lucide-react";
+import { Ban, Clock, PencilLine, RotateCcw } from "lucide-react";
 
 type ClientsTableProps = {
     clients: Client[];
@@ -101,9 +101,9 @@ export default function ClientsTable({
                                                 type="button"
                                                 className={styles.iconButtonDanger}
                                                 onClick={() => onDelete(client)}
-                                                title="Eliminar cliente"
+                                                title="Desactivar cliente"
                                             >
-                                                <Trash2 size={16} />
+                                                <Ban size={16} />
                                             </button>
                                         )}
                                     </div>

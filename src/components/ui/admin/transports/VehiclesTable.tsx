@@ -12,7 +12,7 @@ import type { Driver, Vehicle } from "@/modules/transports/transports.dal";
 import type { AssignmentMaps } from "@/modules/transports/transports.utils";
 
 // Icons
-import { PencilLine, RotateCcw, Trash2 } from "lucide-react";
+import { Ban, PencilLine, RotateCcw } from "lucide-react";
 
 type VehiclesTableProps = {
     vehicles: Vehicle[];
@@ -90,9 +90,9 @@ export default function VehiclesTable({
                                                 type="button"
                                                 className={styles.iconButtonDanger}
                                                 onClick={() => onDelete(vehicle)}
-                                                title="Eliminar vehículo"
+                                                title="Desactivar vehículo"
                                             >
-                                                <Trash2 size={16} />
+                                                <Ban size={16} />
                                             </button>
                                         )}
                                     </div>

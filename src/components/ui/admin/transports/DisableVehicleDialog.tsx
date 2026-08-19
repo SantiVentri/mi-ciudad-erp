@@ -6,7 +6,7 @@ import styles from "./transports.module.css";
 // Types
 import type { Vehicle } from "@/modules/transports/transports.dal";
 
-type DeleteVehicleDialogProps = {
+type DisableVehicleDialogProps = {
     vehicle: Vehicle;
     error: string;
     isPending: boolean;
@@ -14,7 +14,7 @@ type DeleteVehicleDialogProps = {
     onConfirm: () => void;
 };
 
-export default function DeleteVehicleDialog({ vehicle, error, isPending, onClose, onConfirm }: DeleteVehicleDialogProps) {
+export default function DisableVehicleDialog({ vehicle, error, isPending, onClose, onConfirm }: DisableVehicleDialogProps) {
     return (
         <div className={styles.modalOverlay} onClick={onClose} role="presentation">
             <div
@@ -25,9 +25,9 @@ export default function DeleteVehicleDialog({ vehicle, error, isPending, onClose
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className={styles.modalHeader}>
-                    <h3 id="delete-vehicle-title">Eliminar vehículo</h3>
+                    <h3 id="delete-vehicle-title">Desactivar vehículo</h3>
                     <p>
-                        ¿Seguro que querés eliminar el vehículo <strong>{vehicle.patent}</strong>? Vas a poder
+                        ¿Seguro que querés desactivar el vehículo <strong>{vehicle.patent}</strong>? Vas a poder
                         restaurarlo más adelante desde el filtro de inactivos.
                     </p>
                 </div>
@@ -39,7 +39,7 @@ export default function DeleteVehicleDialog({ vehicle, error, isPending, onClose
                         Cancelar
                     </button>
                     <button type="button" className={styles.dangerButton} onClick={onConfirm} disabled={isPending}>
-                        {isPending ? "Eliminando..." : "Eliminar"}
+                        {isPending ? "Desactivando..." : "Desactivar"}
                     </button>
                 </div>
             </div>
