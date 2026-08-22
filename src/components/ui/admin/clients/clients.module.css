@@ -5,6 +5,18 @@
     margin-top: 16px;
 }
 
+/* Metrics */
+.metricsContainer {
+    display: flex;
+    gap: 10px;
+}
+
+.metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
 /* --- Toolbar --- */
 .toolbar {
     display: flex;

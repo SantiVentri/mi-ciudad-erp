@@ -63,3 +63,42 @@ export async function getClientOrders(clientId: string) {
 
 export type ClientOrders = NonNullable<Awaited<ReturnType<typeof getClientOrders>>>
 export type ClientOrder = ClientOrders[number]
+
+export const getTopClientsByOrders = cache(async (limit: number = 3) => {
+    const supabase = await getServerClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const { data, error } = await supabase
+        .from('orders')
+        .select(`
+            client_id,
+            client:clients ( id, name )
+        `)
+
+    if (error) {
+        console.error('Error trayendo el top de clientes:', error.message)
+        return null
+    }
+
+    const counts = new Map<string, { label: string; value: number }>()
+
+    for (const order of data ?? []) {
+        const client = order.client
+        if (!client) continue
+
+        const existing = counts.get(client.id)
+        if (existing) {
+            existing.value += 1
+        } else {
+            counts.set(client.id, { label: client.name, value: 1 })
+        }
+    }
+
+    return Array.from(counts.values())
+        .sort((a, b) => b.value - a.value)
+        .slice(0, limit)
+})
+
+export type TopClientsByOrders = NonNullable<Awaited<ReturnType<typeof getTopClientsByOrders>>>
