@@ -22,7 +22,8 @@ export function dayKey(date: Date) {
 }
 
 export function parseDateOnly(dateValue: string) {
-    const [year, month, day] = dateValue.split("-").map(Number);
+    const datePart = dateValue.split("T")[0].split(" ")[0];
+    const [year, month, day] = datePart.split("-").map(Number);
     return new Date(year, month - 1, day);
 }
 
