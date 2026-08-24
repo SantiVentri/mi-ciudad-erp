@@ -17,7 +17,7 @@ import {
     restoreVehicle,
     updateVehicle,
 } from "@/modules/transports/transports.actions";
-import type { Driver, RouteAssignment, Vehicle } from "@/modules/transports/transports.dal";
+import type { Driver, RouteAssignment, Vehicle, VehiclesMetricsData } from "@/modules/transports/transports.dal";
 
 // Utils
 import { buildAssignmentMaps, getVehicleStatus, matchesVehicleSearch, getDriverStatus, matchesDriverSearch } from "@/modules/transports/transports.utils";
@@ -30,6 +30,7 @@ import DeleteVehicleDialog from "./DisableVehicleDialog";
 import DriversToolbar from "./DriversToolbar";
 import DriversTable from "./DriversTable";
 import DriverInviteModal from "./DriverInviteModal";
+import VehiclesMetrics from "../dashboard/vehiclesMetrics/VehicleMetrics";
 
 // Icons
 import { Truck, Users } from "lucide-react";
@@ -38,13 +39,15 @@ type TransportsViewProps = {
     vehicles: Vehicle[];
     drivers: Driver[];
     assignments: RouteAssignment[];
+    vehiclesMetrics: VehiclesMetricsData | null;
+    topVehicles: { label: string; value: number }[];
 };
 
 type VehicleFormModalState = {
     vehicle: Vehicle | null; // null = creando, Vehicle = editando
 };
 
-export default function TransportsView({ vehicles, drivers, assignments }: TransportsViewProps) {
+export default function TransportsView({ vehicles, drivers, assignments, vehiclesMetrics, topVehicles }: TransportsViewProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
@@ -240,6 +243,8 @@ export default function TransportsView({ vehicles, drivers, assignments }: Trans
 
             {activeTab === "vehiculos" ? (
                 <>
+                    <VehiclesMetrics metrics={vehiclesMetrics} topVehicles={topVehicles} />
+
                     <VehiclesToolbar
                         search={vehicleSearch}
                         onSearchChange={setVehicleSearch}
