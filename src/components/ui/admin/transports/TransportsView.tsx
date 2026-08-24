@@ -17,7 +17,7 @@ import {
     restoreVehicle,
     updateVehicle,
 } from "@/modules/transports/transports.actions";
-import type { Driver, RouteAssignment, Vehicle, VehiclesMetricsData } from "@/modules/transports/transports.dal";
+import type { Driver, RouteAssignment, Vehicle, VehiclesMetricsData, DriversMetricsData } from "@/modules/transports/transports.dal";
 
 // Utils
 import { buildAssignmentMaps, getVehicleStatus, matchesVehicleSearch, getDriverStatus, matchesDriverSearch } from "@/modules/transports/transports.utils";
@@ -31,6 +31,7 @@ import DriversToolbar from "./DriversToolbar";
 import DriversTable from "./DriversTable";
 import DriverInviteModal from "./DriverInviteModal";
 import VehiclesMetrics from "../dashboard/vehiclesMetrics/VehicleMetrics";
+import DriversMetrics from "./driversMetrics/DriversMetrics";
 
 // Icons
 import { Truck, Users } from "lucide-react";
@@ -41,13 +42,15 @@ type TransportsViewProps = {
     assignments: RouteAssignment[];
     vehiclesMetrics: VehiclesMetricsData | null;
     topVehicles: { label: string; value: number }[];
+    driversMetrics: DriversMetricsData | null;
+    topDrivers: { label: string; value: number }[];
 };
 
 type VehicleFormModalState = {
     vehicle: Vehicle | null; // null = creando, Vehicle = editando
 };
 
-export default function TransportsView({ vehicles, drivers, assignments, vehiclesMetrics, topVehicles }: TransportsViewProps) {
+export default function TransportsView({ vehicles, drivers, assignments, vehiclesMetrics, topVehicles, driversMetrics, topDrivers }: TransportsViewProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
@@ -265,6 +268,8 @@ export default function TransportsView({ vehicles, drivers, assignments, vehicle
                 </>
             ) : (
                 <>
+                    <DriversMetrics metrics={driversMetrics} topDrivers={topDrivers} />
+
                     <DriversToolbar
                         search={driverSearch}
                         onSearchChange={setDriverSearch}

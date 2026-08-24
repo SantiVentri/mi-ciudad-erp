@@ -179,3 +179,98 @@ export const getTopVehiclesByRoutes = cache(async (limit: number = 5) => {
 })
 
 export type TopVehiclesByRoutes = NonNullable<Awaited<ReturnType<typeof getTopVehiclesByRoutes>>>
+
+export const getDriversMetrics = cache(async () => {
+    const supabase = await getServerClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const drivers = await getDrivers()
+    if (!drivers) return null
+
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const tomorrowStart = new Date(todayStart)
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+
+    const { data: todayRoutes, error: todayRoutesError } = await supabase
+        .from('routes')
+        .select('driver_id')
+        .gte('route_date', todayStart.toISOString())
+        .lt('route_date', tomorrowStart.toISOString())
+
+    if (todayRoutesError) {
+        console.error('Error trayendo rutas de hoy:', todayRoutesError.message)
+    }
+
+    const now = new Date()
+
+    const totalDrivers = drivers.length
+    const activeDrivers = drivers.filter((d) => d.profile && d.profile.is_active !== false).length
+    const pendingInvitations = drivers.filter((d) => !d.profile && new Date(d.expires_at) >= now).length
+    const expiredInvitations = drivers.filter((d) => !d.profile && new Date(d.expires_at) < now).length
+
+    const assignedTodayIds = new Set((todayRoutes ?? []).map((r) => r.driver_id))
+    const driversWithoutRouteToday = drivers.filter(
+        (d) => d.profile && d.profile.is_active !== false && !assignedTodayIds.has(d.profile.id)
+    ).length
+
+    return {
+        totalDrivers,
+        activeDrivers,
+        pendingInvitations,
+        expiredInvitations,
+        driversWithoutRouteToday,
+    }
+})
+
+export type DriversMetricsData = NonNullable<Awaited<ReturnType<typeof getDriversMetrics>>>
+
+export const getTopDriversByRoutes = cache(async (limit: number = 5) => {
+    const supabase = await getServerClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    // Nota: igual que con vehículos, cuenta TODAS las rutas asignadas
+    // (no filtra por estado, porque no hay un valor confirmado de "completada" en routes.state).
+    const [{ data: routes, error: routesError }, drivers] = await Promise.all([
+        supabase.from('routes').select('driver_id'),
+        getDrivers(),
+    ])
+
+    if (routesError) {
+        console.error('Error trayendo el top de conductores:', routesError.message)
+        return null
+    }
+
+    const nameByProfileId = new Map(
+        (drivers ?? [])
+            .filter((d) => d.profile)
+            .map((d) => {
+                const fullName = `${d.profile!.first_name ?? ''} ${d.profile!.last_name ?? ''}`.trim()
+                return [d.profile!.id, fullName || d.profile!.email] as const
+            })
+    )
+
+    const counts = new Map<string, { label: string; value: number }>()
+
+    for (const route of routes ?? []) {
+        const driverId = route.driver_id
+        const label = nameByProfileId.get(driverId) ?? 'Conductor eliminado'
+
+        const existing = counts.get(driverId)
+        if (existing) {
+            existing.value += 1
+        } else {
+            counts.set(driverId, { label, value: 1 })
+        }
+    }
+
+    return Array.from(counts.values())
+        .sort((a, b) => b.value - a.value)
+        .slice(0, limit)
+})
+
+export type TopDriversByRoutes = NonNullable<Awaited<ReturnType<typeof getTopDriversByRoutes>>>
