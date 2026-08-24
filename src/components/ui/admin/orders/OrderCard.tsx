@@ -34,7 +34,7 @@ export default function OrderCard({
     onToggleSelect,
     onToggleState,
 }: OrderCardProps) {
-    const itemsCount = order.order_details?.length ?? 0;
+    const itemsCount = order.order_details?.reduce((sum, detail) => sum + (detail.quantity ?? 0), 0) ?? 0;
     const { canToggleState } = getOrderPermissions(order, today);
 
     return (
@@ -66,7 +66,7 @@ export default function OrderCard({
                     {order.client?.street} {order.client?.number}, {order.client?.city}
                 </span>
                 <span className={styles.orderItems}>
-                    {itemsCount} {itemsCount === 1 ? "producto" : "productos"}
+                    {itemsCount} {itemsCount === 1 ? "unidad" : "unidades"}
                 </span>
                 <span className={`${styles.stateBadge} ${STATE_STYLES[order.state ?? ""] ?? ""}`}>
                     {order.state}
@@ -100,7 +100,7 @@ export default function OrderCard({
                                         <span>x{detail.quantity}</span>
                                     </li>
                                 ))}
-                                {itemsCount === 0 && <li>Sin productos cargados</li>}
+                                {(order.order_details?.length ?? 0) === 0 && <li>Sin productos cargados</li>}
                             </ul>
                         </div>
                     </div>
