@@ -9,7 +9,7 @@ import type { Client } from "../../../../modules/clients/clients.dal";
 
 // Icons
 import { Users } from "lucide-react";
-import TopClientsChart from "./topClients/TopClientsChart";
+import TopClientsChart from "./TopClientsChart";
 
 // Props
 type ClientsMetricsProps = {
