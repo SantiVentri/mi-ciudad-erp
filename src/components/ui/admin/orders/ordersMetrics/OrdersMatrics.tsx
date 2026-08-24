@@ -5,42 +5,22 @@ import styles from "./ordersMetrics.module.css";
 import Metric from "../../dashboard/metric/Metric";
 import OrdersGrowthChart from "./OrdersGrowthChart";
 
-// Types
-import { getMonthlyOrdersGrowth, Order } from "@/modules/orders/orders.dal";
+// Data
+import { getMonthlyOrdersGrowth, getOrdersMetrics } from "@/modules/orders/orders.dal";
 
 // Icons
 import { Box } from "lucide-react";
 
-// Props
-type OrdersMetricsProps = {
-    orders: Order[];
-};
+export default async function OrdersMetrics() {
+    const [metrics, monthlyGrowth] = await Promise.all([
+        getOrdersMetrics(),
+        getMonthlyOrdersGrowth(6),
+    ]);
 
-export default async function OrdersMetrics({ orders }: OrdersMetricsProps) {
-    const thisYear = new Date().getFullYear();
-    const totalOrders = orders.filter((order) => {
-        const orderYear = new Date(order.created_at).getFullYear();
-        return orderYear === thisYear;
-    }).length;
-
-    const completedOrders = orders.filter((order) => {
-        const orderYear = new Date(order.created_at).getFullYear();
-        return orderYear === thisYear && order.state === "Completada";
-    }).length;
-
-    const pendingOrders = orders.filter((order) => {
-        const orderYear = new Date(order.created_at).getFullYear();
-        return orderYear === thisYear && order.state === "Pendiente";
-    }).length;
-
-    const canceledOrders = orders.filter((order) => {
-        const orderYear = new Date(order.created_at).getFullYear();
-        return orderYear === thisYear && order.state === "Cancelada";
-    }).length;
-
-    const completedOrdersPercentage = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
-
-    const monthlyGrowth = await getMonthlyOrdersGrowth(6);
+    const totalOrders = metrics?.totalOrders ?? 0;
+    const completedOrdersPercentage = metrics?.completedOrdersPercentage ?? 0;
+    const pendingOrders = metrics?.pendingOrders ?? 0;
+    const canceledOrders = metrics?.canceledOrders ?? 0;
 
     return (
         <div className={styles.metricsContainer}>
@@ -54,7 +34,7 @@ export default async function OrdersMetrics({ orders }: OrdersMetricsProps) {
                 <Metric
                     icon={<Box size={15} />}
                     title="% de entregas exitosas"
-                    value={completedOrdersPercentage + "%"}
+                    value={completedOrdersPercentage.toFixed(2) + "%"}
                     description="este año"
                 />
                 <Metric

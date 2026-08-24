@@ -2,7 +2,7 @@ import 'server-only'
 import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
 
-export const getOrders = cache(async () => {
+export const getOrders = cache(async (startDate: string, endDate: string) => {
     const supabase = await getServerClient()
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -19,18 +19,66 @@ export const getOrders = cache(async () => {
         client:clients ( id, name, email, phone, street, number, city, province ),
         order_details ( id, quantity, product:products ( id, name ) )
     `)
+    .gte('arrival_date', startDate)
+    .lte('arrival_date', endDate)
     .order('arrival_date', { ascending: true })
 
-    
     if (error) {
         console.error('Error trayendo los pedidos:', error.message)
     }
-    
+
     return data
 })
 
 export type Orders = NonNullable<Awaited<ReturnType<typeof getOrders>>>
 export type Order = Orders[number]
+
+export const getOrdersMetrics = cache(async () => {
+    const supabase = await getServerClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const thisYear = new Date().getFullYear()
+    const yearStart = `${thisYear}-01-01`
+    const yearEnd = `${thisYear + 1}-01-01`
+
+    const baseQuery = () =>
+        supabase
+            .from('orders')
+            .select('id', { count: 'exact', head: true })
+            .gte('created_at', yearStart)
+            .lt('created_at', yearEnd)
+
+    const [totalRes, completedRes, pendingRes, canceledRes] = await Promise.all([
+        baseQuery(),
+        baseQuery().eq('state', 'Completada'),
+        baseQuery().eq('state', 'Pendiente'),
+        baseQuery().eq('state', 'Cancelada'),
+    ])
+
+    for (const res of [totalRes, completedRes, pendingRes, canceledRes]) {
+        if (res.error) {
+            console.error('Error trayendo las métricas de pedidos:', res.error.message)
+        }
+    }
+
+    const totalOrders = totalRes.count ?? 0
+    const completedOrders = completedRes.count ?? 0
+    const pendingOrders = pendingRes.count ?? 0
+    const canceledOrders = canceledRes.count ?? 0
+    const completedOrdersPercentage = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0
+
+    return {
+        totalOrders,
+        completedOrders,
+        pendingOrders,
+        canceledOrders,
+        completedOrdersPercentage,
+    }
+})
+
+export type OrdersMetricsData = NonNullable<Awaited<ReturnType<typeof getOrdersMetrics>>>
 
 export const getMonthlyOrdersGrowth = cache(async (months: number = 6) => {
     const supabase = await getServerClient()
@@ -39,36 +87,34 @@ export const getMonthlyOrdersGrowth = cache(async (months: number = 6) => {
     if (!user) return null
 
     const today = new Date()
-    const startDate = new Date(today.getFullYear(), today.getMonth() - (months - 1), 1)
 
-    const { data, error } = await supabase
-        .from('orders')
-        .select('arrival_date')
-        .gte('arrival_date', startDate.toISOString())
-
-    if (error) {
-        console.error('Error trayendo el crecimiento mensual de pedidos:', error.message)
-        return null
-    }
-
-    const buckets: { key: string; label: string; value: number }[] = []
+    const buckets: { key: string; label: string; start: Date; end: Date; value: number }[] = []
     for (let i = months - 1; i >= 0; i--) {
-        const date = new Date(today.getFullYear(), today.getMonth() - i, 1)
-        const key = `${date.getFullYear()}-${date.getMonth()}`
-        const rawLabel = date.toLocaleDateString('es-AR', { month: 'short' }).replace('.', '')
+        const start = new Date(today.getFullYear(), today.getMonth() - i, 1)
+        const end = new Date(today.getFullYear(), today.getMonth() - i + 1, 1)
+        const key = `${start.getFullYear()}-${start.getMonth()}`
+        const rawLabel = start.toLocaleDateString('es-AR', { month: 'short' }).replace('.', '')
         const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1)
-        buckets.push({ key, label, value: 0 })
+        buckets.push({ key, label, start, end, value: 0 })
     }
 
-    const bucketMap = new Map(buckets.map((b) => [b.key, b]))
+    const results = await Promise.all(
+        buckets.map((bucket) =>
+            supabase
+                .from('orders')
+                .select('id', { count: 'exact', head: true })
+                .gte('arrival_date', bucket.start.toISOString())
+                .lt('arrival_date', bucket.end.toISOString()),
+        ),
+    )
 
-    for (const order of data ?? []) {
-        if (!order.arrival_date) continue
-        const d = new Date(order.arrival_date)
-        const key = `${d.getFullYear()}-${d.getMonth()}`
-        const bucket = bucketMap.get(key)
-        if (bucket) bucket.value += 1
-    }
+    results.forEach((res, i) => {
+        if (res.error) {
+            console.error('Error trayendo el crecimiento mensual de pedidos:', res.error.message)
+            return
+        }
+        buckets[i].value = res.count ?? 0
+    })
 
     return buckets.map(({ label, value }) => ({ label, value }))
 })
