@@ -57,8 +57,19 @@ export default function OrderCard({
                     }
                 }}
             >
-                <label className={styles.rowCheckbox} data-selection-checkbox="true">
-                    <input type="checkbox" checked={isSelected} onChange={onToggleSelect} />
+                <label
+                    className={styles.rowCheckbox}
+                    data-selection-checkbox="true"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                            e.stopPropagation();
+                            onToggleSelect();
+                        }}
+                    />
                     <span />
                 </label>
                 <span className={styles.orderClient}>{order.client?.name}</span>
