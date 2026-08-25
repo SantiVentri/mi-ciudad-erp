@@ -1,0 +1,30 @@
+.paginationControl {
+    display: flex;
+    gap: 10px;
+}
+
+.pageButton {
+    border: 3px solid #3454d1;
+    border-radius: 5px;
+    color: #3454d1;
+    font-weight: 600;
+    min-width: 25px;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.pageButton:not(:disabled):not(.active):hover {
+    background-color: #3453d14b;
+}
+
+.active {
+    background-color: #3454d1;
+    color: white !important;
+}
+
+.pageButton:disabled {
+    background-color: gray;
+    border-color: gray;
+    color: white;
+    cursor: not-allowed;
+}

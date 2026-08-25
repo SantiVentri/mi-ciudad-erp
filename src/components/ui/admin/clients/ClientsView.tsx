@@ -4,7 +4,7 @@
 import styles from "./clients.module.css";
 
 // Hooks
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 // Data and actions
@@ -20,6 +20,7 @@ import ClientsTable from "./ClientsTable";
 import ClientFormModal from "./ClientFormModal";
 import DeleteClientDialog from "./DisableClientDialog";
 import ClientHistoryModal from "./ClientHistoryModal";
+import PaginationControl from "../pagination/PaginationControl";
 
 type ClientsViewProps = {
     clients: Client[];
@@ -29,13 +30,20 @@ type FormModalState = {
     client: Client | null; // null = creando, Client = editando
 };
 
+const ROWS_PER_PAGE = 10;
+
 export default function ClientsView({ clients }: ClientsViewProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [currentPage, setCurrentPage] = useState(1);
 
     // --- Filtros ---
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("Todos");
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, statusFilter]);
 
     const filteredClients = useMemo(() => {
         return clients.filter((client) => {
@@ -43,6 +51,13 @@ export default function ClientsView({ clients }: ClientsViewProps) {
             return matchesSearch(client, search.trim());
         });
     }, [clients, search, statusFilter]);
+
+    const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+    const totalPages = Math.ceil(filteredClients.length / ROWS_PER_PAGE) || 1;
+
+    const paginatedClients = useMemo(() => {
+        return filteredClients.slice(startIndex, startIndex + ROWS_PER_PAGE);
+    }, [filteredClients, startIndex]);
 
     // --- Alta / edición ---
     const [formModal, setFormModal] = useState<FormModalState | null>(null);
@@ -138,13 +153,28 @@ export default function ClientsView({ clients }: ClientsViewProps) {
             />
 
             <ClientsTable
-                clients={filteredClients}
+                clients={paginatedClients}
                 isRestoring={isRestoring}
                 onEdit={openEditModal}
                 onDelete={openDeleteDialog}
                 onRestore={handleRestore}
                 onViewHistory={setHistoryClient}
             />
+
+            {filteredClients.length > ROWS_PER_PAGE && (
+                <>
+                    <span>
+                        Resultados {filteredClients.length === 0 ? 0 : startIndex + 1} -{" "}
+                        {Math.min(startIndex + ROWS_PER_PAGE, filteredClients.length)} de {filteredClients.length}
+                    </span>
+
+                    <PaginationControl
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        totalPages={totalPages}
+                    />
+                </>
+            )}
 
             {formModal && (
                 <ClientFormModal

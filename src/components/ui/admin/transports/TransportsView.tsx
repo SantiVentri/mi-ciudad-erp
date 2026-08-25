@@ -4,7 +4,7 @@
 import styles from "./transports.module.css";
 
 // Hooks
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 // Data and actions
@@ -32,6 +32,7 @@ import DriversTable from "./DriversTable";
 import DriverInviteModal from "./DriverInviteModal";
 import VehiclesMetrics from "../dashboard/vehiclesMetrics/VehicleMetrics";
 import DriversMetrics from "./driversMetrics/DriversMetrics";
+import PaginationControl from "../pagination/PaginationControl";
 
 // Icons
 import { Truck, Users } from "lucide-react";
@@ -50,7 +51,17 @@ type VehicleFormModalState = {
     vehicle: Vehicle | null; // null = creando, Vehicle = editando
 };
 
-export default function TransportsView({ vehicles, drivers, assignments, vehiclesMetrics, topVehicles, driversMetrics, topDrivers }: TransportsViewProps) {
+const ROWS_PER_PAGE = 10;
+
+export default function TransportsView({
+    vehicles,
+    drivers,
+    assignments,
+    vehiclesMetrics,
+    topVehicles,
+    driversMetrics,
+    topDrivers,
+}: TransportsViewProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
@@ -62,6 +73,12 @@ export default function TransportsView({ vehicles, drivers, assignments, vehicle
     // ===== Vehículos =====
     const [vehicleSearch, setVehicleSearch] = useState("");
     const [vehicleStatusFilter, setVehicleStatusFilter] = useState("Todos");
+    const [vehiclePage, setVehiclePage] = useState(1);
+
+    // Resetea página al cambiar filtros de vehículos
+    useEffect(() => {
+        setVehiclePage(1);
+    }, [vehicleSearch, vehicleStatusFilter]);
 
     const filteredVehicles = useMemo(() => {
         return vehicles.filter((vehicle) => {
@@ -69,6 +86,13 @@ export default function TransportsView({ vehicles, drivers, assignments, vehicle
             return matchesVehicleSearch(vehicle, vehicleSearch.trim());
         });
     }, [vehicles, vehicleSearch, vehicleStatusFilter]);
+
+    const vehicleStartIndex = (vehiclePage - 1) * ROWS_PER_PAGE;
+    const vehicleTotalPages = Math.ceil(filteredVehicles.length / ROWS_PER_PAGE) || 1;
+
+    const paginatedVehicles = useMemo(() => {
+        return filteredVehicles.slice(vehicleStartIndex, vehicleStartIndex + ROWS_PER_PAGE);
+    }, [filteredVehicles, vehicleStartIndex]);
 
     const [vehicleFormModal, setVehicleFormModal] = useState<VehicleFormModalState | null>(null);
     const [vehicleFormError, setVehicleFormError] = useState("");
@@ -151,6 +175,12 @@ export default function TransportsView({ vehicles, drivers, assignments, vehicle
     // ===== Conductores =====
     const [driverSearch, setDriverSearch] = useState("");
     const [driverStatusFilter, setDriverStatusFilter] = useState("Todos");
+    const [driverPage, setDriverPage] = useState(1);
+
+    // Resetea página al cambiar filtros de conductores
+    useEffect(() => {
+        setDriverPage(1);
+    }, [driverSearch, driverStatusFilter]);
 
     const filteredDrivers = useMemo(() => {
         return drivers.filter((driver) => {
@@ -158,6 +188,13 @@ export default function TransportsView({ vehicles, drivers, assignments, vehicle
             return matchesDriverSearch(driver, driverSearch.trim());
         });
     }, [drivers, driverSearch, driverStatusFilter]);
+
+    const driverStartIndex = (driverPage - 1) * ROWS_PER_PAGE;
+    const driverTotalPages = Math.ceil(filteredDrivers.length / ROWS_PER_PAGE) || 1;
+
+    const paginatedDrivers = useMemo(() => {
+        return filteredDrivers.slice(driverStartIndex, driverStartIndex + ROWS_PER_PAGE);
+    }, [filteredDrivers, driverStartIndex]);
 
     const [togglingDriverIds, setTogglingDriverIds] = useState<string[]>([]);
 
@@ -257,13 +294,24 @@ export default function TransportsView({ vehicles, drivers, assignments, vehicle
                     />
 
                     <VehiclesTable
-                        vehicles={filteredVehicles}
+                        vehicles={paginatedVehicles}
                         drivers={drivers}
                         assignmentMaps={assignmentMaps}
                         isRestoring={isRestoringVehicle}
                         onEdit={openEditVehicleModal}
                         onDelete={openDeleteDialog}
                         onRestore={handleRestoreVehicle}
+                    />
+
+                    <span>
+                        Resultados {filteredVehicles.length === 0 ? 0 : vehicleStartIndex + 1} -{" "}
+                        {Math.min(vehicleStartIndex + ROWS_PER_PAGE, filteredVehicles.length)} de {filteredVehicles.length}
+                    </span>
+
+                    <PaginationControl
+                        currentPage={vehiclePage}
+                        setCurrentPage={setVehiclePage}
+                        totalPages={vehicleTotalPages}
                     />
                 </>
             ) : (
@@ -279,13 +327,28 @@ export default function TransportsView({ vehicles, drivers, assignments, vehicle
                     />
 
                     <DriversTable
-                        drivers={filteredDrivers}
+                        drivers={paginatedDrivers}
                         vehicles={vehicles}
                         assignmentMaps={assignmentMaps}
                         isToggling={isTogglingDriver}
                         onDeactivate={handleDeactivateDriver}
                         onActivate={handleActivateDriver}
                     />
+
+                    {filteredDrivers.length >= ROWS_PER_PAGE && (
+                        <>
+                            <span>
+                                Resultados {filteredDrivers.length === 0 ? 0 : driverStartIndex + 1} -{" "}
+                                {Math.min(driverStartIndex + ROWS_PER_PAGE, filteredDrivers.length)} de {filteredDrivers.length}
+                            </span>
+
+                            <PaginationControl
+                                currentPage={driverPage}
+                                setCurrentPage={setDriverPage}
+                                totalPages={driverTotalPages}
+                            />
+                        </>
+                    )}
                 </>
             )}
 
