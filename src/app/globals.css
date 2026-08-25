@@ -1,5 +1,44 @@
 :root {
-  --primary-color: #0b1524;
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Marca */
+  --color-primary: #3454d1;
+  --color-primary-hover: #233b96;
+  --color-accent: #6366f1;
+  --color-accent-bg: #eff4ff;
+  --color-accent-bg-alt: #eef2ff; /* 🔸 candidato a unificar con --color-accent-bg */
+
+  /* Texto */
+  --color-text-heading: #0f172a;
+  --color-text-heading-alt: #0b1524; /* 🔸 candidato a unificar con --color-text-heading */
+  --color-text-primary: #111827;
+  --color-text-secondary: #374151;
+  --color-text-tertiary: #4b5563;
+  --color-text-muted: #6b7280;
+  --color-text-muted-alt: #64748b; /* 🔸 candidato a unificar con --color-text-muted */
+  --color-text-subtle: #9ca3af;
+
+  /* Bordes */
+  --color-border: #d1d5db;
+  --color-border-light: #e5e7eb;
+  --color-border-muted: #cbd5e1;
+
+  /* Fondos */
+  --color-surface: #ffffff;
+  --color-bg-subtle: #f9fafb;
+  --color-bg-muted: #f1f5f9;
+
+  /* Estados semánticos */
+  --color-success-bg: #d1fae5;
+  --color-success-text: #065f46;
+  --color-warning-bg: #fef3c7;
+  --color-warning-text: #92400e;
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-danger-bg-alt: #fef2f2; /* 🔸 candidato a unificar con --color-danger-bg */
+  --color-danger-text: #991b1b;
+  --color-black: #000000;
 }
 
 html {

@@ -9,7 +9,7 @@
 .sectionTabs {
     display: flex;
     gap: 8px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border-light);
 }
 
 .sectionTab {
@@ -20,7 +20,7 @@
     border: 0;
     border-bottom: 2px solid transparent;
     background: transparent;
-    color: #6b7280;
+    color: var(--color-text-muted);
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
@@ -28,12 +28,12 @@
 }
 
 .sectionTab:hover {
-    color: #3454d1;
+    color: var(--color-primary);
 }
 
 .sectionTabActive {
-    color: #3454d1;
-    border-bottom-color: #3454d1;
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
 }
 
 .sectionTabCount {
@@ -44,8 +44,8 @@
     height: 20px;
     padding: 0 6px;
     border-radius: 999px;
-    background: #eef2ff;
-    color: #3454d1;
+    background: var(--color-accent-bg-alt);
+    color: var(--color-primary);
     font-size: 0.75rem;
     font-weight: 700;
 }
@@ -63,11 +63,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 0 14px;
-    background: #ffffff;
-    color: #9ca3af;
+    background: var(--color-surface);
+    color: var(--color-text-subtle);
 }
 
 .searchBox input {
@@ -76,24 +76,24 @@
     border: 0;
     outline: none;
     font-size: 0.95rem;
-    color: #111827;
+    color: var(--color-text-primary);
     background: transparent;
 }
 
 .select {
     height: 48px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 0 12px;
-    background: #ffffff;
-    color: #111827;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
     font-size: 0.92rem;
     outline: none;
     cursor: pointer;
 }
 
 .select:focus {
-    border-color: #6366f1;
+    border-color: var(--color-accent);
 }
 
 .createButton {
@@ -104,8 +104,8 @@
     padding: 0 16px;
     border: 0;
     border-radius: 12px;
-    background: #3454d1;
-    color: #ffffff;
+    background: var(--color-primary);
+    color: var(--color-surface);
     font-size: 0.92rem;
     font-weight: 700;
     cursor: pointer;
@@ -119,9 +119,9 @@
 /* --- Tabla --- */
 .tableWrapper {
     overflow-x: auto;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--color-border-light);
     border-radius: 14px;
-    background: #ffffff;
+    background: var(--color-surface);
 }
 
 .table {
@@ -133,18 +133,18 @@
 .table th {
     text-align: left;
     padding: 14px 16px;
-    background: #f9fafb;
-    color: #6b7280;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-muted);
     font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border-light);
 }
 
 .table td {
     padding: 14px 16px;
-    border-bottom: 1px solid #f1f5f9;
-    color: #111827;
+    border-bottom: 1px solid var(--color-bg-muted);
+    color: var(--color-text-primary);
     vertical-align: top;
 }
 
@@ -161,14 +161,14 @@
 }
 
 .muted {
-    color: #6b7280;
+    color: var(--color-text-muted);
     font-size: 0.88rem;
 }
 
 .emptyState {
     text-align: center;
     padding: 30px 0;
-    color: #6b7280;
+    color: var(--color-text-muted);
     font-size: 0.95rem;
 }
 
@@ -180,28 +180,28 @@
     border-radius: 999px;
     font-size: 0.78rem;
     font-weight: 700;
-    background: #e5e7eb;
-    color: #374151;
+    background: var(--color-border-light);
+    color: var(--color-text-secondary);
 }
 
 .statusActivo {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
 }
 
 .statusInactivo {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
 }
 
 .statusPendiente {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
 }
 
 .statusVencida {
-    background: #e5e7eb;
-    color: #4b5563;
+    background: var(--color-border-light);
+    color: var(--color-text-tertiary);
 }
 
 /* --- Acciones por fila --- */
@@ -218,17 +218,17 @@
     justify-content: center;
     width: 34px;
     height: 34px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--color-border-muted);
     border-radius: 10px;
-    background: #ffffff;
-    color: #3454d1;
+    background: var(--color-surface);
+    color: var(--color-primary);
     cursor: pointer;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .iconButton:hover:not(:disabled) {
-    background: #eff4ff;
-    border-color: #3454d1;
+    background: var(--color-accent-bg);
+    border-color: var(--color-primary);
 }
 
 .iconButton:disabled {
@@ -237,12 +237,12 @@
 }
 
 .iconButtonDanger {
-    color: #dc2626;
+    color: var(--color-danger);
 }
 
 .iconButtonDanger:hover {
-    background: #fef2f2;
-    border-color: #dc2626;
+    background: var(--color-danger-bg-alt);
+    border-color: var(--color-danger);
 }
 
 /* --- Modales (form, delete, invite) --- */
@@ -262,8 +262,8 @@
     max-height: 90vh;
     overflow-y: auto;
     border-radius: 20px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
     box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
     padding: 20px;
 }
@@ -271,12 +271,12 @@
 .modalHeader h3 {
     margin: 0;
     font-size: 1.15rem;
-    color: #0f172a;
+    color: var(--color-text-heading);
 }
 
 .modalHeader p {
     margin: 6px 0 0;
-    color: #64748b;
+    color: var(--color-text-muted-alt);
     font-size: 0.95rem;
 }
 
@@ -291,7 +291,7 @@
     flex-direction: column;
     gap: 8px;
     margin-top: 14px;
-    color: #111827;
+    color: var(--color-text-primary);
     font-size: 0.95rem;
     font-weight: 600;
 }
@@ -299,21 +299,21 @@
 .modalField input {
     height: 46px;
     border-radius: 12px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     padding: 0 14px;
     font: inherit;
-    color: #111827;
+    color: var(--color-text-primary);
     outline: none;
 }
 
 .modalField input:focus {
-    border-color: #3454d1;
+    border-color: var(--color-primary);
     box-shadow: 0 0 0 4px rgba(52, 84, 209, 0.12);
 }
 
 .modalError {
     margin: 12px 0 0;
-    color: #dc2626;
+    color: var(--color-danger);
     font-size: 0.92rem;
 }
 
@@ -321,8 +321,8 @@
     margin: 12px 0 0;
     padding: 10px 12px;
     border-radius: 10px;
-    background: #eef2ff;
-    color: #3454d1;
+    background: var(--color-accent-bg-alt);
+    color: var(--color-primary);
     font-size: 0.88rem;
     word-break: break-all;
 }
@@ -346,13 +346,13 @@
 }
 
 .secondaryButton {
-    background: #e5e7eb;
-    color: #111827;
+    background: var(--color-border-light);
+    color: var(--color-text-primary);
 }
 
 .primaryButton {
-    background: #3454d1;
-    color: #ffffff;
+    background: var(--color-primary);
+    color: var(--color-surface);
 }
 
 .primaryButton:disabled,
@@ -362,8 +362,8 @@
 }
 
 .dangerButton {
-    background: #dc2626;
-    color: #ffffff;
+    background: var(--color-danger);
+    color: var(--color-surface);
 }
 
 @media (max-width: 720px) {

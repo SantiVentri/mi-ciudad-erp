@@ -20,17 +20,17 @@
     min-width: 64px;
     width: 100%;
     padding: 10px 8px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     border-radius: 12px;
-    background: #ffffff;
+    background: var(--color-surface);
     cursor: pointer;
-    color: #111827;
+    color: var(--color-text-primary);
     position: relative;
     transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .dayTab:hover {
-    border-color: #3454d1;
+    border-color: var(--color-primary);
 }
 
 .dayTabWeekday {
@@ -45,22 +45,22 @@
 }
 
 .dayTabToday:not(.dayTabActive) {
-    border-color: #3454d1;
-    color: #3454d1;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 .dayTabActive {
-    background: #3454d1;
-    border-color: #3454d1;
-    color: #ffffff;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-surface);
 }
 
 .dayTabCount {
     position: absolute;
     top: -6px;
     right: -6px;
-    background: #0b1524;
-    color: #ffffff;
+    background: var(--color-text-heading-alt);
+    color: var(--color-surface);
     font-size: 0.7rem;
     font-weight: 700;
     border-radius: 999px;
@@ -73,8 +73,8 @@
 }
 
 .dayTabActive .dayTabCount {
-    background: #ffffff;
-    color: #3454d1;
+    background: var(--color-surface);
+    color: var(--color-primary);
 }
 
 /* --- Barra de búsqueda y filtros --- */
@@ -90,11 +90,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 0 14px;
-    background: #ffffff;
-    color: #9ca3af;
+    background: var(--color-surface);
+    color: var(--color-text-subtle);
 }
 
 .searchBox input {
@@ -103,24 +103,24 @@
     border: 0;
     outline: none;
     font-size: 0.95rem;
-    color: #111827;
+    color: var(--color-text-primary);
     background: transparent;
 }
 
 .select {
     height: 48px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 0 12px;
-    background: #ffffff;
-    color: #111827;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
     font-size: 0.92rem;
     outline: none;
     cursor: pointer;
 }
 
 .select:focus {
-    border-color: #6366f1;
+    border-color: var(--color-accent);
 }
 
 .refreshButton {
@@ -129,10 +129,10 @@
     align-items: center;
     gap: 8px;
     padding: 0 14px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     border-radius: 12px;
-    background: #ffffff;
-    color: #3454d1;
+    background: var(--color-surface);
+    color: var(--color-primary);
     font-size: 0.92rem;
     font-weight: 700;
     cursor: pointer;
@@ -140,8 +140,8 @@
 }
 
 .refreshButton:hover {
-    border-color: #3454d1;
-    background: #eff4ff;
+    border-color: var(--color-primary);
+    background: var(--color-accent-bg);
 }
 
 .bulkEditButton {
@@ -152,8 +152,8 @@
     padding: 0 16px;
     border: 0;
     border-radius: 12px;
-    background: #3454d1;
-    color: #ffffff;
+    background: var(--color-primary);
+    color: var(--color-surface);
     font-size: 0.92rem;
     font-weight: 700;
     cursor: pointer;
@@ -180,15 +180,15 @@
 .emptyState {
     text-align: center;
     padding: 30px 0;
-    color: #6b7280;
+    color: var(--color-text-muted);
     font-size: 0.95rem;
 }
 
 .orderCard {
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--color-border-light);
     border-radius: 14px;
     overflow: hidden;
-    background: #ffffff;
+    background: var(--color-surface);
 }
 
 .orderRow {
@@ -203,16 +203,16 @@
     text-align: left;
     cursor: pointer;
     font-size: 0.92rem;
-    color: #111827;
+    color: var(--color-text-primary);
 }
 
 .orderRow:hover {
-    background: #f9fafb;
+    background: var(--color-bg-subtle);
 }
 
 .orderTime {
     font-weight: 700;
-    color: #3454d1;
+    color: var(--color-primary);
 }
 
 .rowCheckbox {
@@ -236,15 +236,15 @@
     width: 18px;
     height: 18px;
     border-radius: 6px;
-    border: 2px solid #cbd5e1;
-    background: #ffffff;
+    border: 2px solid var(--color-border-muted);
+    background: var(--color-surface);
     transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .rowCheckbox input:checked + span {
-    background: #3454d1;
-    border-color: #3454d1;
-    box-shadow: inset 0 0 0 2px #ffffff;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: inset 0 0 0 2px var(--color-surface);
 }
 
 .orderClient {
@@ -258,10 +258,10 @@
     gap: 6px;
     height: 34px;
     padding: 0 12px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--color-border-muted);
     border-radius: 10px;
-    background: #ffffff;
-    color: #3454d1;
+    background: var(--color-surface);
+    color: var(--color-primary);
     font-size: 0.85rem;
     font-weight: 700;
     cursor: pointer;
@@ -269,19 +269,19 @@
 }
 
 .editButton:hover {
-    background: #eff4ff;
-    border-color: #3454d1;
+    background: var(--color-accent-bg);
+    border-color: var(--color-primary);
 }
 
 .orderAddress {
-    color: #6b7280;
+    color: var(--color-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .orderItems {
-    color: #6b7280;
+    color: var(--color-text-muted);
     font-size: 0.85rem;
 }
 
@@ -292,28 +292,28 @@
     border-radius: 999px;
     font-size: 0.78rem;
     font-weight: 700;
-    background: #e5e7eb;
-    color: #374151;
+    background: var(--color-border-light);
+    color: var(--color-text-secondary);
 }
 
 .statePendiente {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
 }
 
 .stateCompletada {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
 }
 
 .stateCancelada {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
 }
 
 .chevron {
     transition: transform 0.2s ease;
-    color: #9ca3af;
+    color: var(--color-text-subtle);
     justify-self: end;
 }
 
@@ -327,9 +327,9 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 10px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--color-border-light);
     padding: 16px;
-    background: #f9fafb;
+    background: var(--color-bg-subtle);
 }
 
 .orderDetail {
@@ -348,13 +348,13 @@
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: #6b7280;
+    color: var(--color-text-muted);
     margin-bottom: 8px;
 }
 
 .detailSection p {
     font-size: 0.92rem;
-    color: #111827;
+    color: var(--color-text-primary);
     margin-bottom: 2px;
 }
 
@@ -369,10 +369,10 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.92rem;
-    color: #111827;
+    color: var(--color-text-primary);
     padding: 6px 10px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
     border-radius: 8px;
 }
 
@@ -390,7 +390,7 @@
 }
 
 .restoreButton {
-    background-color: #000;
+    background-color: var(--color-black);
 }
 
 .toggleButtonDisabled {
@@ -415,8 +415,8 @@
 .modal {
     width: min(100%, 420px);
     border-radius: 20px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
     box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
     padding: 20px;
 }
@@ -424,12 +424,12 @@
 .modalHeader h3 {
     margin: 0;
     font-size: 1.15rem;
-    color: #0f172a;
+    color: var(--color-text-heading);
 }
 
 .modalHeader p {
     margin: 6px 0 0;
-    color: #64748b;
+    color: var(--color-text-muted-alt);
     font-size: 0.95rem;
 }
 
@@ -438,7 +438,7 @@
     flex-direction: column;
     gap: 8px;
     margin-top: 18px;
-    color: #111827;
+    color: var(--color-text-primary);
     font-size: 0.95rem;
     font-weight: 600;
 }
@@ -446,21 +446,21 @@
 .modalField input {
     height: 48px;
     border-radius: 12px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     padding: 0 14px;
     font: inherit;
-    color: #111827;
+    color: var(--color-text-primary);
     outline: none;
 }
 
 .modalField input:focus {
-    border-color: #3454d1;
+    border-color: var(--color-primary);
     box-shadow: 0 0 0 4px rgba(52, 84, 209, 0.12);
 }
 
 .modalError {
     margin: 12px 0 0;
-    color: #dc2626;
+    color: var(--color-danger);
     font-size: 0.92rem;
 }
 
@@ -482,13 +482,13 @@
 }
 
 .secondaryButton {
-    background: #e5e7eb;
-    color: #111827;
+    background: var(--color-border-light);
+    color: var(--color-text-primary);
 }
 
 .primaryButton {
-    background: #3454d1;
-    color: #ffffff;
+    background: var(--color-primary);
+    color: var(--color-surface);
 }
 
 .primaryButton:disabled {
