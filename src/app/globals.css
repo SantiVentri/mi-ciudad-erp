@@ -7,16 +7,13 @@
   --color-primary-hover: #233b96;
   --color-accent: #6366f1;
   --color-accent-bg: #eff4ff;
-  --color-accent-bg-alt: #eef2ff; /* 🔸 candidato a unificar con --color-accent-bg */
 
   /* Texto */
   --color-text-heading: #0f172a;
-  --color-text-heading-alt: #0b1524; /* 🔸 candidato a unificar con --color-text-heading */
   --color-text-primary: #111827;
   --color-text-secondary: #374151;
   --color-text-tertiary: #4b5563;
   --color-text-muted: #6b7280;
-  --color-text-muted-alt: #64748b; /* 🔸 candidato a unificar con --color-text-muted */
   --color-text-subtle: #9ca3af;
 
   /* Bordes */
@@ -36,7 +33,6 @@
   --color-warning-text: #92400e;
   --color-danger: #dc2626;
   --color-danger-bg: #fee2e2;
-  --color-danger-bg-alt: #fef2f2; /* 🔸 candidato a unificar con --color-danger-bg */
   --color-danger-text: #991b1b;
   --color-black: #000000;
 }

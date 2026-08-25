@@ -69,7 +69,7 @@
 
 .name {
     font-size: 0.78rem;
-    color: var(--color-text-muted-alt);
+    color: var(--color-text-muted);
     text-align: center;
     max-width: 100px;
     text-overflow: ellipsis;
