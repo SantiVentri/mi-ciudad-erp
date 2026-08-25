@@ -2,6 +2,7 @@ import 'server-only'
 import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
 import { assertNoSupabaseError } from '@/utils/supabase/assertNoError'
+import { Driver } from './transports.types'
 
 export const getVehicles = cache(async () => {
     const supabase = await getServerClient()
@@ -29,42 +30,18 @@ export const getVehicles = cache(async () => {
 export type Vehicles = NonNullable<Awaited<ReturnType<typeof getVehicles>>>
 export type Vehicle = Vehicles[number]
 
-export const getDrivers = cache(async () => {
+export const getDrivers = cache(async (): Promise<Driver[] | null> => {
     const supabase = await getServerClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-
     if (!user) return null
 
-    const { data: invitations, error: invitationsError } = await supabase
-        .from('invitations')
-        .select('id, email, created_at, expires_at, used_at')
-        .eq('role', 'driver')
-        .order('created_at', { ascending: false })
+    const { data: drivers, error } = await supabase.rpc('get_drivers' as any)
 
-    assertNoSupabaseError(invitationsError, 'Error trayendo las invitaciones de conductores')
+    assertNoSupabaseError(error, 'Error trayendo los conductores')
 
-    const emails = (invitations ?? []).map((invitation) => invitation.email)
-
-    const { data: profiles, error: profilesError } = emails.length
-        ? await supabase
-            .from('profiles')
-            .select('id, first_name, last_name, email, phone, avatar, is_active')
-            .in('email', emails)
-        : { data: [], error: null }
-
-    assertNoSupabaseError(profilesError, 'Error trayendo los perfiles de conductores')
-
-    const profileByEmail = new Map((profiles ?? []).map((profile) => [profile.email, profile]))
-
-    return (invitations ?? []).map((invitation) => ({
-        ...invitation,
-        profile: profileByEmail.get(invitation.email) ?? null,
-    }))
+    return (drivers as Driver[]) ?? []
 })
-
-export type Drivers = NonNullable<Awaited<ReturnType<typeof getDrivers>>>
-export type Driver = Drivers[number]
 
 export const getRouteAssignments = cache(async () => {
     const supabase = await getServerClient()
@@ -190,20 +167,16 @@ export const getDriversMetrics = cache(async () => {
     const now = new Date()
 
     const totalDrivers = drivers.length
-    const activeDrivers = drivers.filter((d) => d.profile && d.profile.is_active !== false).length
-    const pendingInvitations = drivers.filter((d) => !d.profile && new Date(d.expires_at) >= now).length
-    const expiredInvitations = drivers.filter((d) => !d.profile && new Date(d.expires_at) < now).length
+    const activeDrivers = drivers.filter((d) => d && d.is_active !== false).length
 
     const assignedTodayIds = new Set((todayRoutes ?? []).map((r) => r.driver_id))
     const driversWithoutRouteToday = drivers.filter(
-        (d) => d.profile && d.profile.is_active !== false && !assignedTodayIds.has(d.profile.id)
+        (d) => d && d.is_active !== false && !assignedTodayIds.has(d.id)
     ).length
 
     return {
         totalDrivers,
         activeDrivers,
-        pendingInvitations,
-        expiredInvitations,
         driversWithoutRouteToday,
     }
 })
@@ -227,10 +200,10 @@ export const getTopDriversByRoutes = cache(async (limit: number = 5) => {
 
     const nameByProfileId = new Map(
         (drivers ?? [])
-            .filter((d) => d.profile)
+            .filter((d) => d)
             .map((d) => {
-                const fullName = `${d.profile!.first_name ?? ''} ${d.profile!.last_name ?? ''}`.trim()
-                return [d.profile!.id, fullName || d.profile!.email] as const
+                const fullName = `${d!.first_name ?? ''} ${d!.last_name ?? ''}`.trim()
+                return [d!.id, fullName || d!.email] as const
             })
     )
 

@@ -8,7 +8,8 @@ import { getVehicleAssignmentLabel, getVehicleStatus } from "@/modules/transport
 import { VEHICLE_STATUS_STYLES } from "@/modules/transports/transports.constants";
 
 // Types
-import type { Driver, Vehicle } from "@/modules/transports/transports.dal";
+import { Driver } from "@/modules/transports/transports.types";
+import type { Vehicle } from "@/modules/transports/transports.dal";
 import type { AssignmentMaps } from "@/modules/transports/transports.utils";
 
 // Icons

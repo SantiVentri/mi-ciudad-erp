@@ -20,8 +20,6 @@ type DriversMetricsProps = {
 export default function DriversMetrics({ metrics, topDrivers, onViewWithoutRouteToday }: DriversMetricsProps) {
     const totalDrivers = metrics?.totalDrivers ?? 0;
     const activeDrivers = metrics?.activeDrivers ?? 0;
-    const pendingInvitations = metrics?.pendingInvitations ?? 0;
-    const expiredInvitations = metrics?.expiredInvitations ?? 0;
     const driversWithoutRouteToday = metrics?.driversWithoutRouteToday ?? 0;
 
     return (
@@ -38,12 +36,6 @@ export default function DriversMetrics({ metrics, topDrivers, onViewWithoutRoute
                     title="Conductores activos"
                     value={activeDrivers}
                     description="con cuenta registrada"
-                />
-                <Metric
-                    icon={<Clock size={15} />}
-                    title="Invitaciones pendientes"
-                    value={pendingInvitations}
-                    description={`${expiredInvitations} vencidas`}
                 />
                 <button
                     type="button"

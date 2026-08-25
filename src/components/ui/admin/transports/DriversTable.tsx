@@ -13,7 +13,8 @@ import {
 import { DRIVER_STATUS_STYLES } from "@/modules/transports/transports.constants";
 
 // Types
-import type { Driver, Vehicle } from "@/modules/transports/transports.dal";
+import { Driver } from "@/modules/transports/transports.types";
+import type { Vehicle } from "@/modules/transports/transports.dal";
 import type { AssignmentMaps } from "@/modules/transports/transports.utils";
 
 // Icons
@@ -63,7 +64,7 @@ export default function DriversTable({
                                 <td className={styles.primaryCell}>{getDriverName(driver)}</td>
                                 <td>
                                     <div>{driver.email}</div>
-                                    {driver.profile?.phone && <div className={styles.muted}>{driver.profile.phone}</div>}
+                                    {driver?.phone && <div className={styles.muted}>{driver.phone}</div>}
                                 </td>
                                 <td className={styles.muted}>
                                     {getDriverAssignmentLabel(driver, assignmentMaps, vehicles)}

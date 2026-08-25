@@ -17,7 +17,8 @@ import {
     restoreVehicle,
     updateVehicle,
 } from "@/modules/transports/transports.actions";
-import type { Driver, RouteAssignment, Vehicle, VehiclesMetricsData, DriversMetricsData } from "@/modules/transports/transports.dal";
+import type { RouteAssignment, Vehicle, VehiclesMetricsData, DriversMetricsData } from "@/modules/transports/transports.dal";
+import { Driver } from "@/modules/transports/transports.types";
 
 // Utils
 import { buildAssignmentMaps, getVehicleStatus, matchesVehicleSearch, getDriverStatus, matchesDriverSearch } from "@/modules/transports/transports.utils";
@@ -201,8 +202,8 @@ export default function TransportsView({
     const isTogglingDriver = (driver: Driver) => togglingDriverIds.includes(driver.id);
 
     const handleDeactivateDriver = (driver: Driver) => {
-        if (!driver.profile) return;
-        const profileId = driver.profile.id;
+        if (!driver) return;
+        const profileId = driver.id;
 
         setTogglingDriverIds((prev) => [...prev, driver.id]);
 
@@ -214,8 +215,8 @@ export default function TransportsView({
     };
 
     const handleActivateDriver = (driver: Driver) => {
-        if (!driver.profile) return;
-        const profileId = driver.profile.id;
+        if (!driver) return;
+        const profileId = driver.id;
 
         setTogglingDriverIds((prev) => [...prev, driver.id]);
 

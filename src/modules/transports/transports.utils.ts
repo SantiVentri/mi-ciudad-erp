@@ -1,5 +1,5 @@
-import type { Driver, RouteAssignment, Vehicle } from "@/modules/transports/transports.dal";
-import type { DriverInviteFormValues, VehicleFormValues } from "@/modules/transports/transports.types";
+import type { RouteAssignment, Vehicle } from "@/modules/transports/transports.dal";
+import type { Driver, DriverInviteFormValues, VehicleFormValues } from "@/modules/transports/transports.types";
 
 // --- Vehículos ---
 
@@ -20,28 +20,25 @@ export function matchesVehicleSearch(vehicle: Vehicle, term: string) {
 
 // --- Conductores ---
 
-export function getDriverStatus(driver: Driver): "Activo" | "Inactivo" | "Invitación pendiente" | "Invitación vencida" {
-    if (driver.profile) {
-        return driver.profile.is_active === false ? "Inactivo" : "Activo";
-    }
-    return new Date(driver.expires_at) < new Date() ? "Invitación vencida" : "Invitación pendiente";
+export function getDriverStatus(driver: Driver): "Activo" | "Inactivo" {
+    return driver.is_active ? "Activo" : "Inactivo";
 }
 
 export function canToggleDriverStatus(driver: Driver) {
-    return driver.profile !== null;
+    return driver !== null;
 }
 
 export function getDriverName(driver: Driver) {
-    if (!driver.profile) return driver.email;
+    if (!driver) return driver;
 
-    const fullName = `${driver.profile.first_name ?? ""} ${driver.profile.last_name ?? ""}`.trim();
+    const fullName = `${driver.first_name ?? ""} ${driver.last_name ?? ""}`.trim();
     return fullName || driver.email;
 }
 
 export function matchesDriverSearch(driver: Driver, term: string) {
     if (!term) return true;
 
-    const haystack = [driver.email, driver.profile?.first_name, driver.profile?.last_name, driver.profile?.phone]
+    const haystack = [driver.email, driver?.first_name, driver?.last_name, driver?.phone]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -90,7 +87,7 @@ export function getVehicleAssignmentLabel(
     const assignment = maps.byVehicleId.get(vehicle.id);
     if (!assignment) return "Sin asignaciones";
 
-    const driver = drivers.find((candidate) => candidate.profile?.id === assignment.driver_id);
+    const driver = drivers.find((candidate) => candidate?.id === assignment.driver_id);
     const driverName = driver ? getDriverName(driver) : "Conductor sin perfil";
 
     return `${driverName} · ${formatRouteDate(assignment.route_date)}`;
@@ -101,9 +98,9 @@ export function getDriverAssignmentLabel(
     maps: AssignmentMaps,
     vehicles: Vehicle[],
 ): string {
-    if (!driver.profile) return "Sin registrar";
+    if (!driver) return "Sin registrar";
 
-    const assignment = maps.byDriverId.get(driver.profile.id);
+    const assignment = maps.byDriverId.get(driver.id);
     if (!assignment) return "Sin asignaciones";
 
     const vehicle = vehicles.find((candidate) => candidate.id === assignment.vehicle_id);

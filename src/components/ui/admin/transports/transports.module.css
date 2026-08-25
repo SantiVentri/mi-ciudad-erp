@@ -194,16 +194,6 @@
     color: var(--color-danger-text);
 }
 
-.statusPendiente {
-    background: var(--color-warning-bg);
-    color: var(--color-warning-text);
-}
-
-.statusVencida {
-    background: var(--color-border-light);
-    color: var(--color-text-tertiary);
-}
-
 /* --- Acciones por fila --- */
 .rowActions {
     display: flex;
