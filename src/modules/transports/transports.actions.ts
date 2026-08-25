@@ -1,20 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-
-import { getServerClient } from "@/utils/supabase/getServerClient";
 import { createInvitation } from "@/app/(home)/admin/invitations/actions";
-
-async function requireAdmin() {
-    const supabase = await getServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || user.app_metadata?.role !== "admin") {
-        return null;
-    }
-
-    return supabase;
-}
+import requireAdmin from "@/utils/auth/requireAdmin";
 
 function readVehicleFields(formData: FormData) {
     return {

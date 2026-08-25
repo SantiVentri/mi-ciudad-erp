@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getServerClient } from "@/utils/supabase/getServerClient";
+import requireAdmin from "@/utils/auth/requireAdmin";
 
 function todayDateString() {
     const now = new Date();
@@ -13,10 +14,8 @@ function todayDateString() {
 }
 
 export async function updateOrderArrivalDate(orderId: string, arrivalDate: string) {
-    const supabase = await getServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || user.app_metadata?.role !== "admin") {
+    const supabase = await requireAdmin();
+    if (!supabase) {
         return { error: "No tenés permisos para editar pedidos." };
     }
 
@@ -43,7 +42,11 @@ export async function updateOrderArrivalDate(orderId: string, arrivalDate: strin
 }
 
 export async function setOrderState(orderId: string, newState: string) {
-    const supabase = await getServerClient();
+    const supabase = await requireAdmin();
+    if (!supabase) {
+        return { error: "No tenés permisos para editar pedidos." };
+    }
+
     const {error} = await supabase
         .from("orders")
         .update({ state: newState })

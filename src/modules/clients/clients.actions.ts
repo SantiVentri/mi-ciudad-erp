@@ -1,20 +1,8 @@
 "use server";
 
+import requireAdmin from "@/utils/auth/requireAdmin";
 import { revalidatePath } from "next/cache";
-
-import { getServerClient } from "@/utils/supabase/getServerClient";
 import { getClientOrders } from "@/modules/clients/clients.dal";
-
-async function requireAdmin() {
-    const supabase = await getServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || user.app_metadata?.role !== "admin") {
-        return null;
-    }
-
-    return supabase;
-}
 
 function readClientFields(formData: FormData) {
     return {
