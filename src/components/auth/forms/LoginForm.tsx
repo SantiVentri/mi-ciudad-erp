@@ -29,13 +29,13 @@ export default function LoginForm() {
 
     const validateForm = () => {
         if (!email || !password) {
-            setError("Please fill in all fields.");
+            setError("Completá todos los campos.");
             return false;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            setError("Please enter a valid email address.");
+            setError("El email no es válido.");
             return false;
         }
 

@@ -1,6 +1,7 @@
 import 'server-only'
 import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
+import { assertNoSupabaseError } from '@/utils/supabase/assertNoError'
 
 export const getVehicles = cache(async () => {
     const supabase = await getServerClient()
@@ -20,9 +21,7 @@ export const getVehicles = cache(async () => {
         .order('is_active', { ascending: false })
         .order('patent', { ascending: true })
 
-    if (error) {
-        console.error('Error trayendo los vehículos:', error.message)
-    }
+    assertNoSupabaseError(error, 'Error trayendo los vehículos')
 
     return data
 })
@@ -43,10 +42,7 @@ export const getDrivers = cache(async () => {
         .eq('role', 'driver')
         .order('created_at', { ascending: false })
 
-    if (invitationsError) {
-        console.error('Error trayendo las invitaciones de conductores:', invitationsError.message)
-        return []
-    }
+    assertNoSupabaseError(invitationsError, 'Error trayendo las invitaciones de conductores')
 
     const emails = (invitations ?? []).map((invitation) => invitation.email)
 
@@ -57,9 +53,7 @@ export const getDrivers = cache(async () => {
             .in('email', emails)
         : { data: [], error: null }
 
-    if (profilesError) {
-        console.error('Error trayendo los perfiles de conductores:', profilesError.message)
-    }
+    assertNoSupabaseError(profilesError, 'Error trayendo los perfiles de conductores')
 
     const profileByEmail = new Map((profiles ?? []).map((profile) => [profile.email, profile]))
 
@@ -84,9 +78,7 @@ export const getRouteAssignments = cache(async () => {
         .select('id, route_date, state, driver_id, vehicle_id')
         .order('route_date', { ascending: false })
 
-    if (error) {
-        console.error('Error trayendo las asignaciones de rutas:', error.message)
-    }
+    assertNoSupabaseError(error, 'Error trayendo las asignaciones de rutas')
 
     return data
 })
@@ -114,12 +106,8 @@ export const getVehiclesMetrics = cache(async () => {
             .lt('route_date', tomorrowStart.toISOString()),
     ])
 
-    if (vehiclesRes.error) {
-        console.error('Error trayendo métricas de vehículos:', vehiclesRes.error.message)
-    }
-    if (todayRoutesRes.error) {
-        console.error('Error trayendo rutas de hoy:', todayRoutesRes.error.message)
-    }
+    assertNoSupabaseError(vehiclesRes.error, 'Error trayendo métricas de vehículos')
+    assertNoSupabaseError(todayRoutesRes.error, 'Error trayendo rutas de hoy')
 
     const vehicles = vehiclesRes.data ?? []
     const totalVehicles = vehicles.length
@@ -154,10 +142,7 @@ export const getTopVehiclesByRoutes = cache(async (limit: number = 5) => {
         .from('routes')
         .select('vehicle_id, vehicle:vehicles ( id, patent )')
 
-    if (error) {
-        console.error('Error trayendo el top de vehículos:', error.message)
-        return null
-    }
+    assertNoSupabaseError(error, 'Error trayendo el top de vehículos')
 
     const counts = new Map<string, { label: string; value: number }>()
 
@@ -200,9 +185,7 @@ export const getDriversMetrics = cache(async () => {
         .gte('route_date', todayStart.toISOString())
         .lt('route_date', tomorrowStart.toISOString())
 
-    if (todayRoutesError) {
-        console.error('Error trayendo rutas de hoy:', todayRoutesError.message)
-    }
+    assertNoSupabaseError(todayRoutesError, 'Error trayendo rutas de hoy')
 
     const now = new Date()
 
@@ -240,10 +223,7 @@ export const getTopDriversByRoutes = cache(async (limit: number = 5) => {
         getDrivers(),
     ])
 
-    if (routesError) {
-        console.error('Error trayendo el top de conductores:', routesError.message)
-        return null
-    }
+    assertNoSupabaseError(routesError, 'Error trayendo el top de conductores')
 
     const nameByProfileId = new Map(
         (drivers ?? [])

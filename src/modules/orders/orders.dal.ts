@@ -1,6 +1,7 @@
 import 'server-only'
 import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
+import { assertNoSupabaseError } from '@/utils/supabase/assertNoError'
 
 export const getOrders = cache(async (startDate: string, endDate: string) => {
     const supabase = await getServerClient()
@@ -23,9 +24,7 @@ export const getOrders = cache(async (startDate: string, endDate: string) => {
     .lte('arrival_date', endDate)
     .order('arrival_date', { ascending: true })
 
-    if (error) {
-        console.error('Error trayendo los pedidos:', error.message)
-    }
+    assertNoSupabaseError(error, 'Error trayendo los pedidos')
 
     return data
 })
@@ -58,9 +57,7 @@ export const getOrdersMetrics = cache(async () => {
     ])
 
     for (const res of [totalRes, completedRes, pendingRes, canceledRes]) {
-        if (res.error) {
-            console.error('Error trayendo las métricas de pedidos:', res.error.message)
-        }
+        assertNoSupabaseError(res.error, 'Error trayendo las métricas de pedidos')
     }
 
     const totalOrders = totalRes.count ?? 0
@@ -109,10 +106,7 @@ export const getMonthlyOrdersGrowth = cache(async (months: number = 6) => {
     )
 
     results.forEach((res, i) => {
-        if (res.error) {
-            console.error('Error trayendo el crecimiento mensual de pedidos:', res.error.message)
-            return
-        }
+        assertNoSupabaseError(res.error, 'Error trayendo el crecimiento mensual de pedidos')
         buckets[i].value = res.count ?? 0
     })
 

@@ -1,6 +1,7 @@
 import 'server-only'
 import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
+import { assertNoSupabaseError } from '@/utils/supabase/assertNoError'
 
 export const getClients = cache(async () => {
     const supabase = await getServerClient()
@@ -26,9 +27,7 @@ export const getClients = cache(async () => {
         .order('is_active', {ascending: false})
         .order('name', { ascending: true })
 
-    if (error) {
-        console.error('Error trayendo los clientes:', error.message)
-    }
+    assertNoSupabaseError(error, 'Error trayendo los clientes')
 
     return data
 })
@@ -54,9 +53,7 @@ export async function getClientOrders(clientId: string) {
         .eq('client_id', clientId)
         .order('arrival_date', { ascending: false })
 
-    if (error) {
-        console.error('Error trayendo el historial del cliente:', error.message)
-    }
+    assertNoSupabaseError(error, 'Error trayendo el historial del cliente')
 
     return data
 }
@@ -77,10 +74,7 @@ export const getTopClientsByOrders = cache(async (limit: number = 3) => {
             client:clients ( id, name )
         `)
 
-    if (error) {
-        console.error('Error trayendo el top de clientes:', error.message)
-        return null
-    }
+    assertNoSupabaseError(error, 'Error trayendo el top de clientes')
 
     const counts = new Map<string, { label: string; value: number }>()
 
