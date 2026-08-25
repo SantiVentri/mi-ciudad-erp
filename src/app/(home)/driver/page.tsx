@@ -1,4 +1,4 @@
-import SignOutButton from "@/components/auth/signOutButton/SignOutButton";
+import SignOutButton from "@/modules/auth/components/signOutButton/SignOutButton";
 
 export default function DriverHomePage() {
     return (

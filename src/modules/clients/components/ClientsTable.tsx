@@ -8,7 +8,7 @@ import { getClientStatus } from "@/modules/clients/clients.utils";
 import { STATUS_STYLES } from "@/modules/clients/clients.constants";
 
 // Types
-import type { Client } from "@/modules/clients/clients.dal";
+import type { Client } from "../clients.dal";
 
 // Icons
 import { Ban, Clock, PencilLine, RotateCcw } from "lucide-react";

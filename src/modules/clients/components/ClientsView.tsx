@@ -20,7 +20,7 @@ import ClientsTable from "./ClientsTable";
 import ClientFormModal from "./ClientFormModal";
 import DeleteClientDialog from "./DisableClientDialog";
 import ClientHistoryModal from "./ClientHistoryModal";
-import PaginationControl from "../pagination/PaginationControl";
+import PaginationControl from "@/components/ui/admin/pagination/PaginationControl";
 
 type ClientsViewProps = {
     clients: Client[];

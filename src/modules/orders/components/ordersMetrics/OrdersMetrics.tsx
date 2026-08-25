@@ -2,7 +2,7 @@
 import styles from "./ordersMetrics.module.css";
 
 // Components
-import Metric from "../../dashboard/metric/Metric";
+import Metric from "@/components/ui/admin/dashboard/metric/Metric";
 import OrdersGrowthChart from "./OrdersGrowthChart";
 
 // Data

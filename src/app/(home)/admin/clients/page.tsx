@@ -2,9 +2,9 @@
 import { getClients, getTopClientsByOrders } from "@/modules/clients/clients.dal";
 
 // Components
-import ClientsView from "@/components/ui/admin/clients/ClientsView";
+import ClientsView from "@/modules/clients/components/ClientsView";
 import AdminPageHeader from "@/components/layout/header/AdminPageHeader";
-import ClientsMetrics from "@/components/ui/admin/clients/ClientsMetrics";
+import ClientsMetrics from "@/modules/clients/components/ClientsMetrics";
 
 export default async function ClientsPage() {
     const [clients, topClients] = await Promise.all([

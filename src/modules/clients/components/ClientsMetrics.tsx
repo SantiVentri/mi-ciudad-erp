@@ -2,14 +2,15 @@
 import styles from "./clients.module.css";
 
 // Components
-import Metric from "../dashboard/metric/Metric";
+import Metric from "@/components/ui/admin/dashboard/metric/Metric";
+import TopClientsChart from "./TopClientsChart";
 
 // Types
-import type { Client } from "../../../../modules/clients/clients.dal";
+
+import { Client } from "../clients.dal";
 
 // Icons
 import { Users } from "lucide-react";
-import TopClientsChart from "./TopClientsChart";
 
 // Props
 type ClientsMetricsProps = {

@@ -1,4 +1,4 @@
-import TopBarChart from "../../dashboard/topBarChart/TopBarChart";
+import TopBarChart from "@/components/ui/admin/dashboard/topBarChart/TopBarChart";
 
 type TopDriversChartProps = {
     drivers: { label: string; value: number }[];

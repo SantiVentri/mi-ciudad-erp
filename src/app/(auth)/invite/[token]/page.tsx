@@ -2,7 +2,7 @@
 import styles from "./invite.module.css";
 
 // Components
-import RegisterForm from "@/components/auth/forms/RegisterForm";
+import RegisterForm from "@/modules/auth/components/forms/RegisterForm";
 
 // Utils
 import { getServerClient } from "@/utils/supabase/getServerClient";

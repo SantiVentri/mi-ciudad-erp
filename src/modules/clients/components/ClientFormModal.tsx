@@ -24,9 +24,16 @@ export default function ClientFormModal({ client, error, isPending, onClose, onS
     const [values, setValues] = useState(() => getClientFormValues(client));
     const isEditing = client !== null;
 
-    const handleChange = (field: keyof typeof values) => (e: ChangeEvent<HTMLInputElement>) => {
-        setValues((current) => ({ ...current, [field]: e.target.value }));
-    };
+    const handleChange =
+        (field: keyof typeof values) =>
+            (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                const { value } = e.target;
+
+                setValues((current) => ({
+                    ...current,
+                    [field]: value,
+                }));
+            };
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();

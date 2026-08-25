@@ -1,4 +1,4 @@
-import styles from "@/components/ui/admin/transports/transports.module.css";
+import styles from "@/modules/transports/components/transports.module.css";
 
 export const VEHICLE_STATUS_OPTIONS = ["Todos", "Activo", "Inactivo"];
 

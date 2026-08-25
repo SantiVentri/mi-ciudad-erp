@@ -31,9 +31,9 @@ import DeleteVehicleDialog from "./DisableVehicleDialog";
 import DriversToolbar from "./DriversToolbar";
 import DriversTable from "./DriversTable";
 import DriverInviteModal from "./DriverInviteModal";
-import VehiclesMetrics from "../dashboard/vehiclesMetrics/VehicleMetrics";
 import DriversMetrics from "./driversMetrics/DriversMetrics";
-import PaginationControl from "../pagination/PaginationControl";
+import VehiclesMetrics from "@/components/ui/admin/dashboard/vehiclesMetrics/VehicleMetrics";
+import PaginationControl from "@/components/ui/admin/pagination/PaginationControl";
 
 // Icons
 import { Truck, Users } from "lucide-react";

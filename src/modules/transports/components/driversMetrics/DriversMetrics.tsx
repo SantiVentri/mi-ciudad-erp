@@ -2,7 +2,7 @@
 import styles from "./driversMetrics.module.css";
 
 // Components
-import Metric from "../../dashboard/metric/Metric";
+import Metric from "@/components/ui/admin/dashboard/metric/Metric";
 import TopDriversChart from "./TopDriversChart";
 
 // Types

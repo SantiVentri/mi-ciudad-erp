@@ -1,4 +1,4 @@
-import styles from "@/components/ui/admin/clients/clients.module.css";
+import styles from "@/modules/clients/components/clients.module.css";
 
 export const STATUS_OPTIONS = ["Todos", "Activo", "Inactivo"];
 

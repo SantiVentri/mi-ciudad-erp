@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 // Components
 import Link from "next/link";
 import Image from "next/image";
-import SignOutButton from "@/components/auth/signOutButton/SignOutButton";
+import SignOutButton from "@/modules/auth/components/signOutButton/SignOutButton";
 
 // Icons
 import { Home, Package, Route, Truck, Users } from "lucide-react";

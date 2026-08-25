@@ -1,4 +1,4 @@
-import GrowthChart from "../../dashboard/growthChart/GrowthChart";
+import GrowthChart from "@/components/ui/admin/dashboard/growthChart/GrowthChart";
 
 type OrdersGrowthChartProps = {
     data: { label: string; value: number }[];

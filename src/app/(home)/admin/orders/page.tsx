@@ -1,7 +1,7 @@
 import { getOrders } from "@/modules/orders/orders.dal";
-import OrdersView from "@/components/ui/admin/orders/OrdersView";
+import OrdersView from "@/modules/orders/components/OrdersView";
 import AdminPageHeader from "@/components/layout/header/AdminPageHeader";
-import OrdersMetrics from "@/components/ui/admin/orders/ordersMetrics/OrdersMetrics";
+import OrdersMetrics from "@/modules/orders/components/ordersMetrics/OrdersMetrics";
 import { DAYS_BEFORE, DAYS_AFTER } from "@/modules/orders/orders.constants";
 import { dayKey, startOfDay } from "@/modules/orders/orders.utils";
 

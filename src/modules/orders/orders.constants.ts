@@ -1,4 +1,4 @@
-import styles from "@/components/ui/admin/orders/orders.module.css";
+import styles from "@/modules/orders/components/orders.module.css";
 
 export const DAYS_BEFORE = 7;
 export const DAYS_AFTER = 8;

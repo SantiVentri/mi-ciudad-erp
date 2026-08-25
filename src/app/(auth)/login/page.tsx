@@ -2,7 +2,7 @@
 import styles from "./login.module.css";
 
 // Components
-import LoginForm from "@/components/auth/forms/LoginForm";
+import LoginForm from "@/modules/auth/components/forms/LoginForm";
 
 export default function RegisterPage() {
     return (

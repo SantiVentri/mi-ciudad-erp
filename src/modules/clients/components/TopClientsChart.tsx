@@ -1,4 +1,5 @@
-import TopBarChart from "../dashboard/topBarChart/TopBarChart";
+// Components
+import TopBarChart from "@/components/ui/admin/dashboard/topBarChart/TopBarChart";
 
 // Props
 type TopClientsChartProps = {

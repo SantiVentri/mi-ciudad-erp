@@ -1,5 +1,5 @@
 import AdminPageHeader from "@/components/layout/header/AdminPageHeader";
-import TransportsView from "@/components/ui/admin/transports/TransportsView";
+import TransportsView from "@/modules/transports/components/TransportsView";
 import {
     getDrivers,
     getRouteAssignments,
