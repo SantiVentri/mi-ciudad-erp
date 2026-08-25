@@ -6,8 +6,8 @@ import styles from "./forms.module.css";
 // Hooks
 import { useState } from "react";
 
-// Utils
-import { createClient } from "@/utils/supabase/client";
+// Actions
+import { registerUser } from "@/modules/auth/auth.actions";
 
 export default function RegisterForm({
     email,
@@ -24,27 +24,10 @@ export default function RegisterForm({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const supabase = createClient();
-
-    const validateForm = () => {
+    // Solo para feedback instantáneo en el navegador — la validación real está en registerUser().
+    const quickClientCheck = () => {
         if (!formEmail || !displayName || !firstName || !lastName || !password) {
             setError("Completá todos los campos.");
-            return false;
-        }
-        if (password.length < 6) {
-            setError("La contraseña debe tener al menos 6 caracteres.");
-            return false;
-        } else if (password.length > 20) {
-            setError("La contraseña no puede tener más de 20 caracteres.");
-            return false;
-        } else if (!/[A-Z]/.test(password)) {
-            setError("La contraseña debe tener al menos una mayúscula.");
-            return false;
-        } else if (!/[a-z]/.test(password)) {
-            setError("La contraseña debe tener al menos una minúscula.");
-            return false;
-        } else if (!/[0-9]/.test(password)) {
-            setError("La contraseña debe tener al menos un número.");
             return false;
         }
         return true;
@@ -55,45 +38,27 @@ export default function RegisterForm({
         setIsLoading(true);
         setError("");
 
-        if (!validateForm()) {
+        if (!quickClientCheck()) {
             setIsLoading(false);
             return;
         }
 
-        const { error: signUpError } = await supabase.auth.signUp({
+        const result = await registerUser({
             email: formEmail,
+            displayName,
+            firstName,
+            lastName,
             password,
-            options: {
-                data: {
-                    display_name: displayName,
-                    first_name: firstName,
-                    last_name: lastName,
-                    ...(token ? { invite_token: token } : {}),
-                },
-            },
+            token,
         });
 
-        if (signUpError) {
-            setError("No se pudo crear la cuenta: " + signUpError.message);
+        if (result.error) {
+            setError(result.error);
             setIsLoading(false);
             return;
         }
 
-        const { error: logInError } = await supabase.auth.signInWithPassword({
-            email: formEmail,
-            password,
-        });
-
-        if (logInError) {
-            setError("Cuenta creada, pero no se pudo iniciar sesión automáticamente. Andá a /login.");
-            setIsLoading(false);
-            return;
-        }
-
-        const { data: { user } } = await supabase.auth.getUser();
-        const role = user?.app_metadata?.role;
-
-        window.location.href = role === "driver" ? "/driver" : "/admin";
+        window.location.href = result.redirectTo ?? "/admin";
     };
 
     return (
