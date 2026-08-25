@@ -14,8 +14,10 @@ function todayDateString() {
 }
 
 export async function updateOrderArrivalDate(orderId: string, arrivalDate: string) {
-    const supabase = await requireAdmin();
-    if (!supabase) {
+    const supabase = await getServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user || user.app_metadata?.role !== "admin") {
         return { error: "No tenés permisos para editar pedidos." };
     }
 
@@ -44,16 +46,16 @@ export async function updateOrderArrivalDate(orderId: string, arrivalDate: strin
 export async function setOrderState(orderId: string, newState: string) {
     const supabase = await requireAdmin();
     if (!supabase) {
-        return { error: "No tenés permisos para editar pedidos." };
+        return { error: "No tenés permisos para cambiar el estado del pedido." };
     }
 
-    const {error} = await supabase
+    const { error } = await supabase
         .from("orders")
         .update({ state: newState })
         .eq("id", orderId)
 
     if (error) {
-        return { error: "No se pudo actualizar la fecha: " + error.message };
+        return { error: "No se pudo actualizar el estado: " + error.message };
     }
 
     revalidatePath("/admin/orders");

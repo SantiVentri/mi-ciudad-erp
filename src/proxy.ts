@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { getServerClient } from './utils/supabase/getServerClient'
+import { createProxyClient } from './utils/supabase/middleware'
 
 const PUBLIC_PATHS = ['/login', '/invite'];
 
@@ -20,10 +20,19 @@ function isPathOwnedByOtherRole(path: string, role: string | undefined) {
   });
 }
 
-export async function proxy(request: NextRequest) {
-  const supabaseResponse = NextResponse.next({ request })
+function redirectPreservingSession(request: NextRequest, sessionResponse: NextResponse, pathname: string) {
+  const url = request.nextUrl.clone()
+  url.pathname = pathname
+  const redirectResponse = NextResponse.redirect(url)
+  sessionResponse.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie.name, cookie.value)
+  })
+  return redirectResponse
+}
 
-  const supabase = await getServerClient();
+export async function proxy(request: NextRequest) {
+  const { supabase, ref } = createProxyClient(request)
+
   const { data: { user } } = await supabase.auth.getUser()
   const role = user?.app_metadata?.role as string | undefined;
 
@@ -33,30 +42,22 @@ export async function proxy(request: NextRequest) {
   );
 
   if (!user && !isPublicPath && path !== '/') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+    return redirectPreservingSession(request, ref.response, '/login')
   }
 
   if (user && (path === '/login' || path === '/')) {
-    const url = request.nextUrl.clone()
-    url.pathname = getHomeForRole(role)
-    return NextResponse.redirect(url)
+    return redirectPreservingSession(request, ref.response, getHomeForRole(role))
   }
 
   if (user && isPathOwnedByOtherRole(path, role)) {
-    const url = request.nextUrl.clone()
-    url.pathname = getHomeForRole(role)
-    return NextResponse.redirect(url)
+    return redirectPreservingSession(request, ref.response, getHomeForRole(role))
   }
 
   if (path.startsWith('/admin/invitations') && role !== 'admin') {
-    const url = request.nextUrl.clone()
-    url.pathname = getHomeForRole(role)
-    return NextResponse.redirect(url)
+    return redirectPreservingSession(request, ref.response, getHomeForRole(role))
   }
 
-  return supabaseResponse
+  return ref.response
 }
 
 export const config = {

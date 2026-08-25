@@ -1,6 +1,6 @@
 "use server";
 
-import { getServerClient } from "@/utils/supabase/getServerClient";
+import requireAdmin from "@/utils/auth/requireAdmin";
 import { revalidatePath } from "next/cache";
 
 export async function createInvitation(formData: FormData) {
@@ -11,16 +11,16 @@ export async function createInvitation(formData: FormData) {
     return { error: "Completá el email y el rol." };
   }
 
-  const supabase = await getServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user || user.app_metadata?.role !== "admin") {
+  const supabase = await requireAdmin();
+  if (!supabase) {
     return { error: "No tenés permisos para invitar usuarios." };
   }
 
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data, error } = await supabase
     .from("invitations")
-    .insert({ email, role, invited_by: user.id })
+    .insert({ email, role, invited_by: user!.id })
     .select("id")
     .single();
 

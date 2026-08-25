@@ -6,6 +6,7 @@ import AdminSideNav from "@/components/ui/admin/nav/AdminSideNav"
 
 // Hooks
 import { getProfile } from "@/modules/users/users.dal";
+import requireAdmin from "@/utils/auth/requireAdmin";
 import { redirect } from "next/navigation";
 
 export default async function AdminLayout({
@@ -17,6 +18,11 @@ export default async function AdminLayout({
 
     if (!profile) {
         redirect("/login")
+    }
+
+    const supabase = await requireAdmin();
+    if (!supabase) {
+        redirect("/driver")
     }
 
     return (
