@@ -1,4 +1,4 @@
-import AdminPageHeader from "@/components/ui/admin/header/AdminPageHeader";
+import AdminPageHeader from "@/components/layout/header/AdminPageHeader";
 
 export default function RoutesPage() {
     return (

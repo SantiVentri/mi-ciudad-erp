@@ -2,7 +2,7 @@
 import "./layout.module.css";
 
 // Componetns
-import AdminSideNav from "@/components/ui/admin/nav/AdminSideNav"
+import AdminSideNav from "@/components/layout/nav/AdminSideNav"
 
 // Hooks
 import { getProfile } from "@/modules/users/users.dal";

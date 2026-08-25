@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerClient } from "@/utils/supabase/getServerClient";
-import InviteForm from "@/components/ui/admin/InviteForm";
+import InviteForm from "@/modules/auth/components/InviteForm";
 
 export default async function InvitationsPage() {
     const supabase = await getServerClient();
