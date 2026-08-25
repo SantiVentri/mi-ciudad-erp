@@ -4,7 +4,7 @@
 import styles from "./orders.module.css";
 
 // Hooks
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 // Data and actions
@@ -55,7 +55,18 @@ export default function OrdersView({ orders }: OrdersViewProps) {
         return map;
     }, [orders]);
 
-    const dayOrders = ordersByDay.get(dayKey(selectedDay)) ?? [];
+    const dayOrders = useMemo(() => {
+        return ordersByDay.get(dayKey(startOfDay(selectedDay))) ?? [];
+    }, [ordersByDay, selectedDay]);
+
+    // --- Filtros y orden ---
+    const [search, setSearch] = useState("");
+    const [stateFilter, setStateFilter] = useState<string>("Todos");
+    const [sortBy, setSortBy] = useState<SortOption>("hora-asc");
+
+    // Limpieza de selecciones y expansión al cambiar de día o filtros
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
 
     const handleSelectDay = (day: Date) => {
         setSelectedDay(day);
@@ -63,10 +74,11 @@ export default function OrdersView({ orders }: OrdersViewProps) {
         setSelectedOrderIds([]);
     };
 
-    // --- Filtros y orden ---
-    const [search, setSearch] = useState("");
-    const [stateFilter, setStateFilter] = useState<string>("Todos");
-    const [sortBy, setSortBy] = useState<SortOption>("hora-asc");
+    // Limpia selecciones huérfanas si cambian los filtros
+    useEffect(() => {
+        setSelectedOrderIds([]);
+        setExpandedId(null);
+    }, [search, stateFilter]);
 
     const filteredOrders = useMemo(() => {
         const term = search.trim().toLowerCase();
@@ -101,7 +113,6 @@ export default function OrdersView({ orders }: OrdersViewProps) {
     }, [dayOrders, search, stateFilter, sortBy]);
 
     // --- Selección múltiple + edición de fecha en lote ---
-    const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [nextArrivalDate, setNextArrivalDate] = useState("");
     const [modalError, setModalError] = useState("");
@@ -171,7 +182,6 @@ export default function OrdersView({ orders }: OrdersViewProps) {
     };
 
     // --- Expandir pedido / cambiar estado ---
-    const [expandedId, setExpandedId] = useState<string | null>(null);
     const [updatingIds, setUpdatingIds] = useState<string[]>([]);
 
     const isUpdating = (order: Order) => updatingIds.includes(order.id);
