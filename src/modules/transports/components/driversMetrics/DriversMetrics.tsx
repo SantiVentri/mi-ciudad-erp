@@ -9,7 +9,7 @@ import TopDriversChart from "./TopDriversChart";
 import type { DriversMetricsData } from "@/modules/transports/transports.dal";
 
 // Icons
-import { Users, UserCheck, Clock, MapPinOff } from "lucide-react";
+import { Users, UserCheck, MapPinOff } from "lucide-react";
 
 type DriversMetricsProps = {
     metrics: DriversMetricsData | null;

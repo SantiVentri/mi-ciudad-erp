@@ -164,8 +164,6 @@ export const getDriversMetrics = cache(async () => {
 
     assertNoSupabaseError(todayRoutesError, 'Error trayendo rutas de hoy')
 
-    const now = new Date()
-
     const totalDrivers = drivers.length
     const activeDrivers = drivers.filter((d) => d && d.is_active !== false).length
 

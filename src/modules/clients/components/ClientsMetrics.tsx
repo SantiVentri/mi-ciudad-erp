@@ -56,7 +56,7 @@ export default function ClientsMetrics({ clients, topClients }: ClientsMetricsPr
                 <Metric
                     icon={<Users size={15} />}
                     title="Clientes nuevos"
-                    value={inactiveClients}
+                    value={newClients}
                     description="en los últimos 60 días"
                 />
             </div>
