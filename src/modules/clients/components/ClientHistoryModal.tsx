@@ -26,6 +26,7 @@ export default function ClientHistoryModal({ client, onClose }: ClientHistoryMod
     useEffect(() => {
         let cancelled = false;
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch de datos con cancelación, patrón documentado por React (react.dev/learn/synchronizing-with-effects#fetching-data)
         setIsLoading(true);
         setError("");
 

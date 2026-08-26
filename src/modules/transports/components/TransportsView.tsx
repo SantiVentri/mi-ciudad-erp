@@ -4,7 +4,8 @@
 import styles from "./transports.module.css";
 
 // Hooks
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useResetOnChange } from "@/utils/hooks/useResetOnChange";
 import { useRouter } from "next/navigation";
 
 // Data and actions
@@ -77,9 +78,7 @@ export default function TransportsView({
     const [vehiclePage, setVehiclePage] = useState(1);
 
     // Resetea página al cambiar filtros de vehículos
-    useEffect(() => {
-        setVehiclePage(1);
-    }, [vehicleSearch, vehicleStatusFilter]);
+    useResetOnChange([vehicleSearch, vehicleStatusFilter], () => setVehiclePage(1));
 
     const filteredVehicles = useMemo(() => {
         return vehicles.filter((vehicle) => {
@@ -179,9 +178,7 @@ export default function TransportsView({
     const [driverPage, setDriverPage] = useState(1);
 
     // Resetea página al cambiar filtros de conductores
-    useEffect(() => {
-        setDriverPage(1);
-    }, [driverSearch, driverStatusFilter]);
+    useResetOnChange([driverSearch, driverStatusFilter], () => setDriverPage(1));
 
     const filteredDrivers = useMemo(() => {
         return drivers.filter((driver) => {

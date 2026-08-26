@@ -4,7 +4,8 @@
 import styles from "./clients.module.css";
 
 // Hooks
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useResetOnChange } from "@/utils/hooks/useResetOnChange";
 import { useRouter } from "next/navigation";
 
 // Data and actions
@@ -41,9 +42,7 @@ export default function ClientsView({ clients }: ClientsViewProps) {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("Todos");
 
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [search, statusFilter]);
+    useResetOnChange([search, statusFilter], () => setCurrentPage(1));
 
     const filteredClients = useMemo(() => {
         return clients.filter((client) => {

@@ -4,7 +4,8 @@
 import styles from "./orders.module.css";
 
 // Hooks
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useResetOnChange } from "@/utils/hooks/useResetOnChange";
 import { useRouter } from "next/navigation";
 
 // Data and actions
@@ -75,10 +76,10 @@ export default function OrdersView({ orders }: OrdersViewProps) {
     };
 
     // Limpia selecciones huérfanas si cambian los filtros
-    useEffect(() => {
+    useResetOnChange([search, stateFilter], () => {
         setSelectedOrderIds([]);
         setExpandedId(null);
-    }, [search, stateFilter]);
+    });
 
     const filteredOrders = useMemo(() => {
         const term = search.trim().toLowerCase();
