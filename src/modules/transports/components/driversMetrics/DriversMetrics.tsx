@@ -9,7 +9,7 @@ import TopDriversChart from "./TopDriversChart";
 import type { DriversMetricsData } from "@/modules/transports/transports.dal";
 
 // Icons
-import { Users, UserCheck, MapPinOff } from "lucide-react";
+import { Users, UserCheck, MapPinOff, UserMinus } from "lucide-react";
 
 type DriversMetricsProps = {
     metrics: DriversMetricsData | null;
@@ -21,6 +21,7 @@ export default function DriversMetrics({ metrics, topDrivers, onViewWithoutRoute
     const totalDrivers = metrics?.totalDrivers ?? 0;
     const activeDrivers = metrics?.activeDrivers ?? 0;
     const driversWithoutRouteToday = metrics?.driversWithoutRouteToday ?? 0;
+    const inactiveDrivers = totalDrivers - activeDrivers;
 
     return (
         <div className={styles.metricsContainer}>
@@ -36,6 +37,12 @@ export default function DriversMetrics({ metrics, topDrivers, onViewWithoutRoute
                     title="Conductores activos"
                     value={activeDrivers}
                     description="con cuenta registrada"
+                />
+                <Metric
+                    icon={<UserMinus size={15} />}
+                    title="Conductores inactivos"
+                    value={inactiveDrivers}
+                    description="no disponibles para asignación"
                 />
                 <button
                     type="button"
