@@ -59,13 +59,14 @@
     position: absolute;
     top: -6px;
     right: -6px;
-    background: var(--color-text-heading-alt);
-    color: var(--color-surface);
+    background: var(--color-primary);
+    color: white;
     font-size: 0.7rem;
     font-weight: 700;
     border-radius: 999px;
     min-width: 18px;
     height: 18px;
+    width: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
