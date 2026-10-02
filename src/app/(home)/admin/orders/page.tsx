@@ -5,25 +5,30 @@ import OrdersMetrics from "@/modules/orders/components/ordersMetrics/OrdersMetri
 import { DAYS_BEFORE, DAYS_AFTER } from "@/modules/orders/orders.constants";
 import { dayKey, startOfDay } from "@/modules/orders/orders.utils";
 
+export const metadata = {
+  title: "Pedidos",
+  description: "Revisá, filtrá y gestioná los pedidos desde este panel.",
+};
+
 export default async function OrdersPage() {
-    const today = startOfDay(new Date());
+  const today = startOfDay(new Date());
 
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - DAYS_BEFORE);
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - DAYS_BEFORE);
 
-    const endDate = new Date(today);
-    endDate.setDate(endDate.getDate() + DAYS_AFTER);
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + DAYS_AFTER);
 
-    const orders = await getOrders(dayKey(startDate), dayKey(endDate));
+  const orders = await getOrders(dayKey(startDate), dayKey(endDate));
 
-    return (
-        <div>
-            <AdminPageHeader
-                title="Pedidos"
-                description="Revisá, filtrá y gestioná los pedidos desde este panel."
-            />
-            <OrdersMetrics />
-            <OrdersView orders={orders ?? []} />
-        </div>
-    );
+  return (
+    <div>
+      <AdminPageHeader
+        title="Pedidos"
+        description="Revisá, filtrá y gestioná los pedidos desde este panel."
+      />
+      <OrdersMetrics />
+      <OrdersView orders={orders ?? []} />
+    </div>
+  );
 }
