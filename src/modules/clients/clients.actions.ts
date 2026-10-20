@@ -3,6 +3,7 @@
 import requireAdmin from "@/utils/auth/requireAdmin";
 import { revalidatePath } from "next/cache";
 import { getClientOrders } from "@/modules/clients/clients.dal";
+import { geocodeAddress } from "@/modules/clients/clients.geocoding";
 
 function readClientFields(formData: FormData) {
     return {
@@ -42,7 +43,10 @@ export async function createClient(formData: FormData) {
         return { error: validationError };
     }
 
-    const { error } = await supabase.from("clients").insert({ ...fields, is_active: true });
+    // Calculamos las coordenadas antes de insertar
+    const coords = await geocodeAddress(fields.street, fields.number, fields.city, fields.province);
+
+    const { error } = await supabase.from("clients").insert({ ...fields, ...coords, is_active: true });
 
     if (error) {
         return { error: "No se pudo crear el cliente: " + error.message };
@@ -64,7 +68,28 @@ export async function updateClient(clientId: string, formData: FormData) {
         return { error: validationError };
     }
 
-    const { error } = await supabase.from("clients").update(fields).eq("id", clientId);
+    const { data: current } = await supabase
+        .from("clients")
+        .select("street, number, city, province, latitude, longitude")
+        .eq("id", clientId)
+        .single();
+
+    const addressChanged =
+        !current ||
+        current.street !== fields.street ||
+        current.number !== fields.number ||
+        current.city !== fields.city ||
+        current.province !== fields.province;
+
+    // Solo se geocodifica si cambió el domicilio o todavía no tiene coordenadas.
+    // Así una falla momentánea de Nominatim no borra coordenadas que ya estaban bien.
+    const needsCoordinates = addressChanged || current.latitude == null || current.longitude == null;
+
+    const coords = needsCoordinates
+        ? await geocodeAddress(fields.street, fields.number, fields.city, fields.province)
+        : {};
+
+    const { error } = await supabase.from("clients").update({ ...fields, ...coords }).eq("id", clientId);
 
     if (error) {
         return { error: "No se pudo actualizar el cliente: " + error.message };
