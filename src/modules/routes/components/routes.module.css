@@ -1,0 +1,606 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 16px;
+}
+
+/* --- Tabs de días --- */
+.dayTabs {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 4px;
+}
+
+.dayTab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 64px;
+    width: 100%;
+    padding: 10px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+    cursor: pointer;
+    color: var(--color-text-primary);
+    position: relative;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.dayTab:hover {
+    border-color: var(--color-primary);
+}
+
+.dayTabWeekday {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+.dayTabDate {
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.dayTabToday:not(.dayTabActive) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.dayTabActive {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-surface);
+}
+
+.dayTabCount {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--color-primary);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 999px;
+    min-width: 18px;
+    height: 18px;
+    width: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+
+.dayTabActive .dayTabCount {
+    background: var(--color-surface);
+    color: var(--color-primary);
+}
+
+/* --- Barra de búsqueda y filtros --- */
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.searchBox {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0 14px;
+    background: var(--color-surface);
+    color: var(--color-text-subtle);
+}
+
+.searchBox input {
+    flex: 1;
+    height: 46px;
+    border: 0;
+    outline: none;
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+    background: transparent;
+}
+
+.select {
+    height: 48px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0 12px;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: 0.92rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.select:focus {
+    border-color: var(--color-accent);
+}
+
+.refreshButton {
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.refreshButton:hover {
+    border-color: var(--color-primary);
+    background: var(--color-accent-bg);
+}
+
+.generateButton {
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--color-primary);
+    color: var(--color-surface);
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.generateButton:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+}
+
+.generateButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- Lista de rutas --- */
+.routesList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 30px 0;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+}
+
+.routeCard {
+    border: 1px solid var(--color-border-light);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--color-surface);
+}
+
+.routeRow {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 110px 1.4fr 1fr 110px 120px 20px;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.92rem;
+    color: var(--color-text-primary);
+}
+
+.routeRow:hover {
+    background: var(--color-bg-subtle);
+}
+
+.routeNumber {
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.routeDriver {
+    font-weight: 600;
+}
+
+.routeVehicle {
+    color: var(--color-text-muted);
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 0.88rem;
+}
+
+.routeStops {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.stateBadge {
+    display: inline-flex;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+    background: var(--color-border-light);
+    color: var(--color-text-secondary);
+}
+
+.statePendiente {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.stateEnCurso {
+    background: var(--color-accent-bg);
+    color: var(--color-primary);
+}
+
+.stateCompletada {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.stateCancelada {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+}
+
+.chevron {
+    transition: transform 0.2s ease;
+    color: var(--color-text-subtle);
+    justify-self: end;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+/* --- Detalle expandible --- */
+.routeDetail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    border-top: 1px solid var(--color-border-light);
+    padding: 16px;
+    background: var(--color-bg-subtle);
+}
+
+.stopsColumn h4,
+.mapColumn h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-muted);
+    margin-bottom: 10px;
+}
+
+.stopsList {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stopItem {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: 10px;
+}
+
+.stopNumber {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: var(--color-surface);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.stopInfo p {
+    margin: 0;
+}
+
+.stopClient {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--color-text-primary);
+}
+
+.stopAddress {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.stopMeta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    font-size: 0.8rem;
+    color: var(--color-text-subtle);
+}
+
+.stopNote {
+    margin-top: 4px;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--color-text-tertiary);
+}
+
+.noLocation {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    font-weight: 600;
+}
+
+/* --- Mapa --- */
+.map {
+    width: 100%;
+    height: 380px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border-light);
+    /* Crea su propio contexto de apilamiento para que los paneles de Leaflet
+         (z-index altos) no queden por encima de modales o del menú */
+    position: relative;
+    z-index: 0;
+}
+
+.mapPlaceholder {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 380px;
+    border-radius: 12px;
+    border: 1px dashed var(--color-border-muted);
+    background: var(--color-bg-muted);
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.mapWarning {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--color-warning-text);
+}
+
+.markerWrapper {
+    background: transparent;
+    border: 0;
+}
+
+.marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.35);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.markerDepot {
+    background: var(--color-black);
+}
+
+/* --- Modal de generar ruta --- */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+}
+
+.modal {
+    width: min(100%, 460px);
+    max-height: calc(100vh - 36px);
+    overflow-y: auto;
+    border-radius: 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+    padding: 20px;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--color-text-heading);
+}
+
+.modalHeader p {
+    margin: 6px 0 0;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+}
+
+.modalSummary {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 16px 0 0;
+    color: var(--color-text-primary);
+    font-size: 0.95rem;
+}
+
+.modalSummary p {
+    margin: 0;
+}
+
+.modalField {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    color: var(--color-text-primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.modalField select {
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    padding: 0 12px;
+    font: inherit;
+    font-weight: 400;
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    outline: none;
+}
+
+.modalField select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(52, 84, 209, 0.12);
+}
+
+.modalInfo,
+.modalWarning {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+}
+
+.modalInfo {
+    background: var(--color-accent-bg);
+    color: var(--color-primary);
+}
+
+.modalWarning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.modalWarning p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.excludedList {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.modalError {
+    margin: 12px 0 0;
+    color: var(--color-danger);
+    font-size: 0.92rem;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.secondaryButton,
+.primaryButton {
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 12px;
+    border: 0;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.secondaryButton {
+    background: var(--color-border-light);
+    color: var(--color-text-primary);
+}
+
+.primaryButton {
+    background: var(--color-primary);
+    color: var(--color-surface);
+}
+
+.primaryButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+    .routeDetail {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .routeRow {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+
+    .chevron {
+        display: none;
+    }
+
+    .refreshButton,
+    .generateButton {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modalActions {
+        flex-direction: column;
+    }
+
+    .secondaryButton,
+    .primaryButton {
+        width: 100%;
+    }
+}
