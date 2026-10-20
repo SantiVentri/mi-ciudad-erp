@@ -42,8 +42,10 @@ export function getOrderPermissions(order: Order, today: Date) {
     return {
         isOld,
         canToggleState: order.state !== "Completada" && !isOld,
-        // Reprogramar: pedidos cancelados, o pendientes que quedaron con fecha pasada
-        canReschedule: order.state === "Cancelada" || (order.state === "Pendiente" && isOld),
+        // Reprogramar: pedidos cancelados, o sin entregar que quedaron con fecha pasada
+        canReschedule:
+            order.state === "Cancelada" ||
+            ((order.state === "Pendiente" || order.state === "Asignada") && isOld),
     };
 }
 

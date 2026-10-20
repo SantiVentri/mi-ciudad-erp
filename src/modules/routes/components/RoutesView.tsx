@@ -8,9 +8,10 @@ import { useMemo, useState, useTransition } from "react";
 import { useResetOnChange } from "@/utils/hooks/useResetOnChange";
 import { useRouter } from "next/navigation";
 
-// Data
-import type { AdminRoute } from "@/modules/routes/routes.dal";
-import type { SelectOption } from "@/modules/routes/routes.types";
+// Data and actions
+import { deleteRoute, removeOrderFromRoute } from "@/modules/routes/routes.actions";
+import type { AdminRoute, RouteStop } from "@/modules/routes/routes.dal";
+import type { DayOrdersStatus, SelectOption } from "@/modules/routes/routes.types";
 
 // Constants and utils
 import { DAYS_AFTER, DAYS_BEFORE } from "@/modules/routes/routes.constants";
@@ -27,15 +28,28 @@ import RouteDayTabs from "./RouteDayTabs";
 import RoutesToolbar from "./RoutesToolbar";
 import RouteCard from "./RouteCard";
 import GenerateRouteModal from "./GenerateRouteModal";
+import EditRouteModal from "./EditRouteModal";
+import ConfirmModal from "@/modules/orders/components/ConfirmModal";
 
 type RoutesViewProps = {
     routes: AdminRoute[];
+    ordersByDay: Record<string, DayOrdersStatus>;
     drivers: SelectOption[];
     vehicles: SelectOption[];
 };
 
+type Dialog =
+    | { kind: "confirmDelete"; route: AdminRoute }
+    | { kind: "confirmRemoveStop"; route: AdminRoute; stop: RouteStop }
+    | { kind: "info"; title: string; message: string };
+
+function liveStopsCount(route: AdminRoute) {
+    return (route.stops ?? []).filter((stop) => stop.state !== "Cancelada").length;
+}
+
 export default function RoutesView({
     routes,
+    ordersByDay,
     drivers,
     vehicles,
 }: RoutesViewProps) {
@@ -101,6 +115,62 @@ export default function RoutesView({
     const [isGenerateOpen, setIsGenerateOpen] = useState(false);
     const canGenerate = selectedDay.getTime() >= today.getTime();
 
+    // --- Editar / borrar ---
+    const [editingRoute, setEditingRoute] = useState<AdminRoute | null>(null);
+    const [dialog, setDialog] = useState<Dialog | null>(null);
+    const [busyRouteId, setBusyRouteId] = useState<string | null>(null);
+
+    const handleEditSaved = (date: string) => {
+        setEditingRoute(null);
+        // Si la ruta cambió de día, se va a ese día para seguir viéndola
+        if (date !== dayKey(selectedDay)) {
+            const newDay = days.find((day) => dayKey(day) === date);
+            if (newDay) setSelectedDay(newDay);
+        }
+    };
+
+    const runDelete = (route: AdminRoute) => {
+        setDialog(null);
+        setBusyRouteId(route.id);
+
+        startTransition(async () => {
+            const response = await deleteRoute(route.id);
+            setBusyRouteId(null);
+
+            if (response?.error) {
+                setDialog({
+                    kind: "info",
+                    title: "No se pudo borrar la ruta",
+                    message: response.error,
+                });
+                return;
+            }
+
+            setExpandedId(null);
+        });
+    };
+
+    const runRemoveStop = (route: AdminRoute, stop: RouteStop) => {
+        setDialog(null);
+        if (!stop.order) return;
+
+        const orderId = stop.order.id;
+        setBusyRouteId(route.id);
+
+        startTransition(async () => {
+            const response = await removeOrderFromRoute(route.id, orderId);
+            setBusyRouteId(null);
+
+            if (response?.error) {
+                setDialog({
+                    kind: "info",
+                    title: "No se pudo quitar el pedido",
+                    message: response.error,
+                });
+            }
+        });
+    };
+
     // --- Refresh general ---
     const handleRefresh = () => {
         startTransition(() => {
@@ -114,7 +184,7 @@ export default function RoutesView({
                 days={days}
                 selectedDay={selectedDay}
                 today={today}
-                routesByDay={routesByDay}
+                ordersByDay={ordersByDay}
                 onSelectDay={handleSelectDay}
             />
 
@@ -141,8 +211,14 @@ export default function RoutesView({
                         key={route.id}
                         route={route}
                         isExpanded={expandedId === route.id}
+                        isBusy={busyRouteId === route.id}
                         onToggleExpand={() =>
                             setExpandedId(expandedId === route.id ? null : route.id)
+                        }
+                        onEdit={() => setEditingRoute(route)}
+                        onDelete={() => setDialog({ kind: "confirmDelete", route })}
+                        onRemoveStop={(stop) =>
+                            setDialog({ kind: "confirmRemoveStop", route, stop })
                         }
                     />
                 ))}
@@ -154,6 +230,51 @@ export default function RoutesView({
                     drivers={drivers}
                     vehicles={vehicles}
                     onClose={() => setIsGenerateOpen(false)}
+                />
+            )}
+
+            {editingRoute && (
+                <EditRouteModal
+                    route={editingRoute}
+                    today={today}
+                    drivers={drivers}
+                    vehicles={vehicles}
+                    onClose={() => setEditingRoute(null)}
+                    onSaved={handleEditSaved}
+                />
+            )}
+
+            {dialog?.kind === "confirmDelete" && (
+                <ConfirmModal
+                    title={`Borrar ruta #${dialog.route.route_number}`}
+                    message={`Se borra la ruta y sus ${liveStopsCount(dialog.route)} pedidos vuelven a quedar pendientes de asignar. A los choferes les llega un aviso.`}
+                    confirmLabel="Borrar ruta"
+                    isPending={isPending}
+                    onClose={() => setDialog(null)}
+                    onConfirm={() => runDelete(dialog.route)}
+                />
+            )}
+
+            {dialog?.kind === "confirmRemoveStop" && (
+                <ConfirmModal
+                    title="Quitar pedido de la ruta"
+                    message={
+                        liveStopsCount(dialog.route) === 1
+                            ? `${dialog.stop.order?.client?.name ?? "El pedido"} es la última parada: si lo quitás, la ruta #${dialog.route.route_number} se borra.`
+                            : `${dialog.stop.order?.client?.name ?? "El pedido"} sale de la ruta #${dialog.route.route_number} y vuelve a quedar pendiente de asignar.`
+                    }
+                    confirmLabel="Quitar pedido"
+                    isPending={isPending}
+                    onClose={() => setDialog(null)}
+                    onConfirm={() => runRemoveStop(dialog.route, dialog.stop)}
+                />
+            )}
+
+            {dialog?.kind === "info" && (
+                <ConfirmModal
+                    title={dialog.title}
+                    message={dialog.message}
+                    onClose={() => setDialog(null)}
                 />
             )}
         </div>

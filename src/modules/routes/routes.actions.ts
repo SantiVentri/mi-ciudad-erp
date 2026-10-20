@@ -11,6 +11,7 @@ import {
 import { nextDayKey, pickFreeTrip } from "@/modules/routes/routes.utils";
 import type {
     BusySlot,
+    EditRouteInput,
     ExcludedOrder,
     GenerateRouteInput,
     GenerateRouteResult,
@@ -283,4 +284,113 @@ export async function getRoutePath(
     const path = await getRoadPath([DEPOT, ...stopPoints, DEPOT]);
 
     return { path };
+}
+
+function revalidateRoutesAndOrders() {
+    revalidatePath("/admin/routes");
+    revalidatePath("/admin/orders");
+}
+
+/**
+ * Cambia fecha, choferes y vehículo de una ruta pendiente. Si cambia la fecha,
+ * la base mueve todos sus pedidos al día nuevo (y elige otra vuelta si hace falta).
+ */
+export async function editRoute(
+    input: EditRouteInput,
+): Promise<{ tripNumber: number } | { error: string }> {
+    const supabase = await requireAdmin();
+    if (!supabase) {
+        return { error: "No tenés permisos para editar rutas." };
+    }
+
+    const { routeId, date, driverId, coDriverId, vehicleId } = input;
+
+    const dateError = validateRouteDate(date);
+    if (dateError) {
+        return { error: dateError };
+    }
+
+    if (!driverId || !coDriverId || !vehicleId) {
+        return { error: "Elegí el conductor, el acompañante y el vehículo." };
+    }
+
+    if (driverId === coDriverId) {
+        return { error: "El conductor y el acompañante deben ser distintos." };
+    }
+
+    const { data: tripNumber, error } = await supabase.rpc("edit_route", {
+        p_route_id: routeId,
+        p_new_date: date,
+        p_driver_id: driverId,
+        p_co_driver_id: coDriverId,
+        p_vehicle_id: vehicleId,
+    });
+
+    if (error || tripNumber == null) {
+        return {
+            error:
+                error?.code === "23505"
+                    ? "Los choferes o el vehículo ya tienen una ruta en esa vuelta. Volvé a intentar."
+                    : "No se pudo editar la ruta: " + (error?.message ?? "error desconocido"),
+        };
+    }
+
+    revalidateRoutesAndOrders();
+
+    return { tripNumber };
+}
+
+// Borra una ruta pendiente: sus pedidos vuelven a "Pendiente"
+export async function deleteRoute(routeId: string) {
+    const supabase = await requireAdmin();
+    if (!supabase) {
+        return { error: "No tenés permisos para borrar rutas." };
+    }
+
+    const { error } = await supabase.rpc("delete_route", { p_route_id: routeId });
+
+    if (error) {
+        return { error: "No se pudo borrar la ruta: " + error.message };
+    }
+
+    revalidateRoutesAndOrders();
+
+    return { ok: true };
+}
+
+// Saca un pedido de la ruta (vuelve a "Pendiente"). Si era el último, la ruta se borra.
+export async function removeOrderFromRoute(routeId: string, orderId: string) {
+    const supabase = await requireAdmin();
+    if (!supabase) {
+        return { error: "No tenés permisos para editar rutas." };
+    }
+
+    const { data: stops, error: stopsError } = await supabase
+        .from("stops")
+        .select("order_id, visit_order")
+        .eq("route_id", routeId)
+        .neq("state", "Cancelada")
+        .order("visit_order", { ascending: true });
+
+    if (stopsError) {
+        return { error: "No se pudieron leer las paradas de la ruta." };
+    }
+
+    // Se mantiene el orden de las paradas que quedan
+    const remaining = (stops ?? [])
+        .map((stop) => stop.order_id)
+        .filter((id) => id !== orderId);
+
+    const { error } = await supabase.rpc("set_route_stops", {
+        p_route_id: routeId,
+        p_order_ids: remaining,
+    });
+
+    if (error) {
+        return { error: "No se pudo quitar el pedido: " + error.message };
+    }
+
+    revalidateRoutesAndOrders();
+
+    return { ok: true, routeDeleted: remaining.length === 0 };
 }

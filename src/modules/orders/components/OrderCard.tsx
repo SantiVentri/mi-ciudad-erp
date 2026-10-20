@@ -159,7 +159,7 @@ export default function OrderCard({
                                     name="ToggleButton"
                                     className={`
                                         ${styles.toggleStateButton}
-                                        ${order.state === "Pendiente" ? styles.cancelButton : styles.restoreButton}
+                                        ${order.state === "Cancelada" ? styles.restoreButton : styles.cancelButton}
                                         ${isUpdating ? styles.toggleButtonDisabled : ""}`}
                                     onClick={onToggleState}
                                     disabled={isUpdating}

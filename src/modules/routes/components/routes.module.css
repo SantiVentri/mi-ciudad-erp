@@ -81,6 +81,19 @@
     color: var(--color-primary);
 }
 
+/* Pedidos pendientes de asignar del día */
+.dayTabCount.dayTabPending {
+    width: auto;
+    background: var(--color-warning-text);
+    color: var(--color-surface);
+}
+
+/* Todos los pedidos del día tienen ruta o están cerrados */
+.dayTabCount.dayTabDone {
+    background: var(--color-success-text);
+    color: var(--color-surface);
+}
+
 /* --- Barra de búsqueda y filtros --- */
 .toolbar {
     display: flex;
@@ -308,7 +321,7 @@
 
 .stopItem {
     display: grid;
-    grid-template-columns: 28px minmax(0, 1fr) auto;
+    grid-template-columns: 28px minmax(0, 1fr) auto auto;
     align-items: start;
     gap: 12px;
     padding: 10px 12px;
@@ -371,6 +384,78 @@
     background: var(--color-warning-bg);
     color: var(--color-warning-text);
     font-weight: 600;
+}
+
+.removeStopButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition:
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.removeStopButton:hover:not(:disabled) {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+.removeStopButton:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+/* --- Acciones de la ruta --- */
+.routeActions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.actionButton {
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.actionButton:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-accent-bg);
+}
+
+.actionButtonDanger {
+    color: var(--color-danger);
+}
+
+.actionButtonDanger:hover:not(:disabled) {
+    border-color: var(--color-danger);
+    background: var(--color-danger-bg);
+}
+
+.actionButton:disabled {
+    opacity: 0.5;
+    cursor: wait;
 }
 
 /* --- Mapa --- */
@@ -497,6 +582,19 @@
     outline: none;
 }
 
+.modalField input {
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    padding: 0 12px;
+    font: inherit;
+    font-weight: 400;
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    outline: none;
+}
+
+.modalField input:focus,
 .modalField select:focus {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 4px rgba(52, 84, 209, 0.12);

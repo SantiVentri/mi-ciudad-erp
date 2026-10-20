@@ -60,3 +60,17 @@ export type GenerateRouteResult = {
     excludedCount: number;
     optimized: boolean;
 };
+
+export type EditRouteInput = {
+    routeId: string;
+    date: string;
+    driverId: string;
+    coDriverId: string;
+    vehicleId: string;
+};
+
+// Pedidos de un día (todos los estados) y cuántos siguen sin ruta
+export type DayOrdersStatus = {
+    total: number;
+    pending: number;
+};

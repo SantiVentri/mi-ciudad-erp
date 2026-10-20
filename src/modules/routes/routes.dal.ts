@@ -4,6 +4,7 @@ import { getServerClient } from "@/utils/supabase/getServerClient";
 import { assertNoSupabaseError } from "@/utils/supabase/assertNoError";
 import { dayKey, parseDateOnly } from "@/modules/orders/orders.utils";
 import { todayAR } from "@/utils/dates/argentina";
+import type { DayOrdersStatus } from "@/modules/routes/routes.types";
 
 const METRICS_WINDOW_DAYS = 30;
 const CHART_DAYS = 14;
@@ -64,6 +65,35 @@ export const getRoutes = cache(async (startDate: string, endDate: string) => {
 export type AdminRoutes = NonNullable<Awaited<ReturnType<typeof getRoutes>>>;
 export type AdminRoute = AdminRoutes[number];
 export type RouteStop = AdminRoute["stops"][number];
+
+// Por día: cuántos pedidos hay y cuántos siguen "Pendiente" (sin ruta)
+export const getOrdersStatusByDay = cache(async (startDate: string, endDate: string) => {
+    const supabase = await getServerClient();
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+        .from("orders")
+        .select("arrival_date, state")
+        .gte("arrival_date", startDate)
+        .lte("arrival_date", endDate);
+
+    assertNoSupabaseError(error, "Error trayendo los pedidos por día");
+
+    const byDay: Record<string, DayOrdersStatus> = {};
+    for (const order of data ?? []) {
+        const key = dayKey(parseDateOnly(order.arrival_date));
+        const entry = byDay[key] ?? { total: 0, pending: 0 };
+        entry.total += 1;
+        if (order.state === "Pendiente") entry.pending += 1;
+        byDay[key] = entry;
+    }
+
+    return byDay;
+});
 
 export const getRoutesMetrics = cache(async () => {
     const supabase = await getServerClient();

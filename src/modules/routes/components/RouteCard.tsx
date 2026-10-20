@@ -23,10 +23,10 @@ import {
     ROUTE_STATE_STYLES,
     STOP_STATE_STYLES,
 } from "@/modules/routes/routes.constants";
-import type { AdminRoute } from "@/modules/routes/routes.dal";
+import type { AdminRoute, RouteStop } from "@/modules/routes/routes.dal";
 
 // Icons
-import { ChevronDown, MapPinOff } from "lucide-react";
+import { ChevronDown, MapPinOff, Pencil, Trash2, X } from "lucide-react";
 
 // Leaflet necesita `window`, por eso el mapa se carga solo en el navegador
 const RouteMap = dynamic(() => import("./RouteMap"), {
@@ -37,14 +37,24 @@ const RouteMap = dynamic(() => import("./RouteMap"), {
 type RouteCardProps = {
     route: AdminRoute;
     isExpanded: boolean;
+    isBusy: boolean;
     onToggleExpand: () => void;
+    onEdit: () => void;
+    onDelete: () => void;
+    onRemoveStop: (stop: RouteStop) => void;
 };
 
 export default function RouteCard({
     route,
     isExpanded,
+    isBusy,
     onToggleExpand,
+    onEdit,
+    onDelete,
+    onRemoveStop,
 }: RouteCardProps) {
+    // Solo se editan las rutas que todavía no salieron
+    const isEditable = route.state === "Pendiente";
     const stops = getSortedStops(route);
     const units = getRouteUnits(route);
     const { located, missing } = getRouteMapData(route);
@@ -80,6 +90,29 @@ export default function RouteCard({
 
             {isExpanded && (
                 <div className={styles.routeDetail}>
+                    {isEditable && (
+                        <div className={styles.routeActions}>
+                            <button
+                                type="button"
+                                className={styles.actionButton}
+                                onClick={onEdit}
+                                disabled={isBusy}
+                            >
+                                <Pencil size={15} />
+                                Editar ruta
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.actionButton} ${styles.actionButtonDanger}`}
+                                onClick={onDelete}
+                                disabled={isBusy}
+                            >
+                                <Trash2 size={15} />
+                                Borrar ruta
+                            </button>
+                        </div>
+                    )}
+
                     <div className={styles.stopsColumn}>
                         <h4>
                             Paradas · {units} {units === 1 ? "unidad" : "unidades"}
@@ -124,6 +157,18 @@ export default function RouteCard({
                                             >
                                                 {stop.state ?? "Sin estado"}
                                             </span>
+                                            {isEditable && stop.state !== "Cancelada" && (
+                                                <button
+                                                    type="button"
+                                                    className={styles.removeStopButton}
+                                                    onClick={() => onRemoveStop(stop)}
+                                                    disabled={isBusy}
+                                                    title="Quitar este pedido de la ruta"
+                                                    aria-label={`Quitar a ${client?.name ?? "este pedido"} de la ruta`}
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            )}
                                         </li>
                                     );
                                 })}

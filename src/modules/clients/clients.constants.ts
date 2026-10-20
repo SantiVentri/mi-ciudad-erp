@@ -9,6 +9,7 @@ export const STATUS_STYLES: Record<string, string> = {
 
 export const ORDER_STATE_STYLES: Record<string, string> = {
     Pendiente: styles.statePendiente,
+    Asignada: styles.stateAsignada,
     Completada: styles.stateCompletada,
     Cancelada: styles.stateCancelada,
 };
