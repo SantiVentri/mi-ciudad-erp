@@ -485,6 +485,17 @@ export type Database = {
         Args: { p_route_date: string; p_routes: Json }
         Returns: string[]
       }
+      delete_route: { Args: { p_route_id: string }; Returns: undefined }
+      edit_route: {
+        Args: {
+          p_co_driver_id: string
+          p_driver_id: string
+          p_new_date: string
+          p_route_id: string
+          p_vehicle_id: string
+        }
+        Returns: number
+      }
       get_drivers: {
         Args: never
         Returns: {
@@ -498,6 +509,17 @@ export type Database = {
         }[]
       }
       is_active_driver: { Args: { p_user_id: string }; Returns: boolean }
+      is_route_slot_free: {
+        Args: {
+          p_co_driver_id: string
+          p_date: string
+          p_driver_id: string
+          p_exclude_route_id?: string
+          p_trip: number
+          p_vehicle_id: string
+        }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
       is_driver: { Args: never; Returns: boolean }
       move_route_date: {
