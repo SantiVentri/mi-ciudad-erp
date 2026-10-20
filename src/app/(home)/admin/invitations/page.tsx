@@ -7,7 +7,7 @@ export default async function InvitationsPage() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user || user.app_metadata?.role !== "admin") {
-        redirect("/admin");
+        redirect("/admin/routes");
     }
 
     const { data: invitations } = await supabase

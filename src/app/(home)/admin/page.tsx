@@ -1,10 +1,6 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
+// El módulo de rutas es la pantalla inicial del admin
 export default function AdminHomePage() {
-    return (
-        <div>
-            <h1>Sos admin</h1>
-            <Link href="/admin/invitations">Administrar invitaciones</Link>
-        </div>
-    )
+    redirect("/admin/routes");
 }

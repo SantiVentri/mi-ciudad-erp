@@ -71,5 +71,5 @@ export async function registerUser(fields: RegisterFields) {
     const { data: { user } } = await supabase.auth.getUser();
     const role = user?.app_metadata?.role;
 
-    return { ok: true, redirectTo: role === "driver" ? "/driver" : "/admin" };
+    return { ok: true, redirectTo: role === "driver" ? "/driver" : "/admin/routes" };
 }

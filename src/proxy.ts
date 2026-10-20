@@ -4,7 +4,7 @@ import { createProxyClient } from './utils/supabase/middleware'
 const PUBLIC_PATHS = ['/login', '/invite'];
 
 const ROLE_CONFIG: Record<string, { home: string; ownedPrefixes: string[] }> = {
-  admin: { home: '/admin', ownedPrefixes: ['/admin'] },
+  admin: { home: '/admin/routes', ownedPrefixes: ['/admin'] },
   driver: { home: '/driver', ownedPrefixes: ['/driver'] },
 };
 const DEFAULT_HOME = '/login';

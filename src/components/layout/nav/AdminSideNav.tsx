@@ -12,7 +12,7 @@ import Image from "next/image";
 import SignOutButton from "@/modules/auth/components/signOutButton/SignOutButton";
 
 // Icons
-import { Home, Package, Route, Truck, Users } from "lucide-react";
+import { Package, Route, Truck, Users } from "lucide-react";
 
 type NavProps = {
     avatarUrl?: string;
@@ -29,11 +29,6 @@ export default function AdminSideNav({
 
     // Navigation links
     const NavLinks = [
-        {
-            href: "/admin",
-            label: "Inicio",
-            icon: <Home />
-        },
         {
             href: "/admin/routes",
             label: "Rutas",
@@ -57,10 +52,6 @@ export default function AdminSideNav({
     ]
 
     const isActiveRoute = (href: string) => {
-        if (href === "/admin") {
-            return pathname === href;
-        }
-
         return pathname === href || pathname.startsWith(`${href}/`);
     }
 

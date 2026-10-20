@@ -58,7 +58,7 @@ export default function RegisterForm({
             return;
         }
 
-        window.location.href = result.redirectTo ?? "/admin";
+        window.location.href = result.redirectTo ?? "/admin/routes";
     };
 
     return (
