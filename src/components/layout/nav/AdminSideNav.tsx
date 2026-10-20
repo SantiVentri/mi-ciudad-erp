@@ -2,6 +2,7 @@
 
 // Styles
 import styles from "./nav.module.css";
+import { brandFont } from "./brandFont";
 
 // Hooks
 import { usePathname } from "next/navigation";
@@ -68,7 +69,7 @@ export default function AdminSideNav({
                             height={50}
                             draggable={false}
                         />
-                        <span className={styles.brandName}>Mi Ciudad</span>
+                        <span className={`${styles.brandName} ${brandFont.className}`}>Mi Ciudad</span>
                     </div>
                     <InviteUserButton />
                 </div>
