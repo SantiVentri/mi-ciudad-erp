@@ -5,8 +5,9 @@ export interface Notification {
     user_id: string;
     type: string;
     message: string;
-    href: string;
-    seen: boolean;
+    // Pueden venir en null desde la base (las notificaciones de rutas no tienen link)
+    href: string | null;
+    seen: boolean | null;
     created_at: string;
 }
 

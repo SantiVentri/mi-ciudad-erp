@@ -1,4 +1,4 @@
-import { getOrdersStatusByDay, getRoutes } from "@/modules/routes/routes.dal";
+import { getAdminRoutes, getOrdersStatusByDay } from "@/modules/routes/routes.dal";
 import { getDrivers, getVehicles } from "@/modules/transports/transports.dal";
 import RoutesView from "@/modules/routes/components/RoutesView";
 import RoutesMetrics from "@/modules/routes/components/routesMetrics/RoutesMetrics";
@@ -23,7 +23,7 @@ export default async function RoutesPage() {
   endDate.setDate(endDate.getDate() + DAYS_AFTER);
 
   const [routes, ordersByDay, drivers, vehicles] = await Promise.all([
-    getRoutes(dayKey(startDate), dayKey(endDate)),
+    getAdminRoutes(dayKey(startDate), dayKey(endDate)),
     getOrdersStatusByDay(dayKey(startDate), dayKey(endDate)),
     getDrivers(),
     getVehicles(),

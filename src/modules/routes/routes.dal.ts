@@ -12,7 +12,7 @@ const CHART_DAYS = 14;
 // porque PostgREST corta en silencio a 1000 filas y, sin tope, el conteo saldría mal.
 const UNASSIGNED_WINDOW_DAYS = 8;
 
-export const getRoutes = cache(async (startDate: string, endDate: string) => {
+export const getAdminRoutes = cache(async (startDate: string, endDate: string) => {
     const supabase = await getServerClient();
 
     const {
@@ -62,7 +62,7 @@ export const getRoutes = cache(async (startDate: string, endDate: string) => {
     return data;
 });
 
-export type AdminRoutes = NonNullable<Awaited<ReturnType<typeof getRoutes>>>;
+export type AdminRoutes = NonNullable<Awaited<ReturnType<typeof getAdminRoutes>>>;
 export type AdminRoute = AdminRoutes[number];
 export type AdminRouteStop = AdminRoute["stops"][number];
 
