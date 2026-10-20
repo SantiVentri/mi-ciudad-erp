@@ -220,7 +220,7 @@
 }
 
 .iconButtonDanger:hover {
-    background: var(--color-danger-bg-alt);
+    background: var(--color-danger-bg);
     border-color: var(--color-danger);
 }
 
@@ -255,7 +255,7 @@
 
 .modalHeader p {
     margin: 6px 0 0;
-    color: var(--color-text-muted-alt);
+    color: var(--color-text-muted);
     font-size: 0.95rem;
 }
 

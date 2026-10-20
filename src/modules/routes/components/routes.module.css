@@ -242,7 +242,7 @@
 
 .routeVehicle {
     color: var(--color-text-muted);
-    font-family: var(--font-geist-mono), monospace;
+    font-family: monospace;
     font-size: 0.88rem;
 }
 

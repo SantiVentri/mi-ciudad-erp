@@ -231,7 +231,7 @@
 }
 
 .iconButtonDanger:hover {
-    background: var(--color-danger-bg-alt);
+    background: var(--color-danger-bg);
     border-color: var(--color-danger);
 }
 
