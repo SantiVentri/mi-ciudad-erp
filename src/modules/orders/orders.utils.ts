@@ -42,5 +42,19 @@ export function getOrderPermissions(order: Order, today: Date) {
     return {
         isOld,
         canToggleState: order.state !== "Completada" && !isOld,
+        // Reprogramar: pedidos cancelados, o pendientes que quedaron con fecha pasada
+        canReschedule: order.state === "Cancelada" || (order.state === "Pendiente" && isOld),
     };
+}
+
+// Ruta viva del pedido (ignora paradas y rutas canceladas). null si no está en ninguna.
+export function getOrderLiveRoute(order: Order) {
+    const stop = (order.stops ?? []).find(
+        (candidate) =>
+            candidate.state !== "Cancelada" &&
+            candidate.route &&
+            candidate.route.state !== "Cancelada",
+    );
+
+    return stop?.route ?? null;
 }

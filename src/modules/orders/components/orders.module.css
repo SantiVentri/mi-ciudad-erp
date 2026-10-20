@@ -527,3 +527,25 @@
         justify-content: center;
     }
 }
+
+.confirmList {
+    margin: 12px 0 0;
+    padding-left: 18px;
+    list-style: disc;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--color-text-primary);
+    font-size: 0.92rem;
+}
+
+.detailActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.rescheduleButton {
+    background-color: var(--color-primary);
+}

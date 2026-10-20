@@ -9,12 +9,23 @@ import { useResetOnChange } from "@/utils/hooks/useResetOnChange";
 import { useRouter } from "next/navigation";
 
 // Data and actions
-import { updateOrderArrivalDate, setOrderState } from "@/modules/orders/orders.actions";
+import {
+    updateOrdersArrivalDate,
+    cancelOrder,
+    restoreOrder,
+} from "@/modules/orders/orders.actions";
 import type { Order } from "@/modules/orders/orders.dal";
 
 // Constants and utils
 import { DAYS_BEFORE, DAYS_AFTER } from "@/modules/orders/orders.constants";
-import { dayKey, parseDateOnly, startOfDay, toDateInputValue } from "@/modules/orders/orders.utils";
+import {
+    dayKey,
+    getOrderLiveRoute,
+    parseDateOnly,
+    startOfDay,
+    toDateInputValue,
+} from "@/modules/orders/orders.utils";
+import { todayAR } from "@/utils/dates/argentina";
 import type { SortOption } from "@/modules/orders/orders.types";
 
 // Components
@@ -22,15 +33,31 @@ import DayTabs from "./DayTabs";
 import OrdersToolbar from "./OrdersToolbar";
 import OrderCard from "./OrderCard";
 import EditDateModal from "./EditDateModal";
+import ConfirmModal from "./ConfirmModal";
 
 type OrdersViewProps = {
     orders: Order[];
 };
 
+// Modal de fecha: edición en lote o "Reprogramar" de un solo pedido
+type DateModalState = { orders: Order[]; reactivate: boolean };
+
+type Dialog =
+    | { kind: "confirmCancel"; order: Order; routeLabel: string }
+    | { kind: "confirmDate"; lines: string[] }
+    | { kind: "info"; title: string; message: string; items?: string[] };
+
+function describeRoute(order: Order) {
+    const route = getOrderLiveRoute(order);
+    return route
+        ? `Ruta #${route.route_number} (vuelta ${route.trip_number})`
+        : "";
+}
+
 export default function OrdersView({ orders }: OrdersViewProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
-    const today = useMemo(() => startOfDay(new Date()), []);
+    const today = useMemo(() => todayAR(), []);
 
     // --- Navegación por día ---
     const days = useMemo(() => {
@@ -89,7 +116,13 @@ export default function OrdersView({ orders }: OrdersViewProps) {
             if (!term) return true;
 
             const client = order.client;
-            const haystack = [client?.name, client?.email, client?.phone, client?.street, client?.city]
+            const haystack = [
+                client?.name,
+                client?.email,
+                client?.phone,
+                client?.street,
+                client?.city,
+            ]
                 .filter(Boolean)
                 .join(" ")
                 .toLowerCase();
@@ -100,9 +133,15 @@ export default function OrdersView({ orders }: OrdersViewProps) {
         return [...filtered].sort((a, b) => {
             switch (sortBy) {
                 case "hora-asc":
-                    return parseDateOnly(a.arrival_date).getTime() - parseDateOnly(b.arrival_date).getTime();
+                    return (
+                        parseDateOnly(a.arrival_date).getTime() -
+                        parseDateOnly(b.arrival_date).getTime()
+                    );
                 case "hora-desc":
-                    return parseDateOnly(b.arrival_date).getTime() - parseDateOnly(a.arrival_date).getTime();
+                    return (
+                        parseDateOnly(b.arrival_date).getTime() -
+                        parseDateOnly(a.arrival_date).getTime()
+                    );
                 case "cliente-asc":
                     return (a.client?.name ?? "").localeCompare(b.client?.name ?? "");
                 case "cliente-desc":
@@ -113,11 +152,10 @@ export default function OrdersView({ orders }: OrdersViewProps) {
         });
     }, [dayOrders, search, stateFilter, sortBy]);
 
-    // --- Selección múltiple + edición de fecha en lote ---
-    const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-    const [nextArrivalDate, setNextArrivalDate] = useState("");
-    const [modalError, setModalError] = useState("");
+    // --- Avisos y confirmaciones ---
+    const [dialog, setDialog] = useState<Dialog | null>(null);
 
+    // --- Selección múltiple ---
     const selectedOrders = useMemo(
         () => filteredOrders.filter((order) => selectedOrderIds.includes(order.id)),
         [filteredOrders, selectedOrderIds],
@@ -133,20 +171,63 @@ export default function OrdersView({ orders }: OrdersViewProps) {
 
     const clearSelection = () => setSelectedOrderIds([]);
 
+    // --- Modal de fecha (edición en lote y Reprogramar) ---
+    const [dateModal, setDateModal] = useState<DateModalState | null>(null);
+    const [nextArrivalDate, setNextArrivalDate] = useState("");
+    const [modalError, setModalError] = useState("");
+
+    // Si el pedido quedó con fecha pasada, se sugiere hoy
+    const suggestedDate = (order: Order) =>
+        parseDateOnly(order.arrival_date).getTime() < today.getTime()
+            ? dayKey(today)
+            : toDateInputValue(order.arrival_date);
+
     const openBulkModal = () => {
         if (selectedOrders.length === 0) {
             setModalError("Seleccioná al menos un pedido.");
             return;
         }
-        setEditingOrder(selectedOrders[0]);
-        setNextArrivalDate(toDateInputValue(selectedOrders[0].arrival_date));
+        setDateModal({ orders: selectedOrders, reactivate: false });
+        setNextArrivalDate(suggestedDate(selectedOrders[0]));
+        setModalError("");
+    };
+
+    const openRescheduleModal = (order: Order) => {
+        setDateModal({ orders: [order], reactivate: true });
+        setNextArrivalDate(suggestedDate(order));
         setModalError("");
     };
 
     const closeModal = () => {
-        setEditingOrder(null);
+        setDateModal(null);
         setNextArrivalDate("");
         setModalError("");
+        setDialog(null);
+    };
+
+    const runDateChange = (release: boolean) => {
+        if (!dateModal) return;
+
+        const ids = dateModal.orders.map((order) => order.id);
+        const reactivate = dateModal.reactivate;
+
+        startTransition(async () => {
+            const response = await updateOrdersArrivalDate(ids, nextArrivalDate, {
+                release,
+                reactivate,
+            });
+
+            setDialog(null);
+
+            if (response?.error) {
+                setModalError(response.error);
+                return;
+            }
+
+            closeModal();
+            clearSelection();
+            router.refresh();
+        });
     };
 
     const handleConfirmDateChange = () => {
@@ -154,7 +235,7 @@ export default function OrdersView({ orders }: OrdersViewProps) {
             setModalError("Elegí una nueva fecha.");
             return;
         }
-        if (selectedOrders.length === 0) {
+        if (!dateModal || dateModal.orders.length === 0) {
             setModalError("Seleccioná al menos un pedido.");
             return;
         }
@@ -165,37 +246,114 @@ export default function OrdersView({ orders }: OrdersViewProps) {
 
         setModalError("");
 
-        startTransition(async () => {
-            const responses = await Promise.all(
-                selectedOrders.map((order) => updateOrderArrivalDate(order.id, nextArrivalDate)),
-            );
+        // Pedidos que están en una ruta y cambian de día
+        const affected = dateModal.orders.filter(
+            (order) =>
+                getOrderLiveRoute(order) &&
+                toDateInputValue(order.arrival_date) !== nextArrivalDate,
+        );
 
-            const firstError = responses.find((response) => response?.error)?.error;
-            if (firstError) {
-                setModalError(firstError);
-                return;
-            }
+        // Si la ruta ya comenzó (o terminó), no se puede mover el pedido
+        const started = affected.filter(
+            (order) => getOrderLiveRoute(order)?.state !== "Pendiente",
+        );
+        if (started.length > 0) {
+            setDialog({
+                kind: "info",
+                title: "No se puede cambiar la fecha",
+                message: "Estos pedidos están en rutas que ya comenzaron o terminaron:",
+                items: started.map(
+                    (order) =>
+                        `${order.client?.name ?? "Pedido"} · ${describeRoute(order)}`,
+                ),
+            });
+            return;
+        }
 
-            closeModal();
-            clearSelection();
-            router.refresh();
-        });
+        // Si la ruta todavía no salió, se pide confirmación para sacarlos de la ruta
+        if (affected.length > 0) {
+            setDialog({
+                kind: "confirmDate",
+                lines: affected.map(
+                    (order) =>
+                        `${order.client?.name ?? "Pedido"} · ${describeRoute(order)}`,
+                ),
+            });
+            return;
+        }
+
+        runDateChange(false);
     };
 
-    // --- Expandir pedido / cambiar estado ---
+    // --- Cancelar / restaurar pedido ---
     const [updatingIds, setUpdatingIds] = useState<string[]>([]);
 
     const isUpdating = (order: Order) => updatingIds.includes(order.id);
 
-    const handleToggleOrderState = (order: Order) => {
-        const newState = order.state === "Pendiente" ? "Cancelada" : "Pendiente";
-
+    const runCancel = (order: Order, release: boolean) => {
         setUpdatingIds((prev) => [...prev, order.id]);
 
         startTransition(async () => {
-            await setOrderState(order.id, newState);
+            const response = await cancelOrder(order.id, release);
             setUpdatingIds((prev) => prev.filter((id) => id !== order.id));
+
+            setDialog(
+                response?.error
+                    ? {
+                            kind: "info",
+                            title: "No se pudo cancelar el pedido",
+                            message: response.error,
+                        }
+                    : null,
+            );
             router.refresh();
+        });
+    };
+
+    const runRestore = (order: Order) => {
+        setUpdatingIds((prev) => [...prev, order.id]);
+
+        startTransition(async () => {
+            const response = await restoreOrder(order.id);
+            setUpdatingIds((prev) => prev.filter((id) => id !== order.id));
+
+            if (response?.error) {
+                setDialog({
+                    kind: "info",
+                    title: "No se pudo restaurar el pedido",
+                    message: response.error,
+                });
+            }
+            router.refresh();
+        });
+    };
+
+    const handleToggleOrderState = (order: Order) => {
+        if (order.state === "Cancelada") {
+            runRestore(order);
+            return;
+        }
+
+        const route = getOrderLiveRoute(order);
+
+        if (!route) {
+            runCancel(order, false);
+            return;
+        }
+
+        if (route.state !== "Pendiente") {
+            setDialog({
+                kind: "info",
+                title: "No se puede cancelar el pedido",
+                message: `El pedido está en la Ruta #${route.route_number}, que ya está ${(route.state ?? "").toLowerCase()}.`,
+            });
+            return;
+        }
+
+        setDialog({
+            kind: "confirmCancel",
+            order,
+            routeLabel: describeRoute(order),
         });
     };
 
@@ -231,7 +389,9 @@ export default function OrdersView({ orders }: OrdersViewProps) {
 
             <div className={styles.ordersList}>
                 {filteredOrders.length === 0 && (
-                    <p className={styles.emptyState}>No hay pedidos para este día con esos filtros.</p>
+                    <p className={styles.emptyState}>
+                        No hay pedidos para este día con esos filtros.
+                    </p>
                 )}
 
                 {filteredOrders.map((order) => (
@@ -242,23 +402,63 @@ export default function OrdersView({ orders }: OrdersViewProps) {
                         isExpanded={expandedId === order.id}
                         isSelected={selectedOrderIds.includes(order.id)}
                         isUpdating={isUpdating(order)}
-                        onToggleExpand={() => setExpandedId(expandedId === order.id ? null : order.id)}
+                        onToggleExpand={() =>
+                            setExpandedId(expandedId === order.id ? null : order.id)
+                        }
                         onToggleSelect={() => toggleOrderSelection(order.id)}
                         onToggleState={() => handleToggleOrderState(order)}
+                        onReschedule={() => openRescheduleModal(order)}
                     />
                 ))}
             </div>
 
-            {editingOrder && (
+            {dateModal && (
                 <EditDateModal
-                    selectedOrders={selectedOrders}
+                    selectedOrders={dateModal.orders}
                     nextArrivalDate={nextArrivalDate}
                     onDateChange={setNextArrivalDate}
                     modalError={modalError}
                     isPending={isPending}
                     today={today}
+                    reactivate={dateModal.reactivate}
                     onClose={closeModal}
                     onConfirm={handleConfirmDateChange}
+                />
+            )}
+
+            {dialog?.kind === "confirmCancel" && (
+                <ConfirmModal
+                    title="Cancelar pedido"
+                    message={`${dialog.order.client?.name ?? "El pedido"} está en la ${dialog.routeLabel}. Si lo cancelás, se saca de esa ruta.`}
+                    confirmLabel="Cancelar pedido"
+                    isPending={isPending}
+                    onClose={() => setDialog(null)}
+                    onConfirm={() => {
+                        const order = dialog.order;
+                        setDialog(null);
+                        runCancel(order, true);
+                    }}
+                />
+            )}
+
+            {dialog?.kind === "confirmDate" && (
+                <ConfirmModal
+                    title="Sacar pedidos de su ruta"
+                    message="Al cambiar la fecha, estos pedidos se sacan de su ruta:"
+                    items={dialog.lines}
+                    confirmLabel="Cambiar fecha"
+                    isPending={isPending}
+                    onClose={() => setDialog(null)}
+                    onConfirm={() => runDateChange(true)}
+                />
+            )}
+
+            {dialog?.kind === "info" && (
+                <ConfirmModal
+                    title={dialog.title}
+                    message={dialog.message}
+                    items={dialog.items}
+                    onClose={() => setDialog(null)}
                 />
             )}
         </div>

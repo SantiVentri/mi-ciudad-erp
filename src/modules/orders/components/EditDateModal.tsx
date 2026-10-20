@@ -16,6 +16,8 @@ type EditDateModalProps = {
     modalError: string;
     isPending: boolean;
     today: Date;
+    // Reprogramar: además de cambiar la fecha, los pedidos cancelados vuelven a "Pendiente"
+    reactivate?: boolean;
     onClose: () => void;
     onConfirm: () => void;
 };
@@ -27,9 +29,12 @@ export default function EditDateModal({
     modalError,
     isPending,
     today,
+    reactivate = false,
     onClose,
     onConfirm,
 }: EditDateModalProps) {
+    const count = selectedOrders.length;
+
     return (
         <div className={styles.modalOverlay} onClick={onClose} role="presentation">
             <div
@@ -41,7 +46,8 @@ export default function EditDateModal({
             >
                 <div className={styles.modalHeader}>
                     <h3 id="edit-order-date-title">
-                        Editar fecha de {selectedOrders.length} pedido{selectedOrders.length === 1 ? "" : "s"}
+                        {reactivate ? "Reprogramar" : "Editar fecha de"} {count} pedido
+                        {count === 1 ? "" : "s"}
                     </h3>
                     <p>
                         {selectedOrders
@@ -49,7 +55,7 @@ export default function EditDateModal({
                             .map((order) => order.client?.name)
                             .filter(Boolean)
                             .join(", ")}
-                        {selectedOrders.length > 3 ? "..." : ""}
+                        {count > 3 ? "..." : ""}
                     </p>
                 </div>
 
@@ -67,11 +73,24 @@ export default function EditDateModal({
                 {modalError && <p className={styles.modalError}>{modalError}</p>}
 
                 <div className={styles.modalActions}>
-                    <button type="button" className={styles.secondaryButton} onClick={onClose}>
+                    <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={onClose}
+                    >
                         Cancelar
                     </button>
-                    <button type="button" className={styles.primaryButton} onClick={onConfirm} disabled={isPending}>
-                        {isPending ? "Guardando..." : "Confirmar"}
+                    <button
+                        type="button"
+                        className={styles.primaryButton}
+                        onClick={onConfirm}
+                        disabled={isPending}
+                    >
+                        {isPending
+                            ? "Guardando..."
+                            : reactivate
+                                ? "Reprogramar"
+                                : "Confirmar"}
                     </button>
                 </div>
             </div>

@@ -3,7 +3,8 @@ import OrdersView from "@/modules/orders/components/OrdersView";
 import AdminPageHeader from "@/components/layout/header/AdminPageHeader";
 import OrdersMetrics from "@/modules/orders/components/ordersMetrics/OrdersMetrics";
 import { DAYS_BEFORE, DAYS_AFTER } from "@/modules/orders/orders.constants";
-import { dayKey, startOfDay } from "@/modules/orders/orders.utils";
+import { dayKey } from "@/modules/orders/orders.utils";
+import { todayAR } from "@/utils/dates/argentina";
 
 export const metadata = {
   title: "Pedidos",
@@ -11,7 +12,7 @@ export const metadata = {
 };
 
 export default async function OrdersPage() {
-  const today = startOfDay(new Date());
+  const today = todayAR();
 
   const startDate = new Date(today);
   startDate.setDate(startDate.getDate() - DAYS_BEFORE);

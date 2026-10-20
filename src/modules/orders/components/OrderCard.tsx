@@ -4,7 +4,10 @@
 import styles from "./orders.module.css";
 
 // Utils
-import { getOrderPermissions } from "@/modules/orders/orders.utils";
+import {
+    getOrderLiveRoute,
+    getOrderPermissions,
+} from "@/modules/orders/orders.utils";
 
 // Constants and types
 import { STATE_STYLES } from "@/modules/orders/orders.constants";
@@ -22,6 +25,7 @@ type OrderCardProps = {
     onToggleExpand: () => void;
     onToggleSelect: () => void;
     onToggleState: () => void;
+    onReschedule: () => void;
 };
 
 export default function OrderCard({
@@ -33,9 +37,15 @@ export default function OrderCard({
     onToggleExpand,
     onToggleSelect,
     onToggleState,
+    onReschedule,
 }: OrderCardProps) {
-    const itemsCount = order.order_details?.reduce((sum, detail) => sum + (detail.quantity ?? 0), 0) ?? 0;
-    const { canToggleState } = getOrderPermissions(order, today);
+    const itemsCount =
+        order.order_details?.reduce(
+            (sum, detail) => sum + (detail.quantity ?? 0),
+            0,
+        ) ?? 0;
+    const { canToggleState, canReschedule } = getOrderPermissions(order, today);
+    const liveRoute = getOrderLiveRoute(order);
 
     return (
         <div className={styles.orderCard}>
@@ -79,7 +89,9 @@ export default function OrderCard({
                 <span className={styles.orderItems}>
                     {itemsCount} {itemsCount === 1 ? "unidad" : "unidades"}
                 </span>
-                <span className={`${styles.stateBadge} ${STATE_STYLES[order.state ?? ""] ?? ""}`}>
+                <span
+                    className={`${styles.stateBadge} ${STATE_STYLES[order.state ?? ""] ?? ""}`}
+                >
                     {order.state}
                 </span>
                 <ChevronDown
@@ -97,8 +109,8 @@ export default function OrderCard({
                             <p>{order.client?.email}</p>
                             <p>{order.client?.phone}</p>
                             <p>
-                                {order.client?.street} {order.client?.number}, {order.client?.city},{" "}
-                                {order.client?.province}
+                                {order.client?.street} {order.client?.number},{" "}
+                                {order.client?.city}, {order.client?.province}
                             </p>
                         </div>
 
@@ -111,24 +123,55 @@ export default function OrderCard({
                                         <span>x{detail.quantity}</span>
                                     </li>
                                 ))}
-                                {(order.order_details?.length ?? 0) === 0 && <li>Sin productos cargados</li>}
+                                {(order.order_details?.length ?? 0) === 0 && (
+                                    <li>Sin productos cargados</li>
+                                )}
                             </ul>
+                        </div>
+
+                        <div className={styles.detailSection}>
+                            <h4>Ruta</h4>
+                            {liveRoute ? (
+                                <p>
+                                    Ruta #{liveRoute.route_number} · Vuelta{" "}
+                                    {liveRoute.trip_number} ({liveRoute.state})
+                                </p>
+                            ) : (
+                                <p>Sin ruta asignada</p>
+                            )}
                         </div>
                     </div>
 
-                    {canToggleState && (
-                        <button
-                            name="ToggleButton"
-                            className={`
-                                ${styles.toggleStateButton}
-                                ${order.state === "Pendiente" ? styles.cancelButton : styles.restoreButton}
-                                ${isUpdating ? styles.toggleButtonDisabled : ""}`
-                            }
-                            onClick={onToggleState}
-                            disabled={isUpdating}
-                        >
-                            {isUpdating ? "Procesando..." : order.state === "Cancelada" ? "Restaurar" : "Cancelar pedido"}
-                        </button>
+                    {(canToggleState || canReschedule) && (
+                        <div className={styles.detailActions}>
+                            {canReschedule && (
+                                <button
+                                    type="button"
+                                    className={`${styles.toggleStateButton} ${styles.rescheduleButton} ${isUpdating ? styles.toggleButtonDisabled : ""}`}
+                                    onClick={onReschedule}
+                                    disabled={isUpdating}
+                                >
+                                    Reprogramar
+                                </button>
+                            )}
+                            {canToggleState && (
+                                <button
+                                    name="ToggleButton"
+                                    className={`
+                                        ${styles.toggleStateButton}
+                                        ${order.state === "Pendiente" ? styles.cancelButton : styles.restoreButton}
+                                        ${isUpdating ? styles.toggleButtonDisabled : ""}`}
+                                    onClick={onToggleState}
+                                    disabled={isUpdating}
+                                >
+                                    {isUpdating
+                                        ? "Procesando..."
+                                        : order.state === "Cancelada"
+                                            ? "Restaurar"
+                                            : "Cancelar pedido"}
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
             )}
