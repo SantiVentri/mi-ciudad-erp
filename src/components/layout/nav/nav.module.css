@@ -71,3 +71,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.navBottom {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
