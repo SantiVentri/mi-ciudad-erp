@@ -1,6 +1,7 @@
 "use server";
 
 import { getServerClient } from "@/utils/supabase/getServerClient";
+import { validatePassword } from "@/modules/auth/auth.utils";
 
 type RegisterFields = {
     email: string;
@@ -10,15 +11,6 @@ type RegisterFields = {
     password: string;
     token?: string;
 };
-
-function validatePassword(password: string) {
-    if (password.length < 6) return "La contraseña debe tener al menos 6 caracteres.";
-    if (password.length > 20) return "La contraseña no puede tener más de 20 caracteres.";
-    if (!/[A-Z]/.test(password)) return "La contraseña debe tener al menos una mayúscula.";
-    if (!/[a-z]/.test(password)) return "La contraseña debe tener al menos una minúscula.";
-    if (!/[0-9]/.test(password)) return "La contraseña debe tener al menos un número.";
-    return null;
-}
 
 function validateFields(fields: RegisterFields) {
     const { email, displayName, firstName, lastName, password } = fields;

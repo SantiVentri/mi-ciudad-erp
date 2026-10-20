@@ -1,6 +1,9 @@
 .button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: none;
-    border: none;
+    border: none !important;
     border-radius: 5px;
     color: red;
     padding: 8px;
@@ -15,4 +18,16 @@
     cursor: wait;
     background-color: rgba(0, 0, 0, 0.1);
     color: gray;
+}
+
+/* Versión con texto (perfil del conductor) */
+.withLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 700;
 }
