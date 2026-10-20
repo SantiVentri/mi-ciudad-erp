@@ -451,6 +451,10 @@ export type Database = {
         Returns: undefined
       }
       cancel_route: { Args: { p_route_id: string }; Returns: string }
+      complete_route_by_driver: {
+        Args: { p_route_id: string }
+        Returns: undefined
+      }
       change_orders_date: {
         Args: {
           p_new_date: string
@@ -542,6 +546,10 @@ export type Database = {
       }
       release_order_from_route: {
         Args: { p_order_id: string }
+        Returns: string
+      }
+      set_stop_state: {
+        Args: { p_state: string; p_stop_id: string }
         Returns: string
       }
       set_route_stops: {
