@@ -41,7 +41,7 @@ export async function proxy(request: NextRequest) {
     (p) => path === p || path.startsWith(`${p}/`)
   );
 
-  if (!user && !isPublicPath && path !== '/') {
+  if (!user && !isPublicPath) {
     return redirectPreservingSession(request, ref.response, '/login')
   }
 
