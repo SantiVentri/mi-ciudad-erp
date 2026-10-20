@@ -53,10 +53,6 @@ export async function proxy(request: NextRequest) {
     return redirectPreservingSession(request, ref.response, getHomeForRole(role))
   }
 
-  if (path.startsWith('/admin/invitations') && role !== 'admin') {
-    return redirectPreservingSession(request, ref.response, getHomeForRole(role))
-  }
-
   return ref.response
 }
 

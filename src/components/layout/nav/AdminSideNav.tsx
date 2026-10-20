@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import SignOutButton from "@/modules/auth/components/signOutButton/SignOutButton";
-import InviteUserButton from "@/modules/auth/components/inviteUser/InviteUserButton";
+import InviteUserButton from "@/modules/invitations/components/InviteUserButton";
 
 // Icons
 import { Package, Route, Truck, Users } from "lucide-react";
@@ -59,14 +59,18 @@ export default function AdminSideNav({
     return (
         <div className={styles.navContainer}>
             <nav className={styles.nav}>
-                <div className={styles.logo}>
-                    <Image
-                        src="/logo.png"
-                        alt="Logo"
-                        width={50}
-                        height={50}
-                        draggable={false}
-                    />
+                <div className={styles.logoRow}>
+                    <div className={styles.logo}>
+                        <Image
+                            src="/logo.png"
+                            alt="Logo"
+                            width={50}
+                            height={50}
+                            draggable={false}
+                        />
+                        <span className={styles.brandName}>Mi Ciudad</span>
+                    </div>
+                    <InviteUserButton />
                 </div>
                 {NavLinks.map((link, index) => (
                     <Link
@@ -80,26 +84,23 @@ export default function AdminSideNav({
                     </Link>
                 ))}
             </nav>
-            <div className={styles.navBottom}>
-                <InviteUserButton />
-                <div className={styles.navFooter}>
-                    <div className={styles.userInfo}>
-                        <Image
-                            src={avatarUrl || "https://placehold.co/100/3454d1/ffffff?text=MC"}
-                            alt="User Avatar"
-                            width={45}
-                            height={45}
-                            className={styles.avatar}
-                            draggable={false}
-                            unoptimized
-                        />
-                        <div className={styles.names}>
-                            <p className={styles.name}>{name || "Usuario"}</p>
-                            <p className={styles.email}>{email || "santino.ventrice@ejemplo.com"}</p>
-                        </div>
+            <div className={styles.navFooter}>
+                <div className={styles.userInfo}>
+                    <Image
+                        src={avatarUrl || "https://placehold.co/100/3454d1/ffffff?text=MC"}
+                        alt="User Avatar"
+                        width={45}
+                        height={45}
+                        className={styles.avatar}
+                        draggable={false}
+                        unoptimized
+                    />
+                    <div className={styles.names}>
+                        <p className={styles.name}>{name || "Usuario"}</p>
+                        <p className={styles.email}>{email || "santino.ventrice@ejemplo.com"}</p>
                     </div>
-                    <SignOutButton />
                 </div>
+                <SignOutButton />
             </div>
         </div>
     )

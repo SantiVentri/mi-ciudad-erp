@@ -1,7 +1,6 @@
 "use server";
 
 import requireAdmin from "@/utils/auth/requireAdmin";
-import { revalidatePath } from "next/cache";
 
 export async function createInvitation(formData: FormData) {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
@@ -27,8 +26,6 @@ export async function createInvitation(formData: FormData) {
   if (error) {
     return { error: "No se pudo crear la invitación: " + error.message };
   }
-
-  revalidatePath("/admin/invitations");
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   return { link: `${siteUrl}/invite/${data.id}` };
