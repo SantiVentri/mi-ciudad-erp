@@ -4,6 +4,7 @@ import styles from "./notifications.module.css";
 
 // Types
 import { Notification } from "@/modules/notifications/notifications.dal";
+import { getNotificationTitle } from "@/modules/notifications/notifications.constants";
 import Link from "next/link";
 
 function formatRelativeTime(dateInput: Date | string): string {
@@ -42,7 +43,7 @@ export default function NotificationCard({ notification }: { notification: Notif
                     </span>
                     <div className={styles.notificationContent}>
                         <div className={styles.header}>
-                            <h3>{notification.type}</h3>
+                            <h3>{getNotificationTitle(notification.type)}</h3>
                             <span className={styles.notificationDate}>{notificationDate}</span>
                         </div>
                         <p>{notification.message}</p>
@@ -55,7 +56,7 @@ export default function NotificationCard({ notification }: { notification: Notif
                     </span>
                     <div className={styles.notificationContent}>
                         <div className={styles.header}>
-                            <h3>{notification.type}</h3>
+                            <h3>{getNotificationTitle(notification.type)}</h3>
                             <span className={styles.notificationDate}>{notificationDate}</span>
                         </div>
                         <p>{notification.message}</p>
