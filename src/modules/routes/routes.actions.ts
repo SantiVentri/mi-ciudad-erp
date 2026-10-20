@@ -79,9 +79,9 @@ async function loadDayData(supabase: AdminClient, date: string) {
     const excluded: ExcludedOrder[] = [];
 
     for (const order of ordersRes.data ?? []) {
-        // Mismo criterio que la base: una parada no cancelada significa que ya tiene ruta
+        // Mismo criterio que la base: una parada no cancelada ni fallida significa que ya tiene ruta
         const hasRoute = (order.stops ?? []).some(
-            (stop) => stop.state !== "Cancelada",
+            (stop) => stop.state !== "Cancelada" && stop.state !== "Entrega fallida",
         );
         if (hasRoute) continue;
 
@@ -370,7 +370,7 @@ export async function removeOrderFromRoute(routeId: string, orderId: string) {
         .from("stops")
         .select("order_id, visit_order")
         .eq("route_id", routeId)
-        .neq("state", "Cancelada")
+        .not("state", "in", '("Cancelada","Entrega fallida")')
         .order("visit_order", { ascending: true });
 
     if (stopsError) {
@@ -402,12 +402,8 @@ export type StopState = "Pendiente" | "Completada" | "Entrega fallida";
 
 type SetStopStateResult = { ok: true; state: StopState } | { ok: false; error: string };
 
-type StopWithRoute = {
-  id: string;
-  orderId: string;
-  route: { driver_id: string } | null;
-};
-
+// La base valida que sea el conductor o el acompañante de la ruta y sincroniza
+// el pedido (Completada / Asignada / Pendiente si la entrega falló)
 export async function setStopState(
   stopId: string,
   newState: StopState
@@ -419,75 +415,41 @@ export async function setStopState(
     return { ok: false, error: "Debés iniciar sesión para actualizar la parada." };
   }
 
-  const { data: stop, error: stopError } = await supabase
-    .from("stops")
-    .select(`
-      id,
-      orderId:order_id,
-      route:routes ( driver_id )
-    `)
-    .eq("id", stopId)
-    .single();
+  const { error } = await supabase.rpc("set_stop_state", {
+    p_stop_id: stopId,
+    p_state: newState,
+  });
 
-  if (stopError || !stop) {
-    return { ok: false, error: "No se encontró la parada." };
-  }
-
-  const typedStop = stop as unknown as StopWithRoute;
-
-  if (typedStop.route?.driver_id !== user.id) {
-    return { ok: false, error: "No tenés permisos para actualizar esta parada." };
-  }
-
-  const { error: updateStopError } = await supabase
-    .from("stops")
-    .update({ state: newState })
-    .eq("id", stopId);
-
-  if (updateStopError) {
-    return { ok: false, error: "No se pudo actualizar la parada: " + updateStopError.message };
-  }
-
-  const { data: order } = await supabase
-    .from("orders")
-    .select("state")
-    .eq("id", stop.orderId)
-    .single();
-
-  if (order && order.state !== "Cancelada") {
-    const { error: updateOrderError } = await supabase
-      .from("orders")
-      .update({ state: newState })
-      .eq("id", stop.orderId);
-
-    if (updateOrderError) {
-      return {
-        ok: false,
-        error:
-          "La parada se actualizó pero no se pudo sincronizar el pedido: " +
-          updateOrderError.message,
-      };
-    }
+  if (error) {
+    return { ok: false, error: "No se pudo actualizar la parada: " + error.message };
   }
 
   revalidatePath("/driver");
+  revalidateRoutesAndOrders();
 
   return { ok: true, state: newState };
 }
 
-export async function setCompletedRoute(routeId: string) {
+export async function setCompletedRoute(
+  routeId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = await getServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const { error: updateStateError } = await supabase
-    .from("routes")
-    .update({ state: "Finalizada" })
-    .eq("id", routeId)
-
-  if (updateStateError) {
-    return {
-      error:
-        "La parada se actualizó pero no se pudo sincronizar el pedido: " +
-        updateStateError.message,
-    };
+  if (!user) {
+    return { ok: false, error: "Debés iniciar sesión para finalizar la ruta." };
   }
+
+  const { error } = await supabase.rpc("complete_route_by_driver", {
+    p_route_id: routeId,
+  });
+
+  if (error) {
+    return { ok: false, error: "No se pudo finalizar la ruta: " + error.message };
+  }
+
+  revalidatePath("/driver");
+  revalidateRoutesAndOrders();
+
+  return { ok: true };
 }

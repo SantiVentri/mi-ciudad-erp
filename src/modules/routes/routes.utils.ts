@@ -1,6 +1,7 @@
 import type { AdminRoute, AdminRouteStop, RouteStop } from "@/modules/routes/routes.dal";
 import type { BusySlot, MapStop } from "@/modules/routes/routes.types";
 import { TRIP_NUMBERS } from "@/modules/routes/routes.constants";
+import { todayKeyAR } from "@/utils/dates/argentina";
 
 type AdminClient = NonNullable<NonNullable<AdminRouteStop["order"]>["client"]>;
 
@@ -174,11 +175,8 @@ export function getRouteProgress(stops: RouteStop[]) {
 }
 
 export function isPastRoute(routeDate: string) {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const date = new Date(routeDate);
-
-  return date < todayStart;
+  // route_date es medianoche UTC del día de la ruta; se compara contra hoy en Argentina
+  return routeDate.slice(0, 10) < todayKeyAR();
 }
 
 export function isStopCompleted(stop: RouteStop) {

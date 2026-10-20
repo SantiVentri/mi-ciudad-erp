@@ -49,11 +49,13 @@ export function getOrderPermissions(order: Order, today: Date) {
     };
 }
 
-// Ruta viva del pedido (ignora paradas y rutas canceladas). null si no está en ninguna.
+// Ruta viva del pedido (ignora rutas canceladas y paradas canceladas o fallidas).
+// null si no está en ninguna.
 export function getOrderLiveRoute(order: Order) {
     const stop = (order.stops ?? []).find(
         (candidate) =>
             candidate.state !== "Cancelada" &&
+            candidate.state !== "Entrega fallida" &&
             candidate.route &&
             candidate.route.state !== "Cancelada",
     );

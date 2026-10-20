@@ -44,7 +44,7 @@ type Dialog =
     | { kind: "info"; title: string; message: string };
 
 function liveStopsCount(route: AdminRoute) {
-    return (route.stops ?? []).filter((stop) => stop.state !== "Cancelada").length;
+    return (route.stops ?? []).filter((stop) => stop.state !== "Cancelada" && stop.state !== "Entrega fallida").length;
 }
 
 export default function RoutesView({

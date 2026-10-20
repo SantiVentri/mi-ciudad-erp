@@ -42,7 +42,7 @@ export default function EditRouteModal({
     const [isPending, startTransition] = useTransition();
 
     const dateChanged = date !== toDateInputValue(route.route_date);
-    const stopsCount = (route.stops ?? []).filter((stop) => stop.state !== "Cancelada").length;
+    const stopsCount = (route.stops ?? []).filter((stop) => stop.state !== "Cancelada" && stop.state !== "Entrega fallida").length;
 
     // Si el conductor actual quedó inactivo no está en la lista: se muestra igual para que se vea quién es
     const withCurrent = (options: SelectOption[], id: string, label: string) =>

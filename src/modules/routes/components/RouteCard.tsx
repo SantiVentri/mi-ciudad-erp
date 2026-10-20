@@ -157,7 +157,7 @@ export default function RouteCard({
                                             >
                                                 {stop.state ?? "Sin estado"}
                                             </span>
-                                            {isEditable && stop.state !== "Cancelada" && (
+                                            {isEditable && stop.state !== "Cancelada" && stop.state !== "Entrega fallida" && (
                                                 <button
                                                     type="button"
                                                     className={styles.removeStopButton}

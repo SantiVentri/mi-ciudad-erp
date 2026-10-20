@@ -60,7 +60,7 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
 
     const readOnly = isPastRoute(route.routeDate);
 
-    if (!readOnly && route.state === "Finalizada") {
+    if (!readOnly && route.state === "Completada") {
         return (
             <div className={styles.container}>
                 <div className={styles.emptyState}>
@@ -111,10 +111,17 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
 
         if (!isRouteCompleted) {
             setErrorMessage("No se puede finalizar la ruta. Todavía hay paradas pendientes.");
+            setIsFinishingRoute(false);
             return;
         }
 
-        await setCompletedRoute(route.id);
+        const result = await setCompletedRoute(route.id);
+
+        if (!result.ok) {
+            setErrorMessage(result.error);
+            setIsFinishingRoute(false);
+            return;
+        }
 
         router.refresh();
 

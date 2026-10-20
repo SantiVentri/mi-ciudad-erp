@@ -3,7 +3,8 @@ import { cache } from "react";
 import { getServerClient } from "@/utils/supabase/getServerClient";
 import { assertNoSupabaseError } from "@/utils/supabase/assertNoError";
 import { dayKey, parseDateOnly } from "@/modules/orders/orders.utils";
-import { todayAR } from "@/utils/dates/argentina";
+import { todayAR, todayKeyAR } from "@/utils/dates/argentina";
+import { nextDayKey } from "@/modules/routes/routes.utils";
 import type { DayOrdersStatus } from "@/modules/routes/routes.types";
 
 const METRICS_WINDOW_DAYS = 30;
@@ -121,7 +122,7 @@ export const getRoutesMetrics = cache(async () => {
             .lte("route_date", todayKey),
         supabase
             .from("orders")
-            .select("id, stops ( id, route:routes ( state ) )")
+            .select("id")
             .eq("state", "Pendiente")
             .gte("arrival_date", todayKey)
             .lt("arrival_date", dayKey(unassignedEnd)),
@@ -158,11 +159,8 @@ export const getRoutesMetrics = cache(async () => {
     const avgStopsPerRoute =
         activeRoutes.length > 0 ? totalStops / activeRoutes.length : 0;
 
-    // Un pedido pendiente está "sin ruta" si no tiene ninguna parada en una ruta activa
-    const unassignedOrders = (ordersRes.data ?? []).filter(
-        (order) =>
-            !(order.stops ?? []).some((stop) => stop.route?.state !== "Cancelada"),
-    ).length;
+    // Desde que existe el estado "Asignada", "Pendiente" ya significa "sin ruta"
+    const unassignedOrders = (ordersRes.data ?? []).length;
 
     const routesPerDay: { label: string; value: number }[] = [];
     for (let i = CHART_DAYS - 1; i >= 0; i--) {
@@ -248,10 +246,10 @@ export const getRoutes = cache(async () => {
 
   if (!user) return null;
 
-  // Calcular inicio de hoy e inicio de mañana para el filtro
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+  // Las rutas se guardan a medianoche UTC del día; "hoy" es el de Argentina
+  const today = todayKeyAR();
+  const todayStart = `${today}T00:00:00Z`;
+  const tomorrowStart = `${nextDayKey(today)}T00:00:00Z`;
 
   const { data: routes, error: fetchRoutesError } = await supabase
     .from("routes")
@@ -289,8 +287,8 @@ export const getRoutes = cache(async () => {
         )
       )
     `)
-    .eq("driver_id", user.id)
-    .eq("state", "Pendiente")
+    .or(`driver_id.eq.${user.id},co_driver_id.eq.${user.id}`)
+    .in("state", ["Pendiente", "En curso"])
     .gte("route_date", todayStart)    // Mayor o igual al inicio de hoy
     .lt("route_date", tomorrowStart)  // Estrictamente menor al inicio de mañana
     .order("route_date", {ascending: true});
@@ -347,7 +345,7 @@ export const getRoute = cache(async (routeId: string) => {
         )
       )
     `)
-    .eq("driver_id", user.id)
+    .or(`driver_id.eq.${user.id},co_driver_id.eq.${user.id}`)
     .eq("id", routeId)
     .order("visit_order", { foreignTable: "stops", ascending: true })
     .single();
@@ -366,9 +364,10 @@ export const getPreviousRoutes = cache(async () => {
 
   if (!user) return null;
 
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+  // Las rutas se guardan a medianoche UTC del día; "hoy" es el de Argentina
+  const today = todayKeyAR();
+  const todayStart = `${today}T00:00:00Z`;
+  const tomorrowStart = `${nextDayKey(today)}T00:00:00Z`;
 
   const { data: routes, error: fetchRoutesError } = await supabase
     .from("routes")
@@ -406,9 +405,13 @@ export const getPreviousRoutes = cache(async () => {
         )
       )
     `)
-    .eq("driver_id", user.id)
     .or(
-      `route_date.lt.${todayStart},and(route_date.gte.${todayStart},route_date.lt.${tomorrowStart},state.eq.Finalizada)`
+      [`driver_id.eq.${user.id}`, `co_driver_id.eq.${user.id}`]
+        .flatMap((crewFilter) => [
+          `and(${crewFilter},route_date.lt.${todayStart})`,
+          `and(${crewFilter},route_date.gte.${todayStart},route_date.lt.${tomorrowStart},state.eq.Completada)`,
+        ])
+        .join(",")
     )
     .order("route_date", { ascending: false });
 

@@ -25,6 +25,7 @@ export const ROUTE_STATE_STYLES: Record<string, string> = {
 export const ADMIN_STOP_STATE_STYLES: Record<string, string> = {
     Pendiente: styles.statePendiente,
     Completada: styles.stateCompletada,
+    "Entrega fallida": styles.stateFallida,
     Cancelada: styles.stateCancelada,
 };
 

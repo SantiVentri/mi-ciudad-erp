@@ -283,6 +283,12 @@
     color: var(--color-danger-text);
 }
 
+/* Parada que el conductor no pudo entregar (el pedido volvió a "Pendiente") */
+.stateFallida {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
 .chevron {
     transition: transform 0.2s ease;
     color: var(--color-text-subtle);
