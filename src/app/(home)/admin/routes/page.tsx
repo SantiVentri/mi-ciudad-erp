@@ -1,8 +1,10 @@
-import { getAdminRoutes, getOrdersStatusByDay } from "@/modules/routes/routes.dal";
+import { getAdminRoutes, getOrdersStatusByDay, getRoutesMetrics } from "@/modules/routes/routes.dal";
 import { getDrivers, getVehicles } from "@/modules/transports/transports.dal";
 import RoutesView from "@/modules/routes/components/RoutesView";
 import RoutesMetrics from "@/modules/routes/components/routesMetrics/RoutesMetrics";
+import { Suspense } from "react";
 import AdminPageHeader from "@/components/layout/header/AdminPageHeader";
+import MetricsSkeleton from "@/components/ui/skeleton/MetricsSkeleton";
 import { DAYS_AFTER, DAYS_BEFORE } from "@/modules/routes/routes.constants";
 import { dayKey } from "@/modules/orders/orders.utils";
 import { todayAR } from "@/utils/dates/argentina";
@@ -14,6 +16,9 @@ export const metadata = {
 };
 
 export default async function RoutesPage() {
+  // Las métricas se piden ya, en paralelo con el resto; RoutesMetrics reusa el resultado (cache)
+  getRoutesMetrics().catch(() => {});
+
   const today = todayAR();
 
   const startDate = new Date(today);
@@ -50,7 +55,9 @@ export default async function RoutesPage() {
         title="Rutas"
         description="Visualizá y organizá las rutas disponibles para la operación diaria."
       />
-      <RoutesMetrics />
+      <Suspense fallback={<MetricsSkeleton />}>
+        <RoutesMetrics />
+      </Suspense>
       <RoutesView
         routes={routes ?? []}
         ordersByDay={ordersByDay ?? {}}
