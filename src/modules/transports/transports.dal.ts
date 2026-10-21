@@ -1,13 +1,14 @@
 import 'server-only'
 import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
+import { getCurrentUser } from '@/utils/auth/getCurrentUser'
 import { assertNoSupabaseError } from '@/utils/supabase/assertNoError'
 import { Driver } from './transports.types'
 
 export const getVehicles = cache(async () => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
 
     if (!user) return null
 
@@ -33,7 +34,7 @@ export type Vehicle = Vehicles[number]
 export const getDrivers = cache(async (): Promise<Driver[] | null> => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return null
 
     const { data: drivers, error } = await supabase.rpc('get_drivers' as any)
@@ -46,7 +47,7 @@ export const getDrivers = cache(async (): Promise<Driver[] | null> => {
 export const getRouteAssignments = cache(async () => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
 
     if (!user) return null
 
@@ -66,7 +67,7 @@ export type RouteAssignment = RouteAssignments[number]
 export const getVehiclesMetrics = cache(async () => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return null
 
     const todayStart = new Date()
@@ -110,7 +111,7 @@ export type VehiclesMetricsData = NonNullable<Awaited<ReturnType<typeof getVehic
 export const getTopVehiclesByRoutes = cache(async (limit: number = 5) => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return null
 
     // Nota: cuenta TODAS las rutas asignadas al vehículo (no filtra por estado,
@@ -145,7 +146,7 @@ export type TopVehiclesByRoutes = NonNullable<Awaited<ReturnType<typeof getTopVe
 export const getDriversMetrics = cache(async () => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return null
 
     const drivers = await getDrivers()
@@ -184,7 +185,7 @@ export type DriversMetricsData = NonNullable<Awaited<ReturnType<typeof getDriver
 export const getTopDriversByRoutes = cache(async (limit: number = 5) => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return null
 
     // Nota: igual que con vehículos, cuenta TODAS las rutas asignadas

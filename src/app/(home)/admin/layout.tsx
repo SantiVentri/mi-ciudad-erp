@@ -6,7 +6,7 @@ import AdminSideNav from "@/components/layout/nav/AdminSideNav"
 
 // Hooks
 import { getProfile } from "@/modules/users/users.dal";
-import requireAdmin from "@/utils/auth/requireAdmin";
+import { getCurrentUser } from "@/utils/auth/getCurrentUser";
 import { redirect } from "next/navigation";
 
 export default async function AdminLayout({
@@ -14,15 +14,20 @@ export default async function AdminLayout({
 }: {
     children: React.ReactNode
 }) {
+    const user = await getCurrentUser()
+
+    if (!user) {
+        redirect("/login")
+    }
+
+    if (user.role !== "admin") {
+        redirect("/driver")
+    }
+
     const profile = await getProfile()
 
     if (!profile) {
         redirect("/login")
-    }
-
-    const supabase = await requireAdmin();
-    if (!supabase) {
-        redirect("/driver")
     }
 
     return (

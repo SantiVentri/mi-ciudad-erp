@@ -1,12 +1,12 @@
 import { getServerClient } from "../supabase/getServerClient";
+import { getCurrentUser } from "./getCurrentUser";
 
 export default async function requireRole(role: string) {
-    const supabase = await getServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (!user || user.app_metadata?.role !== role) {
+    if (!user || user.role !== role) {
         return null;
     }
 
-    return supabase;
+    return getServerClient();
 }

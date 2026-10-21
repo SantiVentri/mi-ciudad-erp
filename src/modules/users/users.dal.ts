@@ -1,11 +1,12 @@
 import 'server-only'
 import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
+import { getCurrentUser } from '@/utils/auth/getCurrentUser'
 
 export const getProfile = cache(async () => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
 
     if (!user) return null
 

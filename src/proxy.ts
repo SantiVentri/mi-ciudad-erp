@@ -33,7 +33,10 @@ function redirectPreservingSession(request: NextRequest, sessionResponse: NextRe
 export async function proxy(request: NextRequest) {
   const { supabase, ref } = createProxyClient(request)
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getClaims() valida el JWT sin ir al servidor de Auth (si el proyecto usa
+  // claves asimétricas) y refresca la sesión si el token está por vencer
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims
   const role = user?.app_metadata?.role as string | undefined;
 
   const path = request.nextUrl.pathname

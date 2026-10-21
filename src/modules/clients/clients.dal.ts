@@ -1,12 +1,13 @@
 import 'server-only'
 import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
+import { getCurrentUser } from '@/utils/auth/getCurrentUser'
 import { assertNoSupabaseError } from '@/utils/supabase/assertNoError'
 
 export const getClients = cache(async () => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
 
     if (!user) return null
 
@@ -38,7 +39,7 @@ export type Client = Clients[number]
 export async function getClientOrders(clientId: string) {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
 
     if (!user) return null
 
@@ -64,7 +65,7 @@ export type ClientOrder = ClientOrders[number]
 export const getTopClientsByOrders = cache(async (limit: number = 3) => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return null
 
     const { data, error } = await supabase

@@ -6,15 +6,14 @@ import NotificationsList from "@/components/ui/driver/notifications/Notification
 import { redirect } from "next/navigation";
 
 // Utils
-import { getServerClient } from "@/utils/supabase/getServerClient";
+import { getCurrentUser } from "@/utils/auth/getCurrentUser";
 import { getNotifications } from "@/modules/notifications/notifications.dal";
 
 export default async function DriverNotificationsPage() {
-    const supabase = await getServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     if (!user) {
-        redirect("/driver/login");
+        redirect("/login");
     }
 
     const notifications = await getNotifications(user.id);

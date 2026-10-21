@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { getServerClient } from "@/utils/supabase/getServerClient";
+import { getCurrentUser } from "@/utils/auth/getCurrentUser";
 import { assertNoSupabaseError } from "@/utils/supabase/assertNoError";
 import { dayKey, parseDateOnly } from "@/modules/orders/orders.utils";
 import { todayAR, todayKeyAR } from "@/utils/dates/argentina";
@@ -16,9 +17,7 @@ const UNASSIGNED_WINDOW_DAYS = 8;
 export const getAdminRoutes = cache(async (startDate: string, endDate: string) => {
     const supabase = await getServerClient();
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
     if (!user) return null;
 
@@ -71,9 +70,7 @@ export type AdminRouteStop = AdminRoute["stops"][number];
 export const getOrdersStatusByDay = cache(async (startDate: string, endDate: string) => {
     const supabase = await getServerClient();
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -99,9 +96,7 @@ export const getOrdersStatusByDay = cache(async (startDate: string, endDate: str
 export const getRoutesMetrics = cache(async () => {
     const supabase = await getServerClient();
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return null;
 
     const today = todayAR();
@@ -242,7 +237,7 @@ export type Route = {
 
 export const getRoutes = cache(async () => {
   const supabase = await getServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return null;
 
@@ -304,7 +299,7 @@ export const getRoutes = cache(async () => {
 export const getRoute = cache(async (routeId: string) => {
   const supabase = await getServerClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return null;
   if (!routeId) return null;
@@ -360,7 +355,7 @@ export const getRoute = cache(async (routeId: string) => {
 
 export const getPreviousRoutes = cache(async () => {
   const supabase = await getServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return null;
 

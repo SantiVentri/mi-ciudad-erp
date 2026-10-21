@@ -1,12 +1,13 @@
 import "server-only";
 import { cache } from "react";
 import { getServerClient } from "@/utils/supabase/getServerClient";
+import { getCurrentUser } from "@/utils/auth/getCurrentUser";
 
 // Perfil del usuario logueado + resumen de sus rutas (como conductor o acompañante)
 export const getDriverProfile = cache(async () => {
     const supabase = await getServerClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return null;
 
     const [profileRes, routesRes] = await Promise.all([

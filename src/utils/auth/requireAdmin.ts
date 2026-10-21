@@ -1,12 +1,12 @@
 import { getServerClient } from "../supabase/getServerClient";
+import { getCurrentUser } from "./getCurrentUser";
 
 export default async function requireAdmin() {
-    const supabase = await getServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (!user || user.app_metadata?.role !== "admin") {
+    if (!user || user.role !== "admin") {
         return null;
     }
 
-    return supabase;
+    return getServerClient();
 }

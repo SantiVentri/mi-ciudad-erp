@@ -1,12 +1,13 @@
 import 'server-only'
 import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
+import { getCurrentUser } from '@/utils/auth/getCurrentUser'
 import { assertNoSupabaseError } from '@/utils/supabase/assertNoError'
 
 export const getOrders = cache(async (startDate: string, endDate: string) => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
 
     if (!user) return null
 
@@ -36,7 +37,7 @@ export type Order = Orders[number]
 export const getOrdersMetrics = cache(async () => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return null
 
     const thisYear = new Date().getFullYear()
@@ -81,7 +82,7 @@ export type OrdersMetricsData = NonNullable<Awaited<ReturnType<typeof getOrdersM
 export const getMonthlyOrdersGrowth = cache(async (months: number = 6) => {
     const supabase = await getServerClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return null
 
     const today = new Date()
