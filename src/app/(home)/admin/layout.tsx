@@ -1,6 +1,3 @@
-// Styles
-import "./layout.module.css";
-
 // Componetns
 import AdminSideNav from "@/components/layout/nav/AdminSideNav"
 
