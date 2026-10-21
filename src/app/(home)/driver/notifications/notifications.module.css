@@ -1,5 +1,6 @@
 .container {
-    padding-bottom: 100px;
+    /* Espacio para que el nav fijo (~94px) no tape el final, más la barra de inicio del iPhone */
+    padding-bottom: calc(130px + env(safe-area-inset-bottom));
 }
 
 .container header {
