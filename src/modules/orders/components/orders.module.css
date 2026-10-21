@@ -145,7 +145,8 @@
     background: var(--color-accent-bg);
 }
 
-.bulkEditButton {
+.bulkEditButton,
+.newOrderButton {
     height: 48px;
     display: inline-flex;
     align-items: center;
@@ -161,7 +162,12 @@
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.bulkEditButton:hover:not(:disabled) {
+.newOrderButton {
+    background: var(--color-accent);
+}
+
+.bulkEditButton:hover:not(:disabled),
+.newOrderButton:hover {
     transform: translateY(-1px);
 }
 
@@ -483,6 +489,88 @@
     box-shadow: 0 0 0 4px rgba(52, 84, 209, 0.12);
 }
 
+/* --- Nuevo pedido --- */
+.modalWide {
+    width: min(100%, 560px);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+}
+
+.modalField select,
+.itemRow input {
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    padding: 0 12px;
+    background: var(--color-surface);
+    font: inherit;
+    font-weight: 400;
+    color: var(--color-text-primary);
+    outline: none;
+}
+
+.modalField select:focus,
+.itemRow input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(52, 84, 209, 0.12);
+}
+
+.modalHint {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    font-weight: 400;
+}
+
+.itemRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 96px 44px;
+    gap: 8px;
+}
+
+.itemRow select {
+    min-width: 0;
+}
+
+.itemRemoveButton {
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+    color: var(--color-danger);
+    cursor: pointer;
+}
+
+.itemRemoveButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.addItemButton {
+    align-self: flex-start;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    border: 1px dashed var(--color-border);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--color-primary);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.addItemButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .modalError {
     margin: 12px 0 0;
     color: var(--color-danger);
@@ -546,6 +634,7 @@
     }
 
     .bulkEditButton,
+    .newOrderButton,
     .refreshButton {
         width: 100%;
         justify-content: center;

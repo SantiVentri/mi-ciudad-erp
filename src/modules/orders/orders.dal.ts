@@ -116,3 +116,33 @@ export const getMonthlyOrdersGrowth = cache(async (months: number = 6) => {
 })
 
 export type MonthlyOrdersGrowth = NonNullable<Awaited<ReturnType<typeof getMonthlyOrdersGrowth>>>
+
+// Clientes activos y productos para el formulario de nuevo pedido
+export const getNewOrderOptions = cache(async () => {
+    const supabase = await getServerClient()
+
+    const user = await getCurrentUser()
+    if (!user) return null
+
+    const [clientsRes, productsRes] = await Promise.all([
+        supabase
+            .from('clients')
+            .select('id, name, street, number, city')
+            .or('is_active.is.null,is_active.eq.true')
+            .order('name', { ascending: true }),
+        supabase
+            .from('products')
+            .select('id, name')
+            .order('name', { ascending: true }),
+    ])
+
+    assertNoSupabaseError(clientsRes.error, 'Error trayendo los clientes')
+    assertNoSupabaseError(productsRes.error, 'Error trayendo los productos')
+
+    return {
+        clients: clientsRes.data ?? [],
+        products: productsRes.data ?? [],
+    }
+})
+
+export type NewOrderOptions = NonNullable<Awaited<ReturnType<typeof getNewOrderOptions>>>

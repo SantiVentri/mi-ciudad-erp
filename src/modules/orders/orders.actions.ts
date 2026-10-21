@@ -60,6 +60,56 @@ export async function updateOrdersArrivalDate(
     return { ok: true };
 }
 
+export type NewOrderItem = { productId: string; quantity: number };
+
+export async function createOrder(
+    clientId: string,
+    arrivalDate: string,
+    items: NewOrderItem[],
+) {
+    const supabase = await requireAdmin();
+    if (!supabase) {
+        return { error: "No tenés permisos para crear pedidos." };
+    }
+
+    if (!clientId) {
+        return { error: "Elegí un cliente." };
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(arrivalDate)) {
+        return { error: "Fecha inválida." };
+    }
+
+    if (arrivalDate < todayKeyAR()) {
+        return { error: "No podés crear un pedido con fecha pasada." };
+    }
+
+    if (items.length === 0) {
+        return { error: "Agregá al menos un producto." };
+    }
+
+    if (items.some((item) => !item.productId || !Number.isInteger(item.quantity) || item.quantity <= 0)) {
+        return { error: "Cada producto necesita una cantidad entera mayor a cero." };
+    }
+
+    const { data: orderId, error } = await supabase.rpc("create_order", {
+        p_client_id: clientId,
+        p_arrival_date: arrivalDate,
+        p_items: items.map((item) => ({
+            product_id: item.productId,
+            quantity: item.quantity,
+        })),
+    });
+
+    if (error) {
+        return { error: "No se pudo crear el pedido: " + error.message };
+    }
+
+    revalidateOrdersAndRoutes();
+
+    return { ok: true, orderId };
+}
+
 export async function cancelOrder(orderId: string, release = false) {
     const supabase = await requireAdmin();
     if (!supabase) {

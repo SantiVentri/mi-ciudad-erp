@@ -14,7 +14,7 @@ import {
     cancelOrder,
     restoreOrder,
 } from "@/modules/orders/orders.actions";
-import type { Order } from "@/modules/orders/orders.dal";
+import type { NewOrderOptions, Order } from "@/modules/orders/orders.dal";
 
 // Constants and utils
 import { DAYS_BEFORE, DAYS_AFTER } from "@/modules/orders/orders.constants";
@@ -34,9 +34,11 @@ import OrdersToolbar from "./OrdersToolbar";
 import OrderCard from "./OrderCard";
 import EditDateModal from "./EditDateModal";
 import ConfirmModal from "./ConfirmModal";
+import CreateOrderModal from "./CreateOrderModal";
 
 type OrdersViewProps = {
     orders: Order[];
+    newOrderOptions: NewOrderOptions;
     // Pedido a mostrar al entrar (viene de una parada en Rutas)
     focusOrderId?: string;
 };
@@ -56,7 +58,7 @@ function describeRoute(order: Order) {
         : "";
 }
 
-export default function OrdersView({ orders, focusOrderId }: OrdersViewProps) {
+export default function OrdersView({ orders, newOrderOptions, focusOrderId }: OrdersViewProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const today = useMemo(() => todayAR(), []);
@@ -377,6 +379,17 @@ export default function OrdersView({ orders, focusOrderId }: OrdersViewProps) {
         });
     };
 
+    // --- Nuevo pedido ---
+    const [isCreating, setIsCreating] = useState(false);
+
+    // Al crear, se muestra el día del pedido si entra en los días de la pantalla
+    const handleOrderCreated = (arrivalDate: string) => {
+        setIsCreating(false);
+        const createdDay = days.find((day) => dayKey(day) === arrivalDate);
+        if (createdDay) handleSelectDay(createdDay);
+        router.refresh();
+    };
+
     // --- Refresh general ---
     const handleRefresh = () => {
         startTransition(() => {
@@ -405,6 +418,7 @@ export default function OrdersView({ orders, focusOrderId }: OrdersViewProps) {
                 onRefresh={handleRefresh}
                 selectedCount={selectedOrders.length}
                 onBulkEdit={openBulkModal}
+                onNewOrder={() => setIsCreating(true)}
             />
 
             <div className={styles.ordersList}>
@@ -444,6 +458,18 @@ export default function OrdersView({ orders, focusOrderId }: OrdersViewProps) {
                     reactivate={dateModal.reactivate}
                     onClose={closeModal}
                     onConfirm={handleConfirmDateChange}
+                />
+            )}
+
+            {isCreating && (
+                <CreateOrderModal
+                    options={newOrderOptions}
+                    today={today}
+                    initialDate={
+                        selectedDay.getTime() < today.getTime() ? dayKey(today) : dayKey(selectedDay)
+                    }
+                    onClose={() => setIsCreating(false)}
+                    onCreated={handleOrderCreated}
                 />
             )}
 

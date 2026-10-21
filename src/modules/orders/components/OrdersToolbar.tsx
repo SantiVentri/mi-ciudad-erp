@@ -8,7 +8,7 @@ import { STATE_OPTIONS } from "@/modules/orders/orders.constants";
 import type { SortOption } from "@/modules/orders/orders.types";
 
 // Icons
-import { PencilLine, RefreshCw, Search } from "lucide-react";
+import { PencilLine, Plus, RefreshCw, Search } from "lucide-react";
 
 type OrdersToolbarProps = {
     search: string;
@@ -21,6 +21,7 @@ type OrdersToolbarProps = {
     onRefresh: () => void;
     selectedCount: number;
     onBulkEdit: () => void;
+    onNewOrder: () => void;
 };
 
 export default function OrdersToolbar({
@@ -34,6 +35,7 @@ export default function OrdersToolbar({
     onRefresh,
     selectedCount,
     onBulkEdit,
+    onNewOrder,
 }: OrdersToolbarProps) {
     return (
         <div className={styles.toolbar}>
@@ -81,6 +83,11 @@ export default function OrdersToolbar({
             >
                 <PencilLine size={16} />
                 Editar fechas ({selectedCount})
+            </button>
+
+            <button type="button" className={styles.newOrderButton} onClick={onNewOrder}>
+                <Plus size={16} />
+                Nuevo pedido
             </button>
         </div>
     );

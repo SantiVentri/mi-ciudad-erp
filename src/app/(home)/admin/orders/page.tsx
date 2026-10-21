@@ -1,4 +1,4 @@
-import { getOrders, getOrdersMetrics, getMonthlyOrdersGrowth } from "@/modules/orders/orders.dal";
+import { getOrders, getOrdersMetrics, getMonthlyOrdersGrowth, getNewOrderOptions } from "@/modules/orders/orders.dal";
 import OrdersView from "@/modules/orders/components/OrdersView";
 import { Suspense } from "react";
 import AdminPageHeader from "@/components/layout/header/AdminPageHeader";
@@ -26,8 +26,9 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
   const endDate = new Date(today);
   endDate.setDate(endDate.getDate() + DAYS_AFTER);
 
-  const [orders, { pedido }] = await Promise.all([
+  const [orders, newOrderOptions, { pedido }] = await Promise.all([
     getOrders(dayKey(startDate), dayKey(endDate)),
+    getNewOrderOptions(),
     searchParams,
   ]);
 
@@ -43,7 +44,11 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
       <Suspense fallback={<MetricsSkeleton />}>
         <OrdersMetrics />
       </Suspense>
-      <OrdersView orders={orders ?? []} focusOrderId={focusOrderId} />
+      <OrdersView
+        orders={orders ?? []}
+        newOrderOptions={newOrderOptions ?? { clients: [], products: [] }}
+        focusOrderId={focusOrderId}
+      />
     </div>
   );
 }

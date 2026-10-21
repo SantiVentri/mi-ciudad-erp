@@ -464,6 +464,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      create_order: {
+        Args: { p_arrival_date: string; p_client_id: string; p_items: Json }
+        Returns: string
+      }
       create_route_with_stops:
         | {
             Args: {
