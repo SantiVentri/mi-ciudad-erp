@@ -1,6 +1,7 @@
 "use server";
 
 import requireAdmin from "@/utils/auth/requireAdmin";
+import { getCurrentUser } from "@/utils/auth/getCurrentUser";
 import { revalidatePath } from "next/cache";
 import { getServerClient } from "@/utils/supabase/getServerClient";
 import { todayKeyAR } from "@/utils/dates/argentina";
@@ -243,12 +244,15 @@ export async function generateRoute(
 export async function getRoutePath(
     routeId: string,
 ): Promise<{ path: [number, number][] | null } | { error: string }> {
-    const supabase = await requireAdmin();
-    if (!supabase) {
+    // El admin ve cualquier ruta; el conductor, solo las suyas (como chofer o acompañante)
+    const user = await getCurrentUser();
+    if (!user || (user.role !== "admin" && user.role !== "driver")) {
         return { error: "No tenés permisos para ver rutas." };
     }
 
-    const { data: route, error } = await supabase
+    const supabase = await getServerClient();
+
+    let query = supabase
         .from("routes")
         .select(
             `
@@ -259,8 +263,13 @@ export async function getRoutePath(
                 )
             `,
         )
-        .eq("id", routeId)
-        .single();
+        .eq("id", routeId);
+
+    if (user.role === "driver") {
+        query = query.or(`driver_id.eq.${user.id},co_driver_id.eq.${user.id}`);
+    }
+
+    const { data: route, error } = await query.single();
 
     if (error || !route) {
         return { error: "No se encontró la ruta." };

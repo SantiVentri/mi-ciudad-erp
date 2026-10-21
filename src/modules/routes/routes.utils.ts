@@ -2,6 +2,7 @@ import type { AdminRoute, AdminRouteStop, RouteStop } from "@/modules/routes/rou
 import type { BusySlot, MapStop } from "@/modules/routes/routes.types";
 import { TRIP_NUMBERS } from "@/modules/routes/routes.constants";
 import { todayKeyAR } from "@/utils/dates/argentina";
+import { DEPOT } from "@/modules/routes/routes.depot";
 
 type AdminClient = NonNullable<NonNullable<AdminRouteStop["order"]>["client"]>;
 
@@ -27,7 +28,7 @@ export function getVehiclePatent(vehicle: AdminRoute["vehicle"]) {
 
 export function formatRouteClientAddress(client?: AdminClient | null) {
     if (!client) return "Sin dirección";
-    return `${client.street} ${client.number}, ${client.city}`;
+    return `${client.street} ${client.number ?? ""}, ${client.city}`;
 }
 
 export function getSortedStops(route: AdminRoute): AdminRouteStop[] {
@@ -158,7 +159,7 @@ export function formatRouteDate(dateValue: string) {
 export function formatClientAddress(client: Client | null | undefined) {
   if (!client) return "Dirección no disponible";
 
-  const parts = [`${client.street} ${client.number}`, client.city, client.province].filter(
+  const parts = [`${client.street} ${client.number ?? ""}`.trim(), client.city, client.province].filter(
     Boolean
   );
 
@@ -183,39 +184,94 @@ export function isStopCompleted(stop: RouteStop) {
   return stop.state === "Completada";
 }
 
-export function getPendingStopAddresses(stops: RouteStop[]) {
-  return stops
-    .filter((stop) => stop.state !== "Completada")
-    .map((stop) => formatClientAddress(stop.order?.client))
-    .filter(
-      (address): address is string => Boolean(address) && address !== "Dirección no disponible"
-    );
+// Google Maps acepta hasta 9 paradas intermedias en la app (y en la compu), pero
+// solo 3 si el link se abre en el navegador del celular sin la app instalada.
+// Se usa 9 porque los conductores abren el link en la app de Google Maps.
+// Si hay más paradas, el link lleva por tramos: las próximas paradas pendientes
+// y, cuando quedan pocas, el regreso a la embotelladora.
+// https://developers.google.com/maps/documentation/urls/get-started#directions-action
+const MAPS_MAX_WAYPOINTS = 9;
+
+function isPendingStop(stop: RouteStop) {
+  return stop.state !== "Completada" && stop.state !== "Entrega fallida";
 }
 
-export function buildGoogleMapsRouteUrl(
-  addresses: string[],
-  options?: { origin?: string; destination?: string }
-) {
-  const cleanAddresses = addresses.filter(Boolean);
-  const fixedOrigin = options?.origin;
-  const fixedDestination = options?.destination;
+function hasClientCoordinates(client: Client | null | undefined): client is Client & {
+  latitude: number;
+  longitude: number;
+} {
+  return client?.latitude != null && client?.longitude != null;
+}
 
-  if (cleanAddresses.length === 0 && !fixedDestination) return null;
-
-  const destination = fixedDestination ?? cleanAddresses[cleanAddresses.length - 1];
-  const waypoints = fixedDestination ? cleanAddresses : cleanAddresses.slice(0, -1);
-
-  let url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-    destination
-  )}&travelmode=driving`;
-
-  if (fixedOrigin) {
-    url += `&origin=${encodeURIComponent(fixedOrigin)}`;
+// Coordenadas si el cliente las tiene (no hay ambigüedad); si no, la dirección completa
+function toMapsPoint(client: Client | null | undefined) {
+  if (hasClientCoordinates(client)) {
+    return `${Number(client.latitude)},${Number(client.longitude)}`;
   }
+  if (!client?.street) return null;
 
+  return [`${client.street} ${client.number ?? ""}`.trim(), client.city, client.province, "Argentina"]
+    .filter(Boolean)
+    .join(", ");
+}
+
+/**
+ * Link de Google Maps para el próximo tramo de la ruta. Sin origen: Maps arranca
+ * desde la ubicación del celular. `stopsCount` son las paradas incluidas y
+ * `remaining` las pendientes que quedan para el siguiente tramo.
+ */
+export function buildDriverMapsLink(stops: RouteStop[]) {
+  const points = stops
+    .filter(isPendingStop)
+    .map((stop) => toMapsPoint(stop.order?.client))
+    .filter((point): point is string => point !== null);
+
+  const depot = `${DEPOT.latitude},${DEPOT.longitude}`;
+
+  // Si entran todas, se termina en la embotelladora; si no, en la última parada del tramo
+  const fitsAll = points.length <= MAPS_MAX_WAYPOINTS;
+  const segment = fitsAll ? points : points.slice(0, MAPS_MAX_WAYPOINTS + 1);
+  const destination = fitsAll ? depot : segment[segment.length - 1];
+  const waypoints = fitsAll ? segment : segment.slice(0, -1);
+
+  const params = new URLSearchParams({
+    api: "1",
+    destination,
+    travelmode: "driving",
+  });
   if (waypoints.length > 0) {
-    url += `&waypoints=${waypoints.map(encodeURIComponent).join("%7C")}`;
+    params.set("waypoints", waypoints.join("|"));
   }
 
-  return url;
+  return {
+    url: `https://www.google.com/maps/dir/?${params.toString()}`,
+    stopsCount: segment.length,
+    remaining: points.length - segment.length,
+    returnsToDepot: fitsAll,
+  };
+}
+
+// Paradas con coordenadas para el mapa de previsualización (número = posición en la lista)
+export function getDriverMapStops(stops: RouteStop[]) {
+  const located: MapStop[] = [];
+  let missing = 0;
+
+  stops.forEach((stop, index) => {
+    const client = stop.order?.client;
+
+    if (hasClientCoordinates(client)) {
+      located.push({
+        id: stop.id,
+        number: index + 1,
+        clientName: client.name,
+        address: formatClientAddress(client),
+        latitude: Number(client.latitude),
+        longitude: Number(client.longitude),
+      });
+    } else {
+      missing += 1;
+    }
+  });
+
+  return { located, missing };
 }

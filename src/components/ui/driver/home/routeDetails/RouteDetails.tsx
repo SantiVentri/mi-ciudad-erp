@@ -9,7 +9,14 @@ import styles from "./routeDetails.module.css";
 import { useRouter } from "next/navigation";
 
 // Components
+import dynamic from "next/dynamic";
 import StopCard from "@/components/ui/driver/home/stopCard/StopCard";
+
+// Leaflet necesita `window`, por eso el mapa se carga solo en el navegador
+const RouteMap = dynamic(() => import("@/modules/routes/components/RouteMap"), {
+    ssr: false,
+    loading: () => <div className={styles.mapPlaceholder}>Cargando mapa...</div>,
+});
 
 // Actions and utils
 import { setCompletedRoute, setStopState } from "@/modules/routes/routes.actions";
@@ -17,16 +24,13 @@ import {
     sortStopsByVisitOrder,
     formatRouteDate,
     getRouteProgress,
-    getPendingStopAddresses,
-    buildGoogleMapsRouteUrl,
+    buildDriverMapsLink,
+    getDriverMapStops,
     isPastRoute,
 } from "@/modules/routes/routes.utils";
 
 // Icons
 import { Navigation, CheckCircle2 } from "lucide-react";
-
-// Constants
-import { DIRECCION_EMBOTELLADORA } from "@/modules/routes/routes.constants";
 
 // Types
 import type { Route, RouteStop } from "@/modules/routes/routes.dal";
@@ -74,12 +78,8 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
     const { total, completed, failed, percentage } = getRouteProgress(stops);
     const isRouteCompleted = total > 0 && (completed + failed) === total;
 
-    const origin = completed > 0 ? undefined : DIRECCION_EMBOTELLADORA;
-
-    const mapsUrl = buildGoogleMapsRouteUrl(getPendingStopAddresses(stops), {
-        origin,
-        destination: DIRECCION_EMBOTELLADORA,
-    });
+    const mapsLink = buildDriverMapsLink(stops);
+    const { located, missing } = getDriverMapStops(stops);
 
     const handleToggleStop = (stop: RouteStop, newState: StopState) => {
         const previousStops = stops;
@@ -147,16 +147,42 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
                 </span>
             </div>
 
-            {!readOnly && mapsUrl && (
-                <a
-                    href={mapsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.mapsButton}
-                >
-                    <Navigation size={16} />
-                    Abrir ruta en Google Maps
-                </a>
+            {stops.length > 0 && (
+                <div className={styles.mapSection}>
+                    <RouteMap routeId={route.id} stops={located} height={260} disableDragging />
+                    {missing > 0 && (
+                        <p className={styles.mapWarning}>
+                            {missing === 1
+                                ? "1 parada no aparece en el mapa porque el cliente no tiene ubicación cargada."
+                                : `${missing} paradas no aparecen en el mapa porque los clientes no tienen ubicación cargada.`}
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {!readOnly && (
+                <div className={styles.mapsActions}>
+                    <a
+                        href={mapsLink.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.mapsButton}
+                    >
+                        <Navigation size={16} />
+                        {mapsLink.stopsCount === 0
+                            ? "Volver a la embotelladora"
+                            : mapsLink.returnsToDepot
+                                ? "Abrir ruta en Google Maps"
+                                : `Abrir próximas ${mapsLink.stopsCount} paradas en Google Maps`}
+                    </a>
+                    {mapsLink.remaining > 0 && (
+                        <p className={styles.mapsHint}>
+                            Google Maps admite pocas paradas por recorrido. Cuando las marques
+                            (entregadas o fallidas), volvé a tocar el botón para seguir con las{" "}
+                            {mapsLink.remaining} restantes.
+                        </p>
+                    )}
+                </div>
             )}
 
             {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}

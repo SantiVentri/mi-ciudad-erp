@@ -190,6 +190,8 @@ export type RouteClient = {
   number: string;
   city: string;
   province: string;
+  latitude: number | null;
+  longitude: number | null;
   observations: string | null;
 };
 
@@ -272,6 +274,8 @@ export const getRoutes = cache(async () => {
             number,
             city,
             province,
+            latitude,
+            longitude,
             observations
           ),
           order_details (
@@ -330,6 +334,8 @@ export const getRoute = cache(async (routeId: string) => {
             number,
             city,
             province,
+            latitude,
+            longitude,
             observations
           ),
           order_details (
@@ -390,6 +396,8 @@ export const getPreviousRoutes = cache(async () => {
             number,
             city,
             province,
+            latitude,
+            longitude,
             observations
           ),
           order_details (

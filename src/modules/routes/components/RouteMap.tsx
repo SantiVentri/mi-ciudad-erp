@@ -32,6 +32,10 @@ import type { MapStop } from "@/modules/routes/routes.types";
 type RouteMapProps = {
     routeId: string;
     stops: MapStop[];
+    // Alto en px (por defecto el del panel de admin); en el celular se usa uno más bajo
+    height?: number;
+    // En el celular, para que arrastrar con un dedo haga scroll en la página y no mueva el mapa
+    disableDragging?: boolean;
 };
 
 type LatLng = [number, number];
@@ -55,7 +59,7 @@ function createMarkerIcon(label: string, isDepot = false) {
     });
 }
 
-export default function RouteMap({ routeId, stops }: RouteMapProps) {
+export default function RouteMap({ routeId, stops, height, disableDragging = false }: RouteMapProps) {
     const depot: LatLng = [DEPOT.latitude, DEPOT.longitude];
     const stopPositions = stops.map(
         (stop) => [stop.latitude, stop.longitude] as LatLng,
@@ -104,7 +108,13 @@ export default function RouteMap({ routeId, stops }: RouteMapProps) {
             : { center: depot, zoom: 13 };
 
     return (
-        <MapContainer className={styles.map} scrollWheelZoom={false} {...viewProps}>
+        <MapContainer
+            className={styles.map}
+            style={height ? { height } : undefined}
+            scrollWheelZoom={false}
+            dragging={!disableDragging}
+            {...viewProps}
+        >
             <TileLayer url={MAP_TILE_URL} attribution={MAP_TILE_ATTRIBUTION} />
 
             {currentRoadPath ? (

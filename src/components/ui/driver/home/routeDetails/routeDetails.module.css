@@ -91,6 +91,40 @@
   color: #5b6472;
 }
 
+/* --- Mapa de previsualización y link a Google Maps --- */
+.mapSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mapPlaceholder {
+  display: grid;
+  place-items: center;
+  height: 260px;
+  border-radius: 12px;
+  border: 1px dashed var(--color-border-muted);
+  background: var(--color-bg-muted);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.mapWarning {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.mapsActions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mapsHint {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
 .mapsButton {
   display: inline-flex;
   align-items: center;
