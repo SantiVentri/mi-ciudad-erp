@@ -216,9 +216,23 @@ function toMapsPoint(client: Client | null | undefined) {
 }
 
 /**
- * Link de Google Maps para el próximo tramo de la ruta. Sin origen: Maps arranca
- * desde la ubicación del celular. `stopsCount` son las paradas incluidas y
- * `remaining` las pendientes que quedan para el siguiente tramo.
+ * Punto de partida: la embotelladora si la ruta no empezó; si ya hay paradas
+ * visitadas (entregadas o fallidas), la última según el orden de visita.
+ */
+function getRouteOrigin(stops: RouteStop[], depot: string) {
+  const lastVisited = stops
+    .filter((stop) => !isPendingStop(stop))
+    .sort((a, b) => b.visitOrder - a.visitOrder)
+    .map((stop) => toMapsPoint(stop.order?.client))
+    .find((point): point is string => point !== null);
+
+  return lastVisited ?? depot;
+}
+
+/**
+ * Link de Google Maps para el próximo tramo de la ruta: sale de la embotelladora
+ * (o de la última parada visitada) y vuelve a la embotelladora. `stopsCount` son
+ * las paradas incluidas y `remaining` las pendientes que quedan para el siguiente tramo.
  */
 export function buildDriverMapsLink(stops: RouteStop[]) {
   const points = stops
@@ -227,6 +241,7 @@ export function buildDriverMapsLink(stops: RouteStop[]) {
     .filter((point): point is string => point !== null);
 
   const depot = `${DEPOT.latitude},${DEPOT.longitude}`;
+  const origin = getRouteOrigin(stops, depot);
 
   // Si entran todas, se termina en la embotelladora; si no, en la última parada del tramo
   const fitsAll = points.length <= MAPS_MAX_WAYPOINTS;
@@ -236,6 +251,7 @@ export function buildDriverMapsLink(stops: RouteStop[]) {
 
   const params = new URLSearchParams({
     api: "1",
+    origin,
     destination,
     travelmode: "driving",
   });
