@@ -708,3 +708,24 @@
         width: 100%;
     }
 }
+
+/* Parada que lleva al pedido en la pantalla de Pedidos */
+.stopLink {
+    border-radius: 6px;
+    color: inherit;
+}
+
+.stopLink:hover .stopClient {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.stopLinkIcon {
+    margin-left: 4px;
+    vertical-align: -2px;
+    color: var(--color-text-subtle);
+}
+
+.stopLink:hover .stopLinkIcon {
+    color: var(--color-primary);
+}

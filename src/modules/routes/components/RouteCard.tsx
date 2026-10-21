@@ -5,6 +5,7 @@ import styles from "./routes.module.css";
 
 // Components
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 // Utils
 import {
@@ -26,7 +27,7 @@ import {
 import type { AdminRoute, AdminRouteStop } from "@/modules/routes/routes.dal";
 
 // Icons
-import { ChevronDown, MapPinOff, Pencil, Trash2, X } from "lucide-react";
+import { ArrowUpRight, ChevronDown, MapPinOff, Pencil, Trash2, X } from "lucide-react";
 
 // Leaflet necesita `window`, por eso el mapa se carga solo en el navegador
 const RouteMap = dynamic(() => import("./RouteMap"), {
@@ -127,31 +128,48 @@ export default function RouteCard({
                                     const client = stop.order?.client;
                                     const stopUnits = getStopUnits(stop);
 
+                                    const stopInfo = (
+                                        <>
+                                            <p className={styles.stopClient}>
+                                                {client?.name ?? "Cliente eliminado"}
+                                                {stop.order && (
+                                                    <ArrowUpRight size={14} className={styles.stopLinkIcon} />
+                                                )}
+                                            </p>
+                                            <p className={styles.stopAddress}>
+                                                {formatRouteClientAddress(client)}
+                                            </p>
+                                            <p className={styles.stopMeta}>
+                                                {stopUnits} {stopUnits === 1 ? "unidad" : "unidades"}
+                                                {client?.phone ? ` · ${client.phone}` : ""}
+                                                {!hasCoordinates(client) && (
+                                                    <span className={styles.noLocation}>
+                                                        <MapPinOff size={12} /> Sin ubicación
+                                                    </span>
+                                                )}
+                                            </p>
+                                            {client?.observations && (
+                                                <p className={styles.stopNote}>
+                                                    {client.observations}
+                                                </p>
+                                            )}
+                                        </>
+                                    );
+
                                     return (
                                         <li key={stop.id} className={styles.stopItem}>
                                             <span className={styles.stopNumber}>{index + 1}</span>
-                                            <div className={styles.stopInfo}>
-                                                <p className={styles.stopClient}>
-                                                    {client?.name ?? "Cliente eliminado"}
-                                                </p>
-                                                <p className={styles.stopAddress}>
-                                                    {formatRouteClientAddress(client)}
-                                                </p>
-                                                <p className={styles.stopMeta}>
-                                                    {stopUnits} {stopUnits === 1 ? "unidad" : "unidades"}
-                                                    {client?.phone ? ` · ${client.phone}` : ""}
-                                                    {!hasCoordinates(client) && (
-                                                        <span className={styles.noLocation}>
-                                                            <MapPinOff size={12} /> Sin ubicación
-                                                        </span>
-                                                    )}
-                                                </p>
-                                                {client?.observations && (
-                                                    <p className={styles.stopNote}>
-                                                        {client.observations}
-                                                    </p>
-                                                )}
-                                            </div>
+                                            {stop.order ? (
+                                                <Link
+                                                    href={`/admin/orders?pedido=${stop.order.id}`}
+                                                    className={`${styles.stopInfo} ${styles.stopLink}`}
+                                                    title="Ver el pedido"
+                                                >
+                                                    {stopInfo}
+                                                </Link>
+                                            ) : (
+                                                <div className={styles.stopInfo}>{stopInfo}</div>
+                                            )}
                                             <span
                                                 className={`${styles.stateBadge} ${ADMIN_STOP_STATE_STYLES[stop.state ?? ""] ?? ""}`}
                                             >

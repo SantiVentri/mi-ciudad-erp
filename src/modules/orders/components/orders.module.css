@@ -192,6 +192,24 @@
     background: var(--color-surface);
 }
 
+/* Pedido al que se llegó desde una parada en Rutas: resalta y se desvanece */
+.orderCardHighlighted {
+    animation: highlightOrder 2.5s ease-out;
+}
+
+@keyframes highlightOrder {
+    0%,
+    40% {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-accent-bg);
+    }
+
+    100% {
+        border-color: var(--color-border-light);
+        box-shadow: none;
+    }
+}
+
 .orderRow {
     width: 100%;
     display: grid;

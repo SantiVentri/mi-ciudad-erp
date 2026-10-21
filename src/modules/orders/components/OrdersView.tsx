@@ -4,7 +4,7 @@
 import styles from "./orders.module.css";
 
 // Hooks
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useResetOnChange } from "@/utils/hooks/useResetOnChange";
 import { useRouter } from "next/navigation";
 
@@ -37,6 +37,8 @@ import ConfirmModal from "./ConfirmModal";
 
 type OrdersViewProps = {
     orders: Order[];
+    // Pedido a mostrar al entrar (viene de una parada en Rutas)
+    focusOrderId?: string;
 };
 
 // Modal de fecha: edición en lote o "Reprogramar" de un solo pedido
@@ -54,10 +56,13 @@ function describeRoute(order: Order) {
         : "";
 }
 
-export default function OrdersView({ orders }: OrdersViewProps) {
+export default function OrdersView({ orders, focusOrderId }: OrdersViewProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const today = useMemo(() => todayAR(), []);
+
+    // Solo se enfoca si el pedido está dentro de los días que muestra la pantalla
+    const focusOrder = orders.find((order) => order.id === focusOrderId);
 
     // --- Navegación por día ---
     const days = useMemo(() => {
@@ -70,7 +75,9 @@ export default function OrdersView({ orders }: OrdersViewProps) {
         return result;
     }, [today]);
 
-    const [selectedDay, setSelectedDay] = useState<Date>(today);
+    const [selectedDay, setSelectedDay] = useState<Date>(() =>
+        focusOrder ? startOfDay(parseDateOnly(focusOrder.arrival_date)) : today,
+    );
 
     const ordersByDay = useMemo(() => {
         const map = new Map<string, Order[]>();
@@ -93,11 +100,24 @@ export default function OrdersView({ orders }: OrdersViewProps) {
     const [sortBy, setSortBy] = useState<SortOption>("hora-asc");
 
     // Limpieza de selecciones y expansión al cambiar de día o filtros
-    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [expandedId, setExpandedId] = useState<string | null>(focusOrder?.id ?? null);
     const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+
+    // Resaltado del pedido enfocado; se apaga al cambiar de día para que no se repita
+    const [highlightedId, setHighlightedId] = useState<string | null>(focusOrder?.id ?? null);
+
+    // Lleva la vista hasta el pedido enfocado (solo al entrar, no en cada refresh)
+    const focusedId = focusOrder?.id;
+    useEffect(() => {
+        if (!focusedId) return;
+        document
+            .getElementById(`pedido-${focusedId}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, [focusedId]);
 
     const handleSelectDay = (day: Date) => {
         setSelectedDay(day);
+        setHighlightedId(null);
         setExpandedId(null);
         setSelectedOrderIds([]);
     };
@@ -400,6 +420,7 @@ export default function OrdersView({ orders }: OrdersViewProps) {
                         order={order}
                         today={today}
                         isExpanded={expandedId === order.id}
+                        isHighlighted={highlightedId === order.id}
                         isSelected={selectedOrderIds.includes(order.id)}
                         isUpdating={isUpdating(order)}
                         onToggleExpand={() =>

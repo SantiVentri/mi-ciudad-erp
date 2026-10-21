@@ -13,7 +13,7 @@ export const metadata = {
   description: "Revisá, filtrá y gestioná los pedidos desde este panel.",
 };
 
-export default async function OrdersPage() {
+export default async function OrdersPage({ searchParams }: PageProps<"/admin/orders">) {
   // Las métricas se piden ya, en paralelo con los pedidos; OrdersMetrics reusa el resultado (cache)
   getOrdersMetrics().catch(() => {});
   getMonthlyOrdersGrowth(6).catch(() => {});
@@ -26,7 +26,13 @@ export default async function OrdersPage() {
   const endDate = new Date(today);
   endDate.setDate(endDate.getDate() + DAYS_AFTER);
 
-  const orders = await getOrders(dayKey(startDate), dayKey(endDate));
+  const [orders, { pedido }] = await Promise.all([
+    getOrders(dayKey(startDate), dayKey(endDate)),
+    searchParams,
+  ]);
+
+  // ?pedido=<id> llega desde las paradas de Rutas: se abre ese pedido en su día
+  const focusOrderId = typeof pedido === "string" ? pedido : undefined;
 
   return (
     <div>
@@ -37,7 +43,7 @@ export default async function OrdersPage() {
       <Suspense fallback={<MetricsSkeleton />}>
         <OrdersMetrics />
       </Suspense>
-      <OrdersView orders={orders ?? []} />
+      <OrdersView orders={orders ?? []} focusOrderId={focusOrderId} />
     </div>
   );
 }

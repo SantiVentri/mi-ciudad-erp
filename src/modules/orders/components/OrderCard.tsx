@@ -20,6 +20,7 @@ type OrderCardProps = {
     order: Order;
     today: Date;
     isExpanded: boolean;
+    isHighlighted?: boolean;
     isSelected: boolean;
     isUpdating: boolean;
     onToggleExpand: () => void;
@@ -32,6 +33,7 @@ export default function OrderCard({
     order,
     today,
     isExpanded,
+    isHighlighted = false,
     isSelected,
     isUpdating,
     onToggleExpand,
@@ -48,7 +50,10 @@ export default function OrderCard({
     const liveRoute = getOrderLiveRoute(order);
 
     return (
-        <div className={styles.orderCard}>
+        <div
+            id={`pedido-${order.id}`}
+            className={`${styles.orderCard} ${isHighlighted ? styles.orderCardHighlighted : ""}`}
+        >
             <div
                 className={styles.orderRow}
                 role="button"
