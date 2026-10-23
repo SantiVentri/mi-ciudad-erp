@@ -9,19 +9,17 @@ Tiene dos tipos de usuario:
 
 ## Screenshots
 
-<!--
-  Guardá las imágenes en docs/screenshots/ y descomentá la tabla.
-
-| Admin: rutas | Admin: pedidos |
+| Admin: métricas de rutas | Admin: ruta y paradas |
 |---|---|
-| ![Rutas](docs/screenshots/admin-routes.png) | ![Pedidos](docs/screenshots/admin-orders.png) |
+| <img width="1908" height="870" alt="admin routes metrics" src="https://github.com/user-attachments/assets/50f247cd-6582-4175-b64b-84a886a5b07c" /> | <img width="1908" height="870" alt="admin routes" src="https://github.com/user-attachments/assets/6e8124cc-122c-46d1-9a82-98a11b4c03a7" /> |
 
-| Chofer: ruta del día | Chofer: detalle de ruta |
+| Admin: pedidos | Admin: vehículos y conductores |
 |---|---|
-| ![Inicio chofer](docs/screenshots/driver-home.png) | ![Detalle de ruta](docs/screenshots/driver-route.png) |
--->
+| <img width="1908" height="870" alt="admin orders" src="https://github.com/user-attachments/assets/98f1e1ea-f4e0-4ac1-b71c-2c646405e44a" /> | <img width="1908" height="870" alt="admin transports" src="https://github.com/user-attachments/assets/628eef8c-b787-4f9e-9b3c-6be2a6161fd2" /> |
 
-_Próximamente._
+| Chofer: ruta del día | Chofer: gestión de paradas |
+|---|---|
+| <img height="400" alt="driver route" src="https://github.com/user-attachments/assets/521c01b4-d94f-41c7-a415-ea64d2f97cf9" /> | <img height="400" alt="driver stops" src="https://github.com/user-attachments/assets/8530aca2-d54a-4651-8faa-78a2cce67c21" /> |
 
 ## Funcionalidades
 
