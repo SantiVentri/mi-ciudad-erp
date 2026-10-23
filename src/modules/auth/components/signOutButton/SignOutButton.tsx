@@ -5,6 +5,7 @@ import styles from "./signOutButton.module.css";
 
 // Hooks
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 // Utils
 import { createClient } from "@/utils/supabase/client";
@@ -19,6 +20,7 @@ type SignOutButtonProps = {
 
 export default function SignOutButton({ showLabel = false }: SignOutButtonProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
     const supabase = createClient();
 
@@ -31,7 +33,8 @@ export default function SignOutButton({ showLabel = false }: SignOutButtonProps)
             setIsLoading(false);
             return;
         }
-        window.location.href = "/";
+        router.replace("/login");
+        router.refresh();
     };
 
     return (

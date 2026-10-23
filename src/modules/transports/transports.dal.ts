@@ -37,11 +37,11 @@ export const getDrivers = cache(async (): Promise<Driver[] | null> => {
     const user = await getCurrentUser()
     if (!user) return null
 
-    const { data: drivers, error } = await supabase.rpc('get_drivers' as any)
+    const { data: drivers, error } = await supabase.rpc('get_drivers')
 
     assertNoSupabaseError(error, 'Error trayendo los conductores')
 
-    return (drivers as Driver[]) ?? []
+    return drivers ?? []
 })
 
 export const getRouteAssignments = cache(async () => {

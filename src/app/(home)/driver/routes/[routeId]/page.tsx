@@ -3,7 +3,6 @@ import styles from "./route.module.css";
 
 import RouteDetails from "@/components/ui/driver/home/routeDetails/RouteDetails";
 import { getRoute } from "@/modules/routes/routes.dal";
-import { getServerClient } from "@/utils/supabase/getServerClient";
 import { redirect } from "next/navigation";
 
 interface RoutePageProps {
