@@ -10,12 +10,18 @@ export function getVehicleStatus(vehicle: Vehicle): "Activo" | "Inactivo" {
 export function getVehicleFormValues(vehicle?: Vehicle | null): VehicleFormValues {
     return {
         patent: vehicle?.patent ?? "",
+        model: vehicle?.model ?? "",
+        kmPerLiter: vehicle?.km_per_liter != null ? String(vehicle.km_per_liter) : "",
     };
 }
 
 export function matchesVehicleSearch(vehicle: Vehicle, term: string) {
     if (!term) return true;
-    return vehicle.patent.toLowerCase().includes(term.toLowerCase());
+    const needle = term.toLowerCase();
+    return (
+        vehicle.patent.toLowerCase().includes(needle) ||
+        (vehicle.model ?? "").toLowerCase().includes(needle)
+    );
 }
 
 // --- Conductores ---
@@ -91,6 +97,20 @@ export function getVehicleAssignmentLabel(
     const driverName = driver ? getDriverName(driver) : "Conductor sin perfil";
 
     return `${driverName} · ${formatRouteDate(assignment.route_date)}`;
+}
+
+// Vehículo de la última ruta asignada al conductor (el mismo que muestra la etiqueta de asignación)
+export function getDriverAssignedVehicle(
+    driver: Driver,
+    maps: AssignmentMaps,
+    vehicles: Vehicle[],
+): Vehicle | undefined {
+    if (!driver) return undefined;
+
+    const assignment = maps.byDriverId.get(driver.id);
+    if (!assignment) return undefined;
+
+    return vehicles.find((candidate) => candidate.id === assignment.vehicle_id);
 }
 
 export function getDriverAssignmentLabel(

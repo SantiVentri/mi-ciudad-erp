@@ -17,6 +17,8 @@ export const getVehicles = cache(async () => {
         .select(`
             id,
             patent,
+            model,
+            km_per_liter,
             is_active,
             created_at
         `)
