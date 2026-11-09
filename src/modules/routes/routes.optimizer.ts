@@ -33,6 +33,20 @@ type DirectionsResponse = {
     features?: { geometry: { coordinates: [number, number][] } }[];
 };
 
+type DirectionsSummaryResponse = {
+    // ORS omite distance/duration cuando valen 0
+    routes?: { summary?: { distance?: number; duration?: number } }[];
+};
+
+// Distancia y tiempo de manejo por calles (sin tiempo de descarga en las paradas)
+export type RouteMetrics = {
+    distanceKm: number;
+    durationMin: number;
+};
+
+// Contrato del proveedor de ruteo: si se cambia de API, solo se reemplaza la implementación
+export type RouteMetricsProvider = (points: GeoPoint[]) => Promise<RouteMetrics | null>;
+
 function toLonLat(point: GeoPoint): [number, number] {
     return [point.longitude, point.latitude];
 }
@@ -194,6 +208,49 @@ export async function optimizeStopOrder<T extends GeoPoint>(
 
     return { ordered, optimized: used.size === stops.length };
 }
+
+// Tramos de hasta MAX_DIRECTIONS_WAYPOINTS puntos que comparten el punto de unión
+function chunkWaypoints(points: GeoPoint[]): GeoPoint[][] {
+    const chunks: GeoPoint[][] = [];
+    for (
+        let start = 0;
+        start < points.length - 1;
+        start += MAX_DIRECTIONS_WAYPOINTS - 1
+    ) {
+        chunks.push(points.slice(start, start + MAX_DIRECTIONS_WAYPOINTS));
+    }
+    return chunks;
+}
+
+/**
+ * Kilómetros y minutos de manejo por calles recorriendo los puntos en el orden dado.
+ * Devuelve null si OpenRouteService no respondió: nunca se usa la distancia en
+ * línea recta, porque subestimaría el costo.
+ */
+export const getRouteMetrics: RouteMetricsProvider = async (points) => {
+    if (points.length < 2) return null;
+
+    let meters = 0;
+    let seconds = 0;
+
+    for (const chunk of chunkWaypoints(points)) {
+        const result = await orsPost<DirectionsSummaryResponse>(
+            `/v2/directions/${ORS_PROFILE}`,
+            { coordinates: chunk.map(toLonLat), instructions: false },
+        );
+
+        const summary = result?.routes?.[0]?.summary;
+        if (!summary) return null;
+
+        meters += summary.distance ?? 0;
+        seconds += summary.duration ?? 0;
+    }
+
+    return {
+        distanceKm: Math.round(meters / 10) / 100,
+        durationMin: Math.round(seconds / 60),
+    };
+};
 
 /**
  * Trazado por calles que une los puntos en el orden dado.
