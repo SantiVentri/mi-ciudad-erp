@@ -161,6 +161,12 @@ export default function GenerateRouteModal({
                                     por no tener ubicación.
                                 </p>
                             )}
+                            {result.costWarning && (
+                                <p className={styles.modalWarning} role="alert">
+                                    La ruta se creó, pero no se pudo calcular su costo.{" "}
+                                    {result.costWarning}
+                                </p>
+                            )}
                         </div>
 
                         <div className={styles.modalActions}>

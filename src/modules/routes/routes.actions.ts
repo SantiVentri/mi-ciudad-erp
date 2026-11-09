@@ -11,6 +11,8 @@ import {
     optimizeStopOrder,
 } from "@/modules/routes/routes.optimizer";
 import { nextDayKey, pickFreeTrip } from "@/modules/routes/routes.utils";
+import { refreshRouteEstimateSafely } from "@/modules/costs/costs.estimate";
+import { COSTS_PATH } from "@/modules/costs/costs.constants";
 import type {
     BusySlot,
     EditRouteInput,
@@ -223,8 +225,13 @@ export async function generateRoute(
         .eq("id", routeId)
         .single();
 
+    // Si el costo no se puede calcular (falta un sueldo, el rendimiento, etc.),
+    // la ruta queda creada igual y se avisa qué cargar
+    const costWarning = await refreshRouteEstimateSafely(supabase, routeId);
+
     revalidatePath("/admin/routes");
     revalidatePath("/admin/orders");
+    revalidatePath(COSTS_PATH);
 
     return {
         result: {
@@ -233,6 +240,7 @@ export async function generateRoute(
             stopsCount: ordered.length,
             excludedCount: dayData.excluded.length,
             optimized,
+            costWarning,
         },
     };
 }
@@ -299,6 +307,7 @@ export async function getRoutePath(
 function revalidateRoutesAndOrders() {
     revalidatePath("/admin/routes");
     revalidatePath("/admin/orders");
+    revalidatePath(COSTS_PATH);
 }
 
 /**
@@ -343,6 +352,12 @@ export async function editRoute(
                     ? "Los choferes o el vehículo ya tienen una ruta en esa vuelta. Volvé a intentar."
                     : "No se pudo editar la ruta: " + (error?.message ?? "error desconocido"),
         };
+    }
+
+    // Cambiaron choferes, vehículo o fecha: el costo anterior ya no corresponde
+    const costWarning = await refreshRouteEstimateSafely(supabase, routeId);
+    if (costWarning) {
+        console.warn("Ruta editada sin costo actualizado", routeId, costWarning);
     }
 
     revalidateRoutesAndOrders();
@@ -400,6 +415,14 @@ export async function removeOrderFromRoute(routeId: string, orderId: string) {
         return { error: "No se pudo quitar el pedido: " + error.message };
     }
 
+    // Cambiaron las paradas: se recalcula el recorrido y el costo
+    if (remaining.length > 0) {
+        const costWarning = await refreshRouteEstimateSafely(supabase, routeId);
+        if (costWarning) {
+            console.warn("Pedido quitado sin costo actualizado", routeId, costWarning);
+        }
+    }
+
     revalidateRoutesAndOrders();
 
     return { ok: true, routeDeleted: remaining.length === 0 };
@@ -437,6 +460,33 @@ export async function setStopState(
   revalidateRoutesAndOrders();
 
   return { ok: true, state: newState };
+}
+
+// El conductor sale del depósito: la ruta pasa a "En curso" y se registra started_at
+export async function startRoute(
+  routeId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await getCurrentUser();
+
+  if (!user || user.role !== "driver") {
+    return { ok: false, error: "Iniciá sesión como conductor para iniciar la ruta." };
+  }
+
+  const supabase = await getServerClient();
+
+  const { error } = await supabase.rpc("start_route_by_driver", {
+    p_route_id: routeId,
+  });
+
+  if (error) {
+    return { ok: false, error: "No se pudo iniciar la ruta: " + error.message };
+  }
+
+  revalidatePath("/driver");
+  revalidatePath(`/driver/routes/${routeId}`);
+  revalidateRoutesAndOrders();
+
+  return { ok: true };
 }
 
 export async function setCompletedRoute(
