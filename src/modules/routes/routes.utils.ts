@@ -99,11 +99,16 @@ export function matchesRouteSearch(route: AdminRoute, term: string) {
     return haystack.includes(term.toLowerCase());
 }
 
+// "YYYY-MM-DD" corrido N días (negativo hacia atrás), sin depender de la zona horaria
+export function shiftDayKey(dateKey: string, days: number) {
+    const [year, month, day] = dateKey.split("-").map(Number);
+    const shifted = new Date(Date.UTC(year, month - 1, day + days));
+    return shifted.toISOString().slice(0, 10);
+}
+
 // "YYYY-MM-DD" del día siguiente (sin depender de la zona horaria)
 export function nextDayKey(dateKey: string) {
-    const [year, month, day] = dateKey.split("-").map(Number);
-    const next = new Date(Date.UTC(year, month - 1, day + 1));
-    return next.toISOString().slice(0, 10);
+    return shiftDayKey(dateKey, 1);
 }
 
 // --- Conductor: ruta del día ---

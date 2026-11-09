@@ -12,6 +12,9 @@ import { editRoute } from "@/modules/routes/routes.actions";
 // Utils
 import { dayKey, toDateInputValue } from "@/modules/orders/orders.utils";
 
+// Components
+import CrewAssignmentFields from "./CrewAssignmentFields";
+
 // Types
 import type { AdminRoute } from "@/modules/routes/routes.dal";
 import type { SelectOption } from "@/modules/routes/routes.types";
@@ -120,57 +123,20 @@ export default function EditRouteModal({
                     />
                 </label>
 
-                <label className={styles.modalField} htmlFor="editRouteDriver">
-                    Conductor
-                    <select
-                        id="editRouteDriver"
-                        value={driverId}
-                        onChange={(e) => setDriverId(e.target.value)}
-                    >
-                        <option value="">Elegí un conductor</option>
-                        {driverOptions
-                            .filter((driver) => driver.id !== coDriverId)
-                            .map((driver) => (
-                                <option key={driver.id} value={driver.id}>
-                                    {driver.label}
-                                </option>
-                            ))}
-                    </select>
-                </label>
-
-                <label className={styles.modalField} htmlFor="editRouteCoDriver">
-                    Acompañante
-                    <select
-                        id="editRouteCoDriver"
-                        value={coDriverId}
-                        onChange={(e) => setCoDriverId(e.target.value)}
-                    >
-                        <option value="">Elegí un acompañante</option>
-                        {coDriverOptions
-                            .filter((driver) => driver.id !== driverId)
-                            .map((driver) => (
-                                <option key={driver.id} value={driver.id}>
-                                    {driver.label}
-                                </option>
-                            ))}
-                    </select>
-                </label>
-
-                <label className={styles.modalField} htmlFor="editRouteVehicle">
-                    Vehículo
-                    <select
-                        id="editRouteVehicle"
-                        value={vehicleId}
-                        onChange={(e) => setVehicleId(e.target.value)}
-                    >
-                        <option value="">Elegí un vehículo</option>
-                        {vehicleOptions.map((vehicle) => (
-                            <option key={vehicle.id} value={vehicle.id}>
-                                {vehicle.label}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                <CrewAssignmentFields
+                    idPrefix="editRoute"
+                    date={date}
+                    excludeRouteId={route.id}
+                    drivers={driverOptions}
+                    coDrivers={coDriverOptions}
+                    vehicles={vehicleOptions}
+                    driverId={driverId}
+                    coDriverId={coDriverId}
+                    vehicleId={vehicleId}
+                    onDriverChange={setDriverId}
+                    onCoDriverChange={setCoDriverId}
+                    onVehicleChange={setVehicleId}
+                />
 
                 {dateChanged && (
                     <p className={styles.modalInfo}>

@@ -23,6 +23,9 @@ import type {
     SelectOption,
 } from "@/modules/routes/routes.types";
 
+// Components
+import CrewAssignmentFields from "./CrewAssignmentFields";
+
 // Icons
 import { MapPinOff } from "lucide-react";
 
@@ -215,57 +218,19 @@ export default function GenerateRouteModal({
 
                         {preview && preview.ordersCount > 0 && (
                             <>
-                                <label className={styles.modalField} htmlFor="routeDriver">
-                                    Conductor
-                                    <select
-                                        id="routeDriver"
-                                        value={driverId}
-                                        onChange={(e) => setDriverId(e.target.value)}
-                                    >
-                                        <option value="">Elegí un conductor</option>
-                                        {drivers
-                                            .filter((driver) => driver.id !== coDriverId)
-                                            .map((driver) => (
-                                                <option key={driver.id} value={driver.id}>
-                                                    {driver.label}
-                                                </option>
-                                            ))}
-                                    </select>
-                                </label>
-
-                                <label className={styles.modalField} htmlFor="routeCoDriver">
-                                    Acompañante
-                                    <select
-                                        id="routeCoDriver"
-                                        value={coDriverId}
-                                        onChange={(e) => setCoDriverId(e.target.value)}
-                                    >
-                                        <option value="">Elegí un acompañante</option>
-                                        {drivers
-                                            .filter((driver) => driver.id !== driverId)
-                                            .map((driver) => (
-                                                <option key={driver.id} value={driver.id}>
-                                                    {driver.label}
-                                                </option>
-                                            ))}
-                                    </select>
-                                </label>
-
-                                <label className={styles.modalField} htmlFor="routeVehicle">
-                                    Vehículo
-                                    <select
-                                        id="routeVehicle"
-                                        value={vehicleId}
-                                        onChange={(e) => setVehicleId(e.target.value)}
-                                    >
-                                        <option value="">Elegí un vehículo</option>
-                                        {vehicles.map((vehicle) => (
-                                            <option key={vehicle.id} value={vehicle.id}>
-                                                {vehicle.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
+                                <CrewAssignmentFields
+                                    idPrefix="route"
+                                    date={date}
+                                    drivers={drivers}
+                                    coDrivers={drivers}
+                                    vehicles={vehicles}
+                                    driverId={driverId}
+                                    coDriverId={coDriverId}
+                                    vehicleId={vehicleId}
+                                    onDriverChange={setDriverId}
+                                    onCoDriverChange={setCoDriverId}
+                                    onVehicleChange={setVehicleId}
+                                />
 
                                 {drivers.length < 2 && (
                                     <p className={styles.modalWarning}>

@@ -8,7 +8,12 @@ import { todayKeyAR } from "@/utils/dates/argentina";
 import { DEPOT } from "@/modules/routes/routes.depot";
 import { optimizeStopOrder } from "@/modules/routes/routes.optimizer";
 import { resolveRoutePath, routePathPoints, saveRoutePathSafely } from "@/modules/routes/routes.paths";
-import { nextDayKey } from "@/modules/routes/routes.utils";
+import { nextDayKey, shiftDayKey } from "@/modules/routes/routes.utils";
+import {
+    LOAD_WINDOW_DAYS,
+    LOOKBACK_DAYS,
+    type AssignmentData,
+} from "@/modules/routes/routes.recommendations";
 import { refreshRouteEstimateSafely } from "@/modules/costs/costs.estimate";
 import { COSTS_PATH } from "@/modules/costs/costs.constants";
 import type {
@@ -118,6 +123,71 @@ export async function getRouteGenerationPreview(
             date,
             ordersCount: dayData.routable.length,
             excluded: dayData.excluded,
+        },
+    };
+}
+
+/**
+ * Rutas cercanas a la fecha y rendimiento de los vehículos, para recomendar a quién
+ * asignar. Trae desde LOOKBACK_DAYS antes (días sin rutas, parejas, último vehículo)
+ * hasta LOAD_WINDOW_DAYS después (rutas ya planificadas). Las canceladas no cuentan.
+ * excludeRouteId: la ruta que se está editando, para que no se cuente a sí misma.
+ */
+export async function getAssignmentData(
+    date: string,
+    excludeRouteId?: string,
+): Promise<{ data: AssignmentData } | { error: string }> {
+    const supabase = await requireAdmin();
+    if (!supabase) {
+        return { error: "No tenés permisos para ver las recomendaciones." };
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return { error: "La fecha no es válida." };
+    }
+
+    // Las rutas se guardan a medianoche UTC del día
+    let routesQuery = supabase
+        .from("routes")
+        .select(
+            "route_number, route_date, driver_id, co_driver_id, vehicle_id, estimated_distance_km, estimated_duration_min",
+        )
+        .neq("state", "Cancelada")
+        .gte("route_date", `${shiftDayKey(date, -LOOKBACK_DAYS)}T00:00:00Z`)
+        .lt("route_date", `${shiftDayKey(date, LOAD_WINDOW_DAYS + 1)}T00:00:00Z`);
+
+    if (excludeRouteId) {
+        routesQuery = routesQuery.neq("id", excludeRouteId);
+    }
+
+    const [routesRes, vehiclesRes] = await Promise.all([
+        routesQuery,
+        supabase.from("vehicles").select("id, km_per_liter"),
+    ]);
+
+    if (routesRes.error || vehiclesRes.error) {
+        console.error(
+            "Error cargando datos de recomendaciones:",
+            routesRes.error ?? vehiclesRes.error,
+        );
+        return { error: "No se pudieron cargar las recomendaciones." };
+    }
+
+    return {
+        data: {
+            date,
+            routes: (routesRes.data ?? []).map((route) => ({
+                routeNumber: route.route_number,
+                date: route.route_date.slice(0, 10),
+                driverId: route.driver_id,
+                coDriverId: route.co_driver_id,
+                vehicleId: route.vehicle_id,
+                km: route.estimated_distance_km,
+                minutes: route.estimated_duration_min,
+            })),
+            kmPerLiter: Object.fromEntries(
+                (vehiclesRes.data ?? []).map((vehicle) => [vehicle.id, vehicle.km_per_liter]),
+            ),
         },
     };
 }
