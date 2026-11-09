@@ -3,6 +3,10 @@ import styles from "@/modules/orders/components/orders.module.css";
 export const DAYS_BEFORE = 7;
 export const DAYS_AFTER = 8;
 
+// Vista "Todos": todos los pedidos, de la fecha de entrega más lejana a la más vieja
+export const ALL_ORDERS_VIEW = "todos";
+export const ALL_ORDERS_PAGE_SIZE = 20;
+
 // Pendiente = sin ruta; Asignada = en una ruta, todavía sin entregar
 export const STATE_OPTIONS = ["Todos", "Pendiente", "Asignada", "Completada", "Cancelada"];
 

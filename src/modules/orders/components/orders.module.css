@@ -73,6 +73,45 @@
     padding: 0 4px;
 }
 
+/* Pestaña "Todos": separada de los días */
+.dayTabAll {
+    margin-right: 8px;
+}
+
+/* Encabezado de cada día en la vista "Todos" */
+.dayHeading {
+    margin: 8px 0 -2px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.dayHeading:first-child {
+    margin-top: 0;
+}
+
+/* Mientras se carga otra página o búsqueda de la vista "Todos" */
+.ordersListLoading {
+    opacity: 0.55;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.paginationSummary {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
 .dayTabActive .dayTabCount {
     background: var(--color-surface);
     color: var(--color-primary);

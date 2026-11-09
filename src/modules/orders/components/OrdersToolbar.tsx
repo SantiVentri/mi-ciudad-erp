@@ -15,6 +15,8 @@ type OrdersToolbarProps = {
     onSearchChange: (value: string) => void;
     stateFilter: string;
     onStateFilterChange: (value: string) => void;
+    // En la vista "Todos" el orden es fijo (por fecha), así que no se muestra
+    showSort: boolean;
     sortBy: SortOption;
     onSortByChange: (value: SortOption) => void;
     isPending: boolean;
@@ -29,6 +31,7 @@ export default function OrdersToolbar({
     onSearchChange,
     stateFilter,
     onStateFilterChange,
+    showSort,
     sortBy,
     onSortByChange,
     isPending,
@@ -61,14 +64,16 @@ export default function OrdersToolbar({
                 ))}
             </select>
 
-            <select
-                value={sortBy}
-                onChange={(e) => onSortByChange(e.target.value as SortOption)}
-                className={styles.select}
-            >
-                <option value="cliente-asc">Cliente (A-Z)</option>
-                <option value="cliente-desc">Cliente (Z-A)</option>
-            </select>
+            {showSort && (
+                <select
+                    value={sortBy}
+                    onChange={(e) => onSortByChange(e.target.value as SortOption)}
+                    className={styles.select}
+                >
+                    <option value="cliente-asc">Cliente (A-Z)</option>
+                    <option value="cliente-desc">Cliente (Z-A)</option>
+                </select>
+            )}
 
             <button type="button" className={styles.refreshButton} onClick={onRefresh} disabled={isPending}>
                 <RefreshCw size={16} />

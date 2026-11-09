@@ -27,6 +27,29 @@ export function parseDateOnly(dateValue: string) {
     return new Date(year, month - 1, day);
 }
 
+const HEADING_WEEKDAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+// "Miércoles 12/11 · En 3 días", "Hoy · Lunes 9/11", "Hace 2 días": encabezado de la vista "Todos"
+export function formatOrderDayHeading(dateValue: string, today: Date) {
+    const day = parseDateOnly(dateValue);
+    const diff = Math.round((startOfDay(day).getTime() - startOfDay(today).getTime()) / 86_400_000);
+    const date = `${HEADING_WEEKDAYS[day.getDay()]} ${day.getDate()}/${day.getMonth() + 1}`;
+    const year = day.getFullYear() !== today.getFullYear() ? `/${day.getFullYear()}` : "";
+
+    const relative =
+        diff === 0
+            ? "Hoy"
+            : diff === 1
+              ? "Mañana"
+              : diff === -1
+                ? "Ayer"
+                : diff > 0
+                  ? `En ${diff} días`
+                  : `Hace ${-diff} días`;
+
+    return `${date}${year} · ${relative}`;
+}
+
 export function toDateInputValue(dateValue: string) {
     const date = parseDateOnly(dateValue);
     const year = date.getFullYear();

@@ -1,5 +1,6 @@
 .paginationControl {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
 }
 
@@ -27,4 +28,9 @@
     border-color: gray;
     color: white;
     cursor: not-allowed;
+}
+.gap {
+    align-self: center;
+    color: #3454d1;
+    font-weight: 600;
 }

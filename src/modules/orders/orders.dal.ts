@@ -35,6 +35,86 @@ export const getOrders = cache(async (startDate: string, endDate: string) => {
 export type Orders = NonNullable<Awaited<ReturnType<typeof getOrders>>>
 export type Order = Orders[number]
 
+// Saca lo que rompe la sintaxis de los filtros de PostgREST (comas, paréntesis, comodines)
+function sanitizeSearch(term: string) {
+    return term.replace(/[,()*%\\:"']/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Vista "Todos": una página de pedidos ordenados por fecha de entrega descendente
+ * (primero los futuros, después los de hoy y después los pasados). El filtro por estado
+ * y la búsqueda se hacen en la base para que la paginación cuente bien.
+ * state: null = todos los estados. Si la página quedó fuera de rango, devuelve la primera.
+ */
+export const getOrdersPage = cache(
+    async (page: number, pageSize: number, state: string | null, search: string) => {
+        const supabase = await getServerClient()
+
+        const user = await getCurrentUser()
+        if (!user) return null
+
+        const term = sanitizeSearch(search)
+
+        const fetchPage = (pageNumber: number) => {
+            const from = (pageNumber - 1) * pageSize
+
+            // !inner: el filtro sobre el cliente descarta el pedido (client_id es obligatorio,
+            // así que sin búsqueda no se pierde ninguno)
+            let query = supabase
+                .from('orders')
+                .select(
+                    `
+                    id,
+                    arrival_date,
+                    state,
+                    created_at,
+                    client:clients!inner ( id, name, email, phone, street, number, city, province ),
+                    order_details ( id, quantity, product:products ( id, name ) ),
+                    stops ( id, state, route:routes ( id, route_number, state ) )
+                `,
+                    { count: 'exact' },
+                )
+
+            if (state) query = query.eq('state', state)
+            if (term) {
+                query = query.or(
+                    ['name', 'email', 'phone', 'street', 'city']
+                        .map((field) => `${field}.ilike.*${term}*`)
+                        .join(','),
+                    { referencedTable: 'clients' },
+                )
+            }
+
+            return query
+                .order('arrival_date', { ascending: false })
+                .order('created_at', { ascending: false })
+                .range(from, from + pageSize - 1)
+        }
+
+        let currentPage = Math.max(1, Math.floor(page) || 1)
+        let { data, error, count } = await fetchPage(currentPage)
+
+        // PGRST103: la página pedida ya no existe (p. ej. se cancelaron pedidos)
+        if (error?.code === 'PGRST103' && currentPage > 1) {
+            currentPage = 1
+            ;({ data, error, count } = await fetchPage(currentPage))
+        }
+
+        assertNoSupabaseError(error, 'Error trayendo los pedidos')
+
+        const total = count ?? 0
+
+        return {
+            orders: (data ?? []) as Order[],
+            page: currentPage,
+            totalPages: Math.max(1, Math.ceil(total / pageSize)),
+            total,
+        }
+    },
+)
+
+export type OrdersPage = NonNullable<Awaited<ReturnType<typeof getOrdersPage>>>
+
 // Fechas "YYYY-MM-DD" (los pedidos se guardan a medianoche UTC del día de entrega)
 function shiftDayKey(key: string, days: number) {
     const [year, month, day] = key.split('-').map(Number)

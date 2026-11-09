@@ -4,7 +4,7 @@
 import styles from "./orders.module.css";
 
 // Hooks
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useResetOnChange } from "@/utils/hooks/useResetOnChange";
 import { useRouter } from "next/navigation";
 
@@ -14,12 +14,18 @@ import {
     cancelOrder,
     restoreOrder,
 } from "@/modules/orders/orders.actions";
-import type { NewOrderOptions, Order } from "@/modules/orders/orders.dal";
+import type { NewOrderOptions, Order, OrdersPage } from "@/modules/orders/orders.dal";
 
 // Constants and utils
-import { DAYS_BEFORE, DAYS_AFTER } from "@/modules/orders/orders.constants";
+import {
+    ALL_ORDERS_PAGE_SIZE,
+    ALL_ORDERS_VIEW,
+    DAYS_BEFORE,
+    DAYS_AFTER,
+} from "@/modules/orders/orders.constants";
 import {
     dayKey,
+    formatOrderDayHeading,
     getOrderLiveRoute,
     parseDateOnly,
     startOfDay,
@@ -35,13 +41,20 @@ import OrderCard from "./OrderCard";
 import EditDateModal from "./EditDateModal";
 import ConfirmModal from "./ConfirmModal";
 import CreateOrderModal from "./CreateOrderModal";
+import PaginationControl from "@/components/ui/admin/pagination/PaginationControl";
 
 type OrdersViewProps = {
     orders: Order[];
     newOrderOptions: NewOrderOptions;
     // Pedido a mostrar al entrar (viene de una parada en Rutas)
     focusOrderId?: string;
+    // Vista "Todos" (?vista=todos): una página ya filtrada en el servidor; null = vista por día
+    allOrders: (OrdersPage & { search: string; state: string }) | null;
 };
+
+const ORDERS_PATH = "/admin/orders";
+// Espera tras dejar de escribir antes de buscar en el servidor (vista "Todos")
+const SEARCH_DEBOUNCE_MS = 350;
 
 // Modal de fecha: edición en lote o "Reprogramar" de un solo pedido
 type DateModalState = { orders: Order[]; reactivate: boolean };
@@ -56,10 +69,18 @@ function describeRoute(order: Order) {
     return route ? `Ruta #${route.route_number}` : "";
 }
 
-export default function OrdersView({ orders, newOrderOptions, focusOrderId }: OrdersViewProps) {
+export default function OrdersView({
+    orders,
+    newOrderOptions,
+    focusOrderId,
+    allOrders,
+}: OrdersViewProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [isNavigating, startNavigation] = useTransition();
     const today = useMemo(() => todayAR(), []);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const isAllView = allOrders !== null;
 
     // Solo se enfoca si el pedido está dentro de los días que muestra la pantalla
     const focusOrder = orders.find((order) => order.id === focusOrderId);
@@ -95,9 +116,65 @@ export default function OrdersView({ orders, newOrderOptions, focusOrderId }: Or
     }, [ordersByDay, selectedDay]);
 
     // --- Filtros y orden ---
-    const [search, setSearch] = useState("");
-    const [stateFilter, setStateFilter] = useState<string>("Todos");
+    // En la vista "Todos" arrancan desde la URL (puede llegarse con ?q=...&estado=...)
+    const [search, setSearch] = useState(allOrders?.search ?? "");
+    const [stateFilter, setStateFilter] = useState<string>(allOrders?.state ?? "Todos");
     const [sortBy, setSortBy] = useState<SortOption>("hora-asc");
+
+    // --- Vista "Todos": página, búsqueda y estado viven en la URL ---
+    // Así router.refresh() (después de cancelar, reprogramar, etc.) recarga la misma página
+    const navigateToAll = (next: { page?: number; search: string; state: string }, replace = false) => {
+        const params = new URLSearchParams({ vista: ALL_ORDERS_VIEW });
+        if (next.page && next.page > 1) params.set("pagina", String(next.page));
+        if (next.search.trim()) params.set("q", next.search.trim());
+        if (next.state !== "Todos") params.set("estado", next.state);
+
+        const url = `${ORDERS_PATH}?${params}`;
+        startNavigation(() => {
+            if (replace) router.replace(url, { scroll: false });
+            else router.push(url, { scroll: false });
+        });
+    };
+
+    const handleSelectAll = () => {
+        if (isAllView) return;
+        setHighlightedId(null);
+        setExpandedId(null);
+        setSelectedOrderIds([]);
+        navigateToAll({ search, state: stateFilter });
+    };
+
+    const handleStateFilterChange = (value: string) => {
+        setStateFilter(value);
+        if (isAllView) navigateToAll({ search, state: value });
+    };
+
+    const handlePageChange = (page: number) => {
+        if (!allOrders) return;
+        navigateToAll({ page, search: allOrders.search, state: allOrders.state });
+        containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    // Si el estado de la URL cambia por atrás/adelante del navegador, el select lo acompaña.
+    // (La búsqueda no: se navega con replace, así que el historial no la cambia, y pisarla
+    // borraría lo que se está escribiendo mientras carga.)
+    useResetOnChange([allOrders?.state], () => {
+        if (allOrders) setStateFilter(allOrders.state);
+    });
+
+    // La búsqueda va al servidor recién cuando se deja de escribir (replace: no llena el historial)
+    const appliedSearch = allOrders?.search;
+    useEffect(() => {
+        if (appliedSearch === undefined || search.trim() === appliedSearch) return;
+
+        const timeout = setTimeout(
+            () => navigateToAll({ search, state: stateFilter }, true),
+            SEARCH_DEBOUNCE_MS,
+        );
+        return () => clearTimeout(timeout);
+        // navigateToAll cambia en cada render; solo importa cuando cambia el texto
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search, appliedSearch]);
 
     // Limpieza de selecciones y expansión al cambiar de día o filtros
     const [expandedId, setExpandedId] = useState<string | null>(focusOrder?.id ?? null);
@@ -120,15 +197,22 @@ export default function OrdersView({ orders, newOrderOptions, focusOrderId }: Or
         setHighlightedId(null);
         setExpandedId(null);
         setSelectedOrderIds([]);
+        // Desde "Todos" se vuelve a la vista por día (sin parámetros en la URL)
+        if (isAllView) {
+            startNavigation(() => router.push(ORDERS_PATH, { scroll: false }));
+        }
     };
 
-    // Limpia selecciones huérfanas si cambian los filtros
-    useResetOnChange([search, stateFilter], () => {
+    // Limpia selecciones huérfanas si cambian los filtros, la vista o la página
+    useResetOnChange([search, stateFilter, isAllView, allOrders?.page], () => {
         setSelectedOrderIds([]);
         setExpandedId(null);
     });
 
     const filteredOrders = useMemo(() => {
+        // En "Todos" el servidor ya filtró y ordenó (de la fecha más lejana a la más vieja)
+        if (allOrders) return allOrders.orders;
+
         const term = search.trim().toLowerCase();
 
         const filtered = dayOrders.filter((order) => {
@@ -170,7 +254,7 @@ export default function OrdersView({ orders, newOrderOptions, focusOrderId }: Or
                     return 0;
             }
         });
-    }, [dayOrders, search, stateFilter, sortBy]);
+    }, [allOrders, dayOrders, search, stateFilter, sortBy]);
 
     // --- Avisos y confirmaciones ---
     const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -383,6 +467,11 @@ export default function OrdersView({ orders, newOrderOptions, focusOrderId }: Or
     // Al crear, se muestra el día del pedido si entra en los días de la pantalla
     const handleOrderCreated = (arrivalDate: string) => {
         setIsCreating(false);
+        // En "Todos" el pedido nuevo aparece al refrescar, sin cambiar de vista
+        if (isAllView) {
+            router.refresh();
+            return;
+        }
         const createdDay = days.find((day) => dayKey(day) === arrivalDate);
         if (createdDay) handleSelectDay(createdDay);
         router.refresh();
@@ -396,20 +485,23 @@ export default function OrdersView({ orders, newOrderOptions, focusOrderId }: Or
     };
 
     return (
-        <div className={styles.container}>
+        <div className={styles.container} ref={containerRef}>
             <DayTabs
                 days={days}
                 selectedDay={selectedDay}
                 today={today}
                 ordersByDay={ordersByDay}
+                isAllView={isAllView}
                 onSelectDay={handleSelectDay}
+                onSelectAll={handleSelectAll}
             />
 
             <OrdersToolbar
                 search={search}
                 onSearchChange={setSearch}
                 stateFilter={stateFilter}
-                onStateFilterChange={setStateFilter}
+                onStateFilterChange={handleStateFilterChange}
+                showSort={!isAllView}
                 sortBy={sortBy}
                 onSortByChange={setSortBy}
                 isPending={isPending}
@@ -419,31 +511,69 @@ export default function OrdersView({ orders, newOrderOptions, focusOrderId }: Or
                 onNewOrder={() => setIsCreating(true)}
             />
 
-            <div className={styles.ordersList}>
+
+            <div
+                className={`${styles.ordersList} ${isNavigating ? styles.ordersListLoading : ""}`}
+                aria-busy={isNavigating}
+            >
                 {filteredOrders.length === 0 && (
                     <p className={styles.emptyState}>
-                        No hay pedidos para este día con esos filtros.
+                        {isAllView
+                            ? "No hay pedidos con esos filtros."
+                            : "No hay pedidos para este día con esos filtros."}
                     </p>
                 )}
 
-                {filteredOrders.map((order) => (
-                    <OrderCard
-                        key={order.id}
-                        order={order}
-                        today={today}
-                        isExpanded={expandedId === order.id}
-                        isHighlighted={highlightedId === order.id}
-                        isSelected={selectedOrderIds.includes(order.id)}
-                        isUpdating={isUpdating(order)}
-                        onToggleExpand={() =>
-                            setExpandedId(expandedId === order.id ? null : order.id)
-                        }
-                        onToggleSelect={() => toggleOrderSelection(order.id)}
-                        onToggleState={() => handleToggleOrderState(order)}
-                        onReschedule={() => openRescheduleModal(order)}
-                    />
-                ))}
+                {filteredOrders.map((order, index) => {
+                    // En "Todos" se mezclan días: un encabezado cada vez que cambia la fecha
+                    const orderDay = dayKey(parseDateOnly(order.arrival_date));
+                    const showDayHeading =
+                        isAllView &&
+                        (index === 0 ||
+                            dayKey(parseDateOnly(filteredOrders[index - 1].arrival_date)) !== orderDay);
+
+                    return (
+                        <Fragment key={order.id}>
+                            {showDayHeading && (
+                                <h3 className={styles.dayHeading}>
+                                    {formatOrderDayHeading(order.arrival_date, today)}
+                                </h3>
+                            )}
+                            <OrderCard
+                                order={order}
+                                today={today}
+                                isExpanded={expandedId === order.id}
+                                isHighlighted={highlightedId === order.id}
+                                isSelected={selectedOrderIds.includes(order.id)}
+                                isUpdating={isUpdating(order)}
+                                onToggleExpand={() =>
+                                    setExpandedId(expandedId === order.id ? null : order.id)
+                                }
+                                onToggleSelect={() => toggleOrderSelection(order.id)}
+                                onToggleState={() => handleToggleOrderState(order)}
+                                onReschedule={() => openRescheduleModal(order)}
+                            />
+                        </Fragment>
+                    );
+                })}
             </div>
+
+            {allOrders && allOrders.total > 0 && (
+                <div className={styles.pagination}>
+                    <span className={styles.paginationSummary}>
+                        {(allOrders.page - 1) * ALL_ORDERS_PAGE_SIZE + 1}–
+                        {(allOrders.page - 1) * ALL_ORDERS_PAGE_SIZE + allOrders.orders.length} de{" "}
+                        {allOrders.total} {allOrders.total === 1 ? "pedido" : "pedidos"}
+                    </span>
+                    {allOrders.totalPages > 1 && (
+                        <PaginationControl
+                            currentPage={allOrders.page}
+                            setCurrentPage={handlePageChange}
+                            totalPages={allOrders.totalPages}
+                        />
+                    )}
+                </div>
+            )}
 
             {dateModal && (
                 <EditDateModal
