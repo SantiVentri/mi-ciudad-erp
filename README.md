@@ -160,6 +160,21 @@ npx supabase migration new <descripcion_corta>
 npx supabase db push
 ```
 
+### Datos de prueba (seed)
+
+`supabase/seed.sql` carga datos ficticios después de las migraciones en cada `db reset`: un admin, 6 conductores, clientes, vehículos, 3 meses de rutas completadas con sus costos y gastos, rutas pendientes para hoy y pedidos pendientes hasta fin de mes. Todos los usuarios usan la contraseña `MiCiudad2026!` (solo desarrollo).
+
+Las fechas son relativas al día en que se generó el archivo. Para refrescarlas:
+
+```bash
+npm run seed:generate        # regenera supabase/seed.sql (necesita ORS_API_KEY)
+npx supabase db reset        # local; contra el proyecto remoto: npx supabase db reset --linked
+```
+
+El generador (`scripts/seed/generate-seed.mjs`) calcula los km y minutos de cada ruta por calle con OpenRouteService y guarda las respuestas en `scripts/seed/.ors-cache.json` para no repetir consultas. Los clientes salen de `scripts/seed/data/clients.sql`. Los precios de gasoil y los sueldos son estimaciones con aumentos mensuales: se ajustan en las constantes `FUEL` y `SALARY` del script.
+
+> `db reset --linked` borra todos los datos del proyecto remoto. Usalo solo en un entorno de desarrollo.
+
 Las migraciones siguen el formato `YYYYMMDDHHMMSS_descripcion.sql`. Después de cambiar el esquema, regenerá los tipos:
 
 ```bash
