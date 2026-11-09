@@ -59,19 +59,27 @@ export type RouteCostDetail = {
     expenses: RouteExpense[];
 };
 
+// Real - estimado, promedio de las rutas finalizadas en los últimos 30 días
+export type DurationVarianceMetric = {
+    avgVarianceMin: number | null;
+    routesMeasured: number;
+};
+
 export type CostsMetricsData = {
     currentFuelPrice: { pricePerLiter: number; validFrom: string } | null;
     fuelCostPerKm: number | null;
     vehiclesWithYield: number;
-    avgDurationVarianceMin: number | null;
-    finishedRoutesMeasured: number;
     totalExpenses: number;
     routesWithExpenses: number;
-    // Promedios por ruta (rutas no canceladas con costo calculado, últimos 30 días)
+    // Rutas completadas con costo calculado en los últimos 30 días
+    completedRoutes: number;
     avgCostPerRoute: number | null;
-    avgFuelCostPerRoute: number | null;
-    avgLitersPerRoute: number | null;
-    avgKmPerRoute: number | null;
-    routesWithCost: number;
+    // Paradas entregadas en esas rutas y lo que se vendió en ellas
+    deliveries: number;
+    costPerDelivery: number | null;
+    deliveredSales: number;
+    unpricedLines: number;
+    // Costo de esas rutas sobre lo vendido en ellas (null si faltan precios)
+    logisticsCostPct: number | null;
     estimatedCostPerDay: { label: string; value: number }[];
 };

@@ -9,7 +9,7 @@ import TopDriversChart from "./TopDriversChart";
 import type { DriversMetricsData } from "@/modules/transports/transports.dal";
 
 // Icons
-import { Users, UserCheck, MapPinOff, UserMinus } from "lucide-react";
+import { Wallet, UserCheck, MapPinOff, UserMinus } from "lucide-react";
 
 type DriversMetricsProps = {
     metrics: DriversMetricsData | null;
@@ -21,16 +21,23 @@ export default function DriversMetrics({ metrics, topDrivers, onViewWithoutRoute
     const totalDrivers = metrics?.totalDrivers ?? 0;
     const activeDrivers = metrics?.activeDrivers ?? 0;
     const driversWithoutRouteToday = metrics?.driversWithoutRouteToday ?? 0;
+    const driversWithoutSalary = metrics?.driversWithoutSalary ?? null;
     const inactiveDrivers = totalDrivers - activeDrivers;
 
     return (
         <div className={styles.metricsContainer}>
             <div className={styles.metricsGrid}>
                 <Metric
-                    icon={<Users size={15} />}
-                    title="Total de conductores"
-                    value={totalDrivers}
-                    description="entre activos e invitados"
+                    icon={<Wallet size={15} />}
+                    title="Sin sueldo vigente"
+                    value={driversWithoutSalary ?? "—"}
+                    description={
+                        driversWithoutSalary == null
+                            ? "Solo lo ve el admin"
+                            : driversWithoutSalary > 0
+                              ? "Activos sin sueldo cargado: no se estima el costo de sus rutas"
+                              : "Todos los activos tienen sueldo vigente"
+                    }
                 />
                 <Metric
                     icon={<UserCheck size={15} />}

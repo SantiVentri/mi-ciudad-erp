@@ -9,7 +9,7 @@ import TopVehiclesChart from "./TopVehiclesChart";
 import type { VehiclesMetricsData } from "@/modules/transports/transports.dal";
 
 // Icons
-import { Truck, CheckCircle2, XCircle, MapPinOff } from "lucide-react";
+import { Gauge, CheckCircle2, XCircle, MapPinOff } from "lucide-react";
 
 type VehiclesMetricsProps = {
     metrics: VehiclesMetricsData | null;
@@ -18,7 +18,7 @@ type VehiclesMetricsProps = {
 };
 
 export default function VehiclesMetrics({ metrics, topVehicles, onViewWithoutRouteToday }: VehiclesMetricsProps) {
-    const totalVehicles = metrics?.totalVehicles ?? 0;
+    const vehiclesWithoutYield = metrics?.vehiclesWithoutYield ?? 0;
     const activeVehicles = metrics?.activeVehicles ?? 0;
     const inactiveVehicles = metrics?.inactiveVehicles ?? 0;
     const vehiclesWithoutRouteToday = metrics?.vehiclesWithoutRouteToday ?? 0;
@@ -27,10 +27,14 @@ export default function VehiclesMetrics({ metrics, topVehicles, onViewWithoutRou
         <div className={styles.metricsContainer}>
             <div className={styles.metricsGrid}>
                 <Metric
-                    icon={<Truck size={15} />}
-                    title="Total de vehículos"
-                    value={totalVehicles}
-                    description="en toda la flota"
+                    icon={<Gauge size={15} />}
+                    title="Sin rendimiento cargado"
+                    value={vehiclesWithoutYield}
+                    description={
+                        vehiclesWithoutYield > 0
+                            ? "Activos sin km por litro: no se estima el costo de sus rutas"
+                            : "Todos los activos tienen rendimiento cargado"
+                    }
                 />
                 <Metric
                     icon={<CheckCircle2 size={15} />}

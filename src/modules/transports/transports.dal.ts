@@ -3,7 +3,21 @@ import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
 import { getCurrentUser } from '@/utils/auth/getCurrentUser'
 import { assertNoSupabaseError } from '@/utils/supabase/assertNoError'
+import { todayKeyAR } from '@/utils/dates/argentina'
+import { nextDayKey } from '@/modules/routes/routes.utils'
 import { Driver } from './transports.types'
+
+// Rutas de hoy en Argentina que siguen en pie (las canceladas no ocupan a nadie).
+// route_date se guarda a medianoche UTC del día.
+function todayRoutesQuery(supabase: Awaited<ReturnType<typeof getServerClient>>, columns: string) {
+    const today = todayKeyAR()
+    return supabase
+        .from('routes')
+        .select(columns)
+        .gte('route_date', `${today}T00:00:00Z`)
+        .lt('route_date', `${nextDayKey(today)}T00:00:00Z`)
+        .neq('state', 'Cancelada')
+}
 
 export const getVehicles = cache(async () => {
     const supabase = await getServerClient()
@@ -72,18 +86,9 @@ export const getVehiclesMetrics = cache(async () => {
     const user = await getCurrentUser()
     if (!user) return null
 
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    const tomorrowStart = new Date(todayStart)
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1)
-
     const [vehiclesRes, todayRoutesRes] = await Promise.all([
-        supabase.from('vehicles').select('id, is_active'),
-        supabase
-            .from('routes')
-            .select('vehicle_id')
-            .gte('route_date', todayStart.toISOString())
-            .lt('route_date', tomorrowStart.toISOString()),
+        supabase.from('vehicles').select('id, is_active, km_per_liter'),
+        todayRoutesQuery(supabase, 'vehicle_id').returns<{ vehicle_id: string }[]>(),
     ])
 
     assertNoSupabaseError(vehiclesRes.error, 'Error trayendo métricas de vehículos')
@@ -100,11 +105,17 @@ export const getVehiclesMetrics = cache(async () => {
         (v) => v.is_active !== false && !assignedTodayIds.has(v.id)
     ).length
 
+    // Sin rendimiento no se puede estimar el combustible de sus rutas
+    const vehiclesWithoutYield = vehicles.filter(
+        (v) => v.is_active !== false && v.km_per_liter == null
+    ).length
+
     return {
         totalVehicles,
         activeVehicles,
         inactiveVehicles,
         vehiclesWithoutRouteToday,
+        vehiclesWithoutYield,
     }
 })
 
@@ -154,31 +165,46 @@ export const getDriversMetrics = cache(async () => {
     const drivers = await getDrivers()
     if (!drivers) return null
 
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    const tomorrowStart = new Date(todayStart)
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+    const today = todayKeyAR()
 
-    const { data: todayRoutes, error: todayRoutesError } = await supabase
-        .from('routes')
-        .select('driver_id')
-        .gte('route_date', todayStart.toISOString())
-        .lt('route_date', tomorrowStart.toISOString())
+    // Sueldos vigentes hoy: solo el admin los puede leer (RLS)
+    const [todayRoutesRes, salariesRes] = await Promise.all([
+        todayRoutesQuery(supabase, 'driver_id, co_driver_id').returns<
+            { driver_id: string | null; co_driver_id: string | null }[]
+        >(),
+        user.role === 'admin'
+            ? supabase
+                  .from('salaries')
+                  .select('profile_id')
+                  .lte('valid_from', today)
+                  .or(`valid_to.is.null,valid_to.gte.${today}`)
+            : null,
+    ])
 
-    assertNoSupabaseError(todayRoutesError, 'Error trayendo rutas de hoy')
+    assertNoSupabaseError(todayRoutesRes.error, 'Error trayendo rutas de hoy')
+    if (salariesRes) assertNoSupabaseError(salariesRes.error, 'Error trayendo los sueldos vigentes')
 
+    const activeDriversList = drivers.filter((d) => d && d.is_active !== false)
     const totalDrivers = drivers.length
-    const activeDrivers = drivers.filter((d) => d && d.is_active !== false).length
+    const activeDrivers = activeDriversList.length
 
-    const assignedTodayIds = new Set((todayRoutes ?? []).map((r) => r.driver_id))
-    const driversWithoutRouteToday = drivers.filter(
-        (d) => d && d.is_active !== false && !assignedTodayIds.has(d.id)
-    ).length
+    // El acompañante también está ocupado
+    const assignedTodayIds = new Set(
+        (todayRoutesRes.data ?? []).flatMap((r) => [r.driver_id, r.co_driver_id]).filter(Boolean),
+    )
+    const driversWithoutRouteToday = activeDriversList.filter((d) => !assignedTodayIds.has(d.id)).length
+
+    // Sin sueldo vigente no se puede estimar el costo laboral de sus rutas
+    const withSalary = new Set((salariesRes?.data ?? []).map((s) => s.profile_id))
+    const driversWithoutSalary = salariesRes
+        ? activeDriversList.filter((d) => !withSalary.has(d.id)).length
+        : null
 
     return {
         totalDrivers,
         activeDrivers,
         driversWithoutRouteToday,
+        driversWithoutSalary,
     }
 })
 

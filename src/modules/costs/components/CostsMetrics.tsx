@@ -10,74 +10,53 @@ import { getCostsMetrics } from "@/modules/costs/costs.dal";
 import { COSTS_CHART_DAYS } from "@/modules/costs/costs.constants";
 
 // Utils
-import {
-    formatCurrency,
-    formatDayKey,
-    formatKm,
-    formatNumber,
-    formatVariance,
-} from "@/modules/costs/costs.utils";
+import { formatCurrency } from "@/modules/costs/costs.utils";
 
 // Icons
-import { Calculator, Clock, Droplets, Fuel, Gauge, Receipt } from "lucide-react";
+import { Gauge, Percent, Receipt, Truck } from "lucide-react";
+
+const pctFormatter = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 1 });
 
 export default async function CostsMetrics() {
     const metrics = await getCostsMetrics();
 
     const fuelPrice = metrics?.currentFuelPrice ?? null;
-    const variance = metrics?.avgDurationVarianceMin ?? null;
-    const routesWithCost = metrics?.routesWithCost ?? 0;
-    const routesLabel = `${routesWithCost} ${routesWithCost === 1 ? "ruta" : "rutas"}`;
-
-    // "42,5 l · 63 km" por ruta
-    const fuelDetail = [
-        metrics?.avgLitersPerRoute != null
-            ? `${formatNumber(Math.round(metrics.avgLitersPerRoute * 10) / 10)} l`
-            : null,
-        metrics?.avgKmPerRoute != null ? formatKm(Math.round(metrics.avgKmPerRoute)) : null,
-    ]
-        .filter(Boolean)
-        .join(" · ");
+    const completedRoutes = metrics?.completedRoutes ?? 0;
+    const deliveries = metrics?.deliveries ?? 0;
+    const unpricedLines = metrics?.unpricedLines ?? 0;
+    const routesLabel = `${completedRoutes} ${completedRoutes === 1 ? "ruta completada" : "rutas completadas"}`;
 
     return (
         <div className={styles.metricsContainer}>
             <div className={styles.metricsGrid}>
                 <Metric
-                    icon={<Calculator size={15} />}
-                    title="Costo promedio por ruta"
+                    icon={<Truck size={15} />}
+                    title="Costo por entrega"
                     value={
-                        metrics?.avgCostPerRoute != null
-                            ? formatCurrency(Math.round(metrics.avgCostPerRoute))
+                        metrics?.costPerDelivery != null
+                            ? formatCurrency(Math.round(metrics.costPerDelivery))
                             : "Sin datos"
                     }
                     description={
-                        routesWithCost > 0
-                            ? `Combustible, mano de obra y gastos. Promedio de ${routesLabel} en 30 días`
-                            : "Aparece cuando haya rutas con costo calculado"
+                        deliveries > 0 && metrics?.avgCostPerRoute != null
+                            ? `${deliveries} entregas en ${routesLabel} (30 días). Ruta promedio: ${formatCurrency(Math.round(metrics.avgCostPerRoute))}`
+                            : "Aparece cuando se completen rutas con costo calculado"
                     }
                 />
                 <Metric
-                    icon={<Droplets size={15} />}
-                    title="Combustible promedio por ruta"
+                    icon={<Percent size={15} />}
+                    title="Costo logístico sobre ventas"
                     value={
-                        metrics?.avgFuelCostPerRoute != null
-                            ? formatCurrency(Math.round(metrics.avgFuelCostPerRoute))
+                        metrics?.logisticsCostPct != null
+                            ? `${pctFormatter.format(metrics.logisticsCostPct)} %`
                             : "Sin datos"
                     }
                     description={
-                        routesWithCost > 0
-                            ? `Estimado${fuelDetail ? ` (${fuelDetail})` : ""}. Promedio de ${routesLabel} en 30 días`
-                            : "Aparece cuando haya rutas con costo calculado"
-                    }
-                />
-                <Metric
-                    icon={<Fuel size={15} />}
-                    title="Precio del combustible vigente"
-                    value={fuelPrice ? formatCurrency(fuelPrice.pricePerLiter) : "Sin cargar"}
-                    description={
-                        fuelPrice
-                            ? `Por litro, desde el ${formatDayKey(fuelPrice.validFrom)}`
-                            : "Cargalo en la pestaña Combustible"
+                        metrics?.logisticsCostPct != null
+                            ? `${formatCurrency(Math.round(metrics.deliveredSales))} vendidos en ${routesLabel} (30 días)`
+                            : unpricedLines > 0
+                              ? `Hay ${unpricedLines} ${unpricedLines === 1 ? "renglón" : "renglones"} de pedidos sin precio registrado`
+                              : "Aparece cuando se completen rutas con ventas"
                     }
                 />
                 <Metric
@@ -85,19 +64,11 @@ export default async function CostsMetrics() {
                     title="Combustible por km"
                     value={metrics?.fuelCostPerKm != null ? formatCurrency(metrics.fuelCostPerKm) : "Sin datos"}
                     description={
-                        metrics && metrics.vehiclesWithYield > 0
-                            ? `Promedio de ${metrics.vehiclesWithYield} ${metrics.vehiclesWithYield === 1 ? "vehículo" : "vehículos"} con rendimiento cargado`
-                            : "Cargá el rendimiento de los vehículos en Transportes"
-                    }
-                />
-                <Metric
-                    icon={<Clock size={15} />}
-                    title="Desvío de duración"
-                    value={variance != null ? formatVariance(variance) : "Sin datos"}
-                    description={
-                        metrics && metrics.finishedRoutesMeasured > 0
-                            ? `Real vs estimado, promedio de ${metrics.finishedRoutesMeasured} ${metrics.finishedRoutesMeasured === 1 ? "ruta finalizada" : "rutas finalizadas"} en 30 días`
-                            : "Aparece cuando se finalicen rutas con estimación"
+                        !fuelPrice
+                            ? "Cargá el precio del combustible en la pestaña Combustible"
+                            : metrics && metrics.vehiclesWithYield > 0
+                              ? `Promedio de ${metrics.vehiclesWithYield} ${metrics.vehiclesWithYield === 1 ? "vehículo" : "vehículos"} con rendimiento cargado`
+                              : "Cargá el rendimiento de los vehículos en Transportes"
                     }
                 />
                 <Metric

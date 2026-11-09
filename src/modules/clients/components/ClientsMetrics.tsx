@@ -9,18 +9,24 @@ import TopClientsChart from "./TopClientsChart";
 
 import { Client } from "../clients.dal";
 
+// Utils
+import { getClientStatus } from "@/modules/clients/clients.utils";
+
 // Icons
-import { Users } from "lucide-react";
+import { UserPlus, UserRoundCheck, UserRoundX, UserX } from "lucide-react";
 
 // Props
 type ClientsMetricsProps = {
     clients: Client[];
     topClients: { label: string; value: number }[] | null;
+    // Habilitados sin pedidos en 30 días ni programados (null: no se pudo calcular)
+    withoutRecentOrders: number | null;
 };
 
-export default function ClientsMetrics({ clients, topClients }: ClientsMetricsProps) {
+export default function ClientsMetrics({ clients, topClients, withoutRecentOrders }: ClientsMetricsProps) {
     const totalClients = clients.length;
-    const activeClients = clients.filter(client => client.is_active).length;
+    // Misma regla que la tabla: sin is_active cargado cuenta como activo
+    const activeClients = clients.filter(client => getClientStatus(client) === "Activo").length;
     const inactiveClients = totalClients - activeClients;
 
     const isNew = (createdAt: string) => {
@@ -36,25 +42,29 @@ export default function ClientsMetrics({ clients, topClients }: ClientsMetricsPr
         <div className={styles.metricsContainer}>
             <div className={styles.metricsGrid}>
                 <Metric
-                    icon={<Users size={15} />}
-                    title="Total de clientes"
-                    value={totalClients}
-                    description="en toda la base"
+                    icon={<UserX size={15} />}
+                    title="Sin pedidos en 30 días"
+                    value={withoutRecentOrders ?? "—"}
+                    description={
+                        withoutRecentOrders
+                            ? "Habilitados, sin pedidos recientes ni programados: contactalos"
+                            : "Todos los habilitados pidieron en los últimos 30 días"
+                    }
                 />
                 <Metric
-                    icon={<Users size={15} />}
+                    icon={<UserRoundCheck size={15} />}
                     title="Clientes activos"
                     value={activeClients}
-                    description="con actividad reciente"
+                    description="habilitados para recibir pedidos"
                 />
                 <Metric
-                    icon={<Users size={15} />}
+                    icon={<UserRoundX size={15} />}
                     title="Clientes inactivos"
                     value={inactiveClients}
-                    description="sin actividad reciente"
+                    description="deshabilitados, no reciben pedidos"
                 />
                 <Metric
-                    icon={<Users size={15} />}
+                    icon={<UserPlus size={15} />}
                     title="Clientes nuevos"
                     value={newClients}
                     description="en los últimos 60 días"

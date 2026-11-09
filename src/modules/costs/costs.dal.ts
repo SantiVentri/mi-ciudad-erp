@@ -10,6 +10,8 @@ import { COSTS_CHART_DAYS, COSTS_METRICS_WINDOW_DAYS } from "@/modules/costs/cos
 import { fullName, isExpenseType } from "@/modules/costs/costs.utils";
 import type {
     CostsMetricsData,
+    DbClient,
+    DurationVarianceMetric,
     EmployeeOption,
     FuelPrice,
     RouteCostDetail,
@@ -202,6 +204,45 @@ function toNumberOrNull(value: number | string | null | undefined) {
     return value == null ? null : Number(value);
 }
 
+type DeliveredStopRow = {
+    id: string;
+    order: { order_details: { quantity: number; unit_price: number | null }[] } | null;
+};
+
+/**
+ * Paradas entregadas de las rutas dadas y lo que se vendió en ellas
+ * (cantidad × precio guardado en cada renglón). Pagina de a 1000 filas.
+ */
+async function getRouteDeliveries(supabase: DbClient, routeIds: string[]) {
+    const result = { count: 0, sales: 0, unpricedLines: 0 };
+    if (routeIds.length === 0) return result;
+
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+            .from("stops")
+            .select("id, order:orders ( order_details ( quantity, unit_price ) )")
+            .in("route_id", routeIds)
+            .eq("state", "Completada")
+            .order("id", { ascending: true })
+            .range(from, from + PAGE - 1);
+
+        assertNoSupabaseError(error, "Error trayendo las entregas de las rutas");
+
+        for (const stop of (data ?? []) as DeliveredStopRow[]) {
+            result.count += 1;
+            for (const line of stop.order?.order_details ?? []) {
+                if (line.unit_price == null) result.unpricedLines += 1;
+                else result.sales += Number(line.quantity) * Number(line.unit_price);
+            }
+        }
+
+        if (!data || data.length < PAGE) break;
+    }
+
+    return result;
+}
+
 export const getCostsMetrics = cache(async (): Promise<CostsMetricsData | null> => {
     const supabase = await getAdminClient();
     if (!supabase) return null;
@@ -230,7 +271,7 @@ export const getCostsMetrics = cache(async (): Promise<CostsMetricsData | null> 
         supabase
             .from("route_cost_summary")
             .select(
-                "route_date, state, estimated_distance_km, duration_variance_min, estimated_fuel_cost, estimated_labor_cost, total_expenses",
+                "route_id, route_date, state, estimated_fuel_cost, estimated_labor_cost, total_expenses",
             )
             .gte("route_date", windowStart)
             .lt("route_date", windowEnd),
@@ -265,46 +306,21 @@ export const getCostsMetrics = cache(async (): Promise<CostsMetricsData | null> 
 
     const rows = (summaryRes.data ?? []).filter((row) => row.state !== "Cancelada");
 
-    const variances = rows
-        .map((row) => row.duration_variance_min)
-        .filter((value): value is number => value != null)
-        .map(Number);
-    const avgDurationVarianceMin =
-        variances.length > 0
-            ? variances.reduce((sum, value) => sum + value, 0) / variances.length
-            : null;
-
-    // Promedios por ruta: solo las que tienen costo calculado
-    const costedRows = rows.filter(
-        (row) => row.estimated_fuel_cost != null && row.estimated_labor_cost != null,
+    // Costo por entrega y sobre ventas: solo rutas completadas con costo calculado
+    // (una ruta de hoy sin terminar no tiene entregas todavía y bajaría el promedio)
+    const routeCost = (row: (typeof rows)[number]) =>
+        Number(row.estimated_fuel_cost) + Number(row.estimated_labor_cost) + Number(row.total_expenses ?? 0);
+    const completedRows = rows.filter(
+        (row) =>
+            row.state === "Completada" &&
+            row.route_id != null &&
+            row.estimated_fuel_cost != null &&
+            row.estimated_labor_cost != null,
     );
-    const average = (values: number[]) =>
-        values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
-
-    const avgCostPerRoute = average(
-        costedRows.map(
-            (row) =>
-                Number(row.estimated_fuel_cost) +
-                Number(row.estimated_labor_cost) +
-                Number(row.total_expenses ?? 0),
-        ),
-    );
-    const avgFuelCostPerRoute = average(costedRows.map((row) => Number(row.estimated_fuel_cost)));
-
-    // Litros = costo de combustible ÷ precio del litro en la fecha de la ruta: los mismos
-    // litros con los que se estimó, aunque después cambie el rendimiento del vehículo
-    const liters = costedRows
-        .map((row) => {
-            const price = row.route_date ? priceOn(row.route_date.slice(0, 10)) : null;
-            return price ? Number(row.estimated_fuel_cost) / price.pricePerLiter : null;
-        })
-        .filter((value): value is number => value != null);
-    const avgLitersPerRoute = average(liters);
-    const avgKmPerRoute = average(
-        costedRows
-            .map((row) => row.estimated_distance_km)
-            .filter((value): value is number => value != null)
-            .map(Number),
+    const completedCost = completedRows.reduce((sum, row) => sum + routeCost(row), 0);
+    const deliveries = await getRouteDeliveries(
+        supabase,
+        completedRows.map((row) => row.route_id as string),
     );
 
     const totalExpenses = rows.reduce((sum, row) => sum + Number(row.total_expenses ?? 0), 0);
@@ -334,16 +350,55 @@ export const getCostsMetrics = cache(async (): Promise<CostsMetricsData | null> 
         currentFuelPrice,
         fuelCostPerKm,
         vehiclesWithYield: yields.length,
-        avgDurationVarianceMin,
-        finishedRoutesMeasured: variances.length,
         totalExpenses,
         routesWithExpenses,
-        avgCostPerRoute,
-        avgFuelCostPerRoute,
-        avgLitersPerRoute,
-        avgKmPerRoute,
-        routesWithCost: costedRows.length,
+        completedRoutes: completedRows.length,
+        avgCostPerRoute: completedRows.length > 0 ? completedCost / completedRows.length : null,
+        deliveries: deliveries.count,
+        costPerDelivery: deliveries.count > 0 ? completedCost / deliveries.count : null,
+        deliveredSales: deliveries.sales,
+        unpricedLines: deliveries.unpricedLines,
+        // Con renglones sin precio la proporción saldría inflada: no se muestra
+        logisticsCostPct:
+            deliveries.sales > 0 && deliveries.unpricedLines === 0
+                ? (completedCost / deliveries.sales) * 100
+                : null,
         estimatedCostPerDay,
+    };
+});
+
+/**
+ * Desvío promedio entre la duración real y la estimada de las rutas finalizadas en
+ * los últimos 30 días (se muestra en las métricas de Rutas). Solo admin: sale de
+ * route_cost_summary.
+ */
+export const getDurationVariance = cache(async (): Promise<DurationVarianceMetric | null> => {
+    const supabase = await getAdminClient();
+    if (!supabase) return null;
+
+    const today = todayAR();
+    const windowStart = `${dayKey(shiftDays(today, -(COSTS_METRICS_WINDOW_DAYS - 1)))}T00:00:00Z`;
+    const windowEnd = `${nextDayKey(dayKey(today))}T00:00:00Z`;
+
+    const { data, error } = await supabase
+        .from("route_cost_summary")
+        .select("state, duration_variance_min")
+        .gte("route_date", windowStart)
+        .lt("route_date", windowEnd)
+        .not("duration_variance_min", "is", null);
+
+    assertNoSupabaseError(error, "Error trayendo el desvío de duración de las rutas");
+
+    const variances = (data ?? [])
+        .filter((row) => row.state !== "Cancelada")
+        .map((row) => Number(row.duration_variance_min));
+
+    return {
+        avgVarianceMin:
+            variances.length > 0
+                ? variances.reduce((sum, value) => sum + value, 0) / variances.length
+                : null,
+        routesMeasured: variances.length,
     };
 });
 

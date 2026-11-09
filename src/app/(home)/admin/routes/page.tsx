@@ -1,6 +1,6 @@
 import { getAdminRoutes, getOrdersStatusByDay, getRoutesMetrics } from "@/modules/routes/routes.dal";
 import { getDrivers, getVehicles } from "@/modules/transports/transports.dal";
-import { getRouteCostDetails } from "@/modules/costs/costs.dal";
+import { getDurationVariance, getRouteCostDetails } from "@/modules/costs/costs.dal";
 import RoutesView from "@/modules/routes/components/RoutesView";
 import RoutesMetrics from "@/modules/routes/components/routesMetrics/RoutesMetrics";
 import { Suspense } from "react";
@@ -19,6 +19,7 @@ export const metadata = {
 export default async function RoutesPage() {
   // Las métricas se piden ya, en paralelo con el resto; RoutesMetrics reusa el resultado (cache)
   getRoutesMetrics().catch(() => {});
+  getDurationVariance().catch(() => {});
 
   const today = todayAR();
 

@@ -111,7 +111,7 @@ export const getRoutesMetrics = cache(async () => {
     const [routesRes, ordersRes] = await Promise.all([
         supabase
             .from("routes")
-            .select("id, route_date, state, stops ( id )")
+            .select("id, route_date, state, stops ( id, state )")
             .gte("route_date", dayKey(windowStart))
             .lte("route_date", todayKey),
         supabase
@@ -133,25 +133,32 @@ export const getRoutesMetrics = cache(async () => {
         (route) => route.state !== "Cancelada",
     );
 
-    const byDay = new Map<string, { routes: number; stops: number }>();
+    const byDay = new Map<string, number>();
+    // Paradas visitadas (entregadas o fallidas) en la ventana, y las de hoy
+    let completedStops = 0;
+    let failedStops = 0;
+    let todayStops = 0;
+    let todayCompletedStops = 0;
+
     for (const route of activeRoutes) {
         const key = dayKey(parseDateOnly(route.route_date));
-        const entry = byDay.get(key) ?? { routes: 0, stops: 0 };
-        entry.routes += 1;
-        entry.stops += route.stops?.length ?? 0;
-        byDay.set(key, entry);
+        byDay.set(key, (byDay.get(key) ?? 0) + 1);
+
+        // Las paradas canceladas (quitadas de la ruta) no cuentan
+        const stops = (route.stops ?? []).filter((stop) => stop.state !== "Cancelada");
+        for (const stop of stops) {
+            if (stop.state === "Completada") completedStops += 1;
+            if (stop.state === "Entrega fallida") failedStops += 1;
+        }
+        if (key === todayKey) {
+            todayStops += stops.length;
+            todayCompletedStops += stops.filter((stop) => stop.state === "Completada").length;
+        }
     }
 
-    const totalStops = activeRoutes.reduce(
-        (sum, route) => sum + (route.stops?.length ?? 0),
-        0,
-    );
-    const daysWithRoutes = byDay.size;
-
-    const routesToday = byDay.get(todayKey)?.routes ?? 0;
-    const avgOrdersPerDay = daysWithRoutes > 0 ? totalStops / daysWithRoutes : 0;
-    const avgStopsPerRoute =
-        activeRoutes.length > 0 ? totalStops / activeRoutes.length : 0;
+    const routesToday = byDay.get(todayKey) ?? 0;
+    const visitedStops = completedStops + failedStops;
+    const failedDeliveryRate = visitedStops > 0 ? (failedStops / visitedStops) * 100 : null;
 
     // Desde que existe el estado "Asignada", "Pendiente" ya significa "sin ruta"
     const unassignedOrders = (ordersRes.data ?? []).length;
@@ -162,15 +169,18 @@ export const getRoutesMetrics = cache(async () => {
         day.setDate(day.getDate() - i);
         routesPerDay.push({
             label: `${day.getDate()}/${day.getMonth() + 1}`,
-            value: byDay.get(dayKey(day))?.routes ?? 0,
+            value: byDay.get(dayKey(day)) ?? 0,
         });
     }
 
     return {
         routesToday,
+        todayStops,
+        todayCompletedStops,
         unassignedOrders,
-        avgOrdersPerDay,
-        avgStopsPerRoute,
+        failedDeliveryRate,
+        failedStops,
+        visitedStops,
         routesPerDay,
     };
 });

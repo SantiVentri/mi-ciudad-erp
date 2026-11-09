@@ -1,6 +1,7 @@
 // Utils
 import {
   getClients,
+  getClientsWithoutRecentOrders,
   getTopClientsByOrders,
 } from "@/modules/clients/clients.dal";
 
@@ -15,9 +16,10 @@ export const metadata = {
 };
 
 export default async function ClientsPage() {
-  const [clients, topClients] = await Promise.all([
+  const [clients, topClients, withoutRecentOrders] = await Promise.all([
     getClients(),
     getTopClientsByOrders(6),
+    getClientsWithoutRecentOrders(),
   ]);
 
   return (
@@ -26,7 +28,11 @@ export default async function ClientsPage() {
         title="Clientes"
         description="Consultá y administrá los clientes registrados en el sistema."
       />
-      <ClientsMetrics clients={clients ?? []} topClients={topClients ?? []} />
+      <ClientsMetrics
+        clients={clients ?? []}
+        topClients={topClients ?? []}
+        withoutRecentOrders={withoutRecentOrders}
+      />
       <ClientsView clients={clients ?? []} />
     </div>
   );
