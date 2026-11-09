@@ -6,8 +6,9 @@ import { useState, type ChangeEvent, type FormEvent } from "react";
 // Styles
 import styles from "./transports.module.css";
 
-// Utils
+// Utils and constants
 import { getVehicleFormValues } from "@/modules/transports/transports.utils";
+import { MAX_VEHICLE_MODEL_LENGTH } from "@/modules/transports/transports.constants";
 
 // Types
 import type { Vehicle } from "@/modules/transports/transports.dal";
@@ -62,7 +63,40 @@ export default function VehicleFormModal({ vehicle, error, isPending, onClose, o
                         />
                     </label>
 
-                    {error && <p className={styles.modalError}>{error}</p>}
+                    <label className={styles.modalField}>
+                        Modelo (opcional)
+                        <input
+                            type="text"
+                            value={values.model}
+                            onChange={handleChange("model")}
+                            placeholder="Mercedes-Benz Accelo 1016"
+                            maxLength={MAX_VEHICLE_MODEL_LENGTH}
+                        />
+                    </label>
+
+                    <label className={styles.modalField}>
+                        Rendimiento (km por litro)
+                        <input
+                            type="number"
+                            inputMode="decimal"
+                            min="0.1"
+                            step="0.1"
+                            value={values.kmPerLiter}
+                            onChange={handleChange("kmPerLiter")}
+                            placeholder="8.5"
+                            aria-describedby="vehicle-km-per-liter-hint"
+                        />
+                        <span id="vehicle-km-per-liter-hint" className={styles.modalHint}>
+                            Se usa para estimar el combustible de cada ruta. Sin este dato no se
+                            calcula su costo.
+                        </span>
+                    </label>
+
+                    {error && (
+                        <p className={styles.modalError} role="alert">
+                            {error}
+                        </p>
+                    )}
 
                     <div className={styles.modalActions}>
                         <button type="button" className={styles.secondaryButton} onClick={onClose}>

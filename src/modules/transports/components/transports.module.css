@@ -301,6 +301,11 @@
     box-shadow: 0 0 0 4px rgba(52, 84, 209, 0.12);
 }
 
+.modalHint {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+}
+
 .modalError {
     margin: 12px 0 0;
     color: var(--color-danger);

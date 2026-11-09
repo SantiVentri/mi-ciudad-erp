@@ -3,19 +3,42 @@
 import { revalidatePath } from "next/cache";
 import { createInvitation } from "@/app/(home)/admin/invitations/actions";
 import requireAdmin from "@/utils/auth/requireAdmin";
+import { parseDecimal } from "@/modules/costs/costs.utils";
+import { COSTS_PATH } from "@/modules/costs/costs.constants";
+import { MAX_KM_PER_LITER, MAX_VEHICLE_MODEL_LENGTH } from "@/modules/transports/transports.constants";
 
-function readVehicleFields(formData: FormData) {
-    return {
-        patent: String(formData.get("patent") ?? "").trim().toUpperCase(),
-    };
-}
+type VehicleFields = {
+    patent: string;
+    model: string | null;
+    km_per_liter: number | null;
+};
 
-function validateVehicleFields(fields: ReturnType<typeof readVehicleFields>) {
-    if (!fields.patent) {
-        return "Ingresá la patente del vehículo.";
+// Lee y valida el formulario de vehículo. Modelo y rendimiento son opcionales;
+// sin rendimiento no se puede estimar el costo de combustible de sus rutas.
+function readVehicleFields(formData: FormData): { fields: VehicleFields } | { error: string } {
+    const patent = String(formData.get("patent") ?? "").trim().toUpperCase();
+    if (!patent) {
+        return { error: "Ingresá la patente del vehículo." };
     }
 
-    return null;
+    const model = String(formData.get("model") ?? "").trim();
+    if (model.length > MAX_VEHICLE_MODEL_LENGTH) {
+        return { error: `El modelo puede tener hasta ${MAX_VEHICLE_MODEL_LENGTH} caracteres.` };
+    }
+
+    const rawKmPerLiter = String(formData.get("kmPerLiter") ?? "").trim();
+    let kmPerLiter: number | null = null;
+    if (rawKmPerLiter) {
+        kmPerLiter = parseDecimal(rawKmPerLiter);
+        if (kmPerLiter == null || kmPerLiter <= 0) {
+            return { error: "Ingresá el rendimiento como un número mayor a cero (km por litro)." };
+        }
+        if (kmPerLiter > MAX_KM_PER_LITER) {
+            return { error: `El rendimiento no puede superar los ${MAX_KM_PER_LITER} km por litro.` };
+        }
+    }
+
+    return { fields: { patent, model: model || null, km_per_liter: kmPerLiter } };
 }
 
 export async function createVehicle(formData: FormData) {
@@ -24,19 +47,19 @@ export async function createVehicle(formData: FormData) {
         return { error: "No tenés permisos para crear vehículos." };
     }
 
-    const fields = readVehicleFields(formData);
-    const validationError = validateVehicleFields(fields);
-    if (validationError) {
-        return { error: validationError };
+    const parsed = readVehicleFields(formData);
+    if ("error" in parsed) {
+        return { error: parsed.error };
     }
 
-    const { error } = await supabase.from("vehicles").insert({ ...fields, is_active: true });
+    const { error } = await supabase.from("vehicles").insert({ ...parsed.fields, is_active: true });
 
     if (error) {
         return { error: "No se pudo crear el vehículo: " + error.message };
     }
 
     revalidatePath("/admin/transports");
+    revalidatePath(COSTS_PATH);
     return { ok: true };
 }
 
@@ -46,19 +69,19 @@ export async function updateVehicle(vehicleId: string, formData: FormData) {
         return { error: "No tenés permisos para editar vehículos." };
     }
 
-    const fields = readVehicleFields(formData);
-    const validationError = validateVehicleFields(fields);
-    if (validationError) {
-        return { error: validationError };
+    const parsed = readVehicleFields(formData);
+    if ("error" in parsed) {
+        return { error: parsed.error };
     }
 
-    const { error } = await supabase.from("vehicles").update(fields).eq("id", vehicleId);
+    const { error } = await supabase.from("vehicles").update(parsed.fields).eq("id", vehicleId);
 
     if (error) {
         return { error: "No se pudo actualizar el vehículo: " + error.message };
     }
 
     revalidatePath("/admin/transports");
+    revalidatePath(COSTS_PATH);
     return { ok: true };
 }
 
