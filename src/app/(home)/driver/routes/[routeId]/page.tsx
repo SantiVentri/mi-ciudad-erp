@@ -3,6 +3,7 @@ import styles from "./route.module.css";
 
 import RouteDetails from "@/components/ui/driver/home/routeDetails/RouteDetails";
 import { getRoute } from "@/modules/routes/routes.dal";
+import { getRouteExpenses } from "@/modules/costs/costs.dal";
 import { redirect } from "next/navigation";
 
 interface RoutePageProps {
@@ -18,11 +19,11 @@ export default async function RoutePage({ params }: RoutePageProps) {
         redirect("/driver/routes");
     }
 
-    const route = await getRoute(routeId);
+    const [route, expenses] = await Promise.all([getRoute(routeId), getRouteExpenses(routeId)]);
 
     return (
         <div className={styles.container}>
-            <RouteDetails route={route ? route : null} />
+            <RouteDetails route={route ? route : null} expenses={route ? expenses : []} />
         </div>
     )
 }
