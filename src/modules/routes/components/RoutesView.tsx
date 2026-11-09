@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { deleteRoute, removeOrderFromRoute } from "@/modules/routes/routes.actions";
 import type { AdminRoute, AdminRouteStop } from "@/modules/routes/routes.dal";
 import type { DayOrdersStatus, SelectOption } from "@/modules/routes/routes.types";
+import type { RouteCostDetail } from "@/modules/costs/costs.types";
 
 // Constants and utils
 import { DAYS_AFTER, DAYS_BEFORE } from "@/modules/routes/routes.constants";
@@ -36,6 +37,7 @@ type RoutesViewProps = {
     ordersByDay: Record<string, DayOrdersStatus>;
     drivers: SelectOption[];
     vehicles: SelectOption[];
+    routeCosts: Record<string, RouteCostDetail>;
 };
 
 type Dialog =
@@ -52,6 +54,7 @@ export default function RoutesView({
     ordersByDay,
     drivers,
     vehicles,
+    routeCosts,
 }: RoutesViewProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -210,6 +213,7 @@ export default function RoutesView({
                     <RouteCard
                         key={route.id}
                         route={route}
+                        cost={routeCosts[route.id] ?? null}
                         isExpanded={expandedId === route.id}
                         isBusy={busyRouteId === route.id}
                         onToggleExpand={() =>
