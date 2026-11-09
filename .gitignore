@@ -48,4 +48,6 @@ next-env.d.ts
 
 # Supabase
 supabase/.temp/
+# Caché de OpenRouteService del generador de seed
+scripts/seed/.ors-cache.json
 .temp/
