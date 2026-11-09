@@ -8,7 +8,7 @@ import { STATE_OPTIONS } from "@/modules/orders/orders.constants";
 import type { SortOption } from "@/modules/orders/orders.types";
 
 // Icons
-import { PencilLine, Plus, RefreshCw, Search } from "lucide-react";
+import { Plus, RefreshCw, Search } from "lucide-react";
 
 type OrdersToolbarProps = {
     search: string;
@@ -21,8 +21,6 @@ type OrdersToolbarProps = {
     onSortByChange: (value: SortOption) => void;
     isPending: boolean;
     onRefresh: () => void;
-    selectedCount: number;
-    onBulkEdit: () => void;
     onNewOrder: () => void;
 };
 
@@ -36,8 +34,6 @@ export default function OrdersToolbar({
     onSortByChange,
     isPending,
     onRefresh,
-    selectedCount,
-    onBulkEdit,
     onNewOrder,
 }: OrdersToolbarProps) {
     return (
@@ -78,16 +74,6 @@ export default function OrdersToolbar({
             <button type="button" className={styles.refreshButton} onClick={onRefresh} disabled={isPending}>
                 <RefreshCw size={16} />
                 {isPending ? "Refrezcando..." : "Refrescar"}
-            </button>
-
-            <button
-                type="button"
-                className={styles.bulkEditButton}
-                onClick={onBulkEdit}
-                disabled={selectedCount === 0}
-            >
-                <PencilLine size={16} />
-                Editar fechas ({selectedCount})
             </button>
 
             <button type="button" className={styles.newOrderButton} onClick={onNewOrder}>

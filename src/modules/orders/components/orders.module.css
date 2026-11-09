@@ -184,7 +184,6 @@
     background: var(--color-accent-bg);
 }
 
-.bulkEditButton,
 .newOrderButton {
     height: 48px;
     display: inline-flex;
@@ -205,14 +204,99 @@
     background: var(--color-accent);
 }
 
-.bulkEditButton:hover:not(:disabled),
 .newOrderButton:hover {
     transform: translateY(-1px);
 }
 
-.bulkEditButton:disabled {
-    opacity: 0.5;
+/* --- Barra de acciones sobre los pedidos seleccionados --- */
+.selectionBar {
+    position: sticky;
+    top: 8px;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    padding: 10px 12px 10px 16px;
+    border: 1px solid var(--color-primary);
+    border-radius: 14px;
+    background: var(--color-accent-bg);
+    color: var(--color-text-primary);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.selectionInfo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    font-size: 0.92rem;
+}
+
+.selectionLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-primary);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.selectionLink:hover {
+    text-decoration: underline;
+}
+
+.selectionActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.selectionButton {
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--color-primary);
+    color: var(--color-surface);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.selectionButtonDanger {
+    background: var(--color-danger);
+}
+
+.selectionButtonSuccess {
+    background: var(--color-success-text);
+}
+
+.selectionButton:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.selectionButton:disabled {
+    opacity: 0.45;
     cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+    .selectionActions,
+    .selectionButton {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* --- Lista de pedidos --- */
@@ -686,7 +770,6 @@
         width: 100%;
     }
 
-    .bulkEditButton,
     .newOrderButton,
     .refreshButton {
         width: 100%;

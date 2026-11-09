@@ -110,19 +110,58 @@ export async function createOrder(
     return { ok: true, orderId };
 }
 
+type AdminClient = NonNullable<Awaited<ReturnType<typeof requireAdmin>>>;
+
+// Tope de pedidos por operación en lote (una página de la vista "Todos" son 20)
+const MAX_BULK_ORDERS = 200;
+
+// La base valida el resto: que no esté completado, ni en una ruta que ya salió, etc.
+async function cancelOne(supabase: AdminClient, orderId: string, release: boolean) {
+    const { error } = await supabase.rpc("cancel_order", {
+        p_order_id: orderId,
+        p_release: release,
+    });
+
+    return error ? cleanDbError(error.message) : null;
+}
+
+async function restoreOne(supabase: AdminClient, orderId: string) {
+    const { data: order, error: fetchError } = await supabase
+        .from("orders")
+        .select("arrival_date, state")
+        .eq("id", orderId)
+        .single();
+
+    if (fetchError || !order) {
+        return "No se encontró el pedido.";
+    }
+
+    if (order.state !== "Cancelada") {
+        return "Solo se pueden restaurar pedidos cancelados.";
+    }
+
+    if (order.arrival_date.slice(0, 10) < todayKeyAR()) {
+        return "El pedido tiene fecha pasada: usá Reprogramar.";
+    }
+
+    const { error } = await supabase
+        .from("orders")
+        .update({ state: "Pendiente" })
+        .eq("id", orderId)
+        .eq("state", "Cancelada");
+
+    return error ? "No se pudo restaurar el pedido: " + error.message : null;
+}
+
 export async function cancelOrder(orderId: string, release = false) {
     const supabase = await requireAdmin();
     if (!supabase) {
         return { error: "No tenés permisos para cancelar pedidos." };
     }
 
-    const { error } = await supabase.rpc("cancel_order", {
-        p_order_id: orderId,
-        p_release: release,
-    });
-
+    const error = await cancelOne(supabase, orderId, release);
     if (error) {
-        return { error: cleanDbError(error.message) };
+        return { error };
     }
 
     revalidateOrdersAndRoutes();
@@ -136,35 +175,64 @@ export async function restoreOrder(orderId: string) {
         return { error: "No tenés permisos para restaurar pedidos." };
     }
 
-    const { data: order, error: fetchError } = await supabase
-        .from("orders")
-        .select("arrival_date, state")
-        .eq("id", orderId)
-        .single();
-
-    if (fetchError || !order) {
-        return { error: "No se encontró el pedido." };
-    }
-
-    if (order.state !== "Cancelada") {
-        return { error: "Solo se pueden restaurar pedidos cancelados." };
-    }
-
-    if (order.arrival_date.slice(0, 10) < todayKeyAR()) {
-        return { error: "El pedido tiene fecha pasada: usá Reprogramar." };
-    }
-
-    const { error } = await supabase
-        .from("orders")
-        .update({ state: "Pendiente" })
-        .eq("id", orderId)
-        .eq("state", "Cancelada");
-
+    const error = await restoreOne(supabase, orderId);
     if (error) {
-        return { error: "No se pudo restaurar el pedido: " + error.message };
+        return { error };
     }
 
     revalidateOrdersAndRoutes();
 
     return { ok: true };
+}
+
+export type BulkStateResult =
+    | { error: string }
+    | { done: number; failed: { orderId: string; error: string }[] };
+
+/**
+ * Cancela o restaura varios pedidos. Cada uno se procesa por separado: si alguno
+ * falla (p. ej. su ruta salió mientras tanto), los demás se aplican igual y se
+ * devuelve qué falló y por qué.
+ * release (solo al cancelar): sacar de su ruta a los que estén en una que no salió
+ * (el usuario ya lo confirmó).
+ */
+export async function setOrdersState(
+    orderIds: string[],
+    action: "cancel" | "restore",
+    release = false,
+): Promise<BulkStateResult> {
+    const supabase = await requireAdmin();
+    if (!supabase) {
+        return {
+            error:
+                action === "cancel"
+                    ? "No tenés permisos para cancelar pedidos."
+                    : "No tenés permisos para restaurar pedidos.",
+        };
+    }
+
+    const ids = [...new Set(orderIds)];
+    if (ids.length === 0) {
+        return { error: "Seleccioná al menos un pedido." };
+    }
+    if (ids.length > MAX_BULK_ORDERS) {
+        return { error: `Podés cambiar hasta ${MAX_BULK_ORDERS} pedidos a la vez.` };
+    }
+
+    const failed: { orderId: string; error: string }[] = [];
+
+    // De a uno: cada cancelación bloquea el pedido y su ruta en la base
+    for (const orderId of ids) {
+        const error =
+            action === "cancel"
+                ? await cancelOne(supabase, orderId, release)
+                : await restoreOne(supabase, orderId);
+        if (error) failed.push({ orderId, error });
+    }
+
+    if (failed.length < ids.length) {
+        revalidateOrdersAndRoutes();
+    }
+
+    return { done: ids.length - failed.length, failed };
 }

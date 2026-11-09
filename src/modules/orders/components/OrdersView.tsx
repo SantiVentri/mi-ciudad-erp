@@ -13,6 +13,7 @@ import {
     updateOrdersArrivalDate,
     cancelOrder,
     restoreOrder,
+    setOrdersState,
 } from "@/modules/orders/orders.actions";
 import type { NewOrderOptions, Order, OrdersPage } from "@/modules/orders/orders.dal";
 
@@ -27,6 +28,7 @@ import {
     dayKey,
     formatOrderDayHeading,
     getOrderLiveRoute,
+    getOrderPermissions,
     parseDateOnly,
     startOfDay,
     toDateInputValue,
@@ -41,6 +43,7 @@ import OrderCard from "./OrderCard";
 import EditDateModal from "./EditDateModal";
 import ConfirmModal from "./ConfirmModal";
 import CreateOrderModal from "./CreateOrderModal";
+import SelectionBar from "./SelectionBar";
 import PaginationControl from "@/components/ui/admin/pagination/PaginationControl";
 
 type OrdersViewProps = {
@@ -61,12 +64,75 @@ type DateModalState = { orders: Order[]; reactivate: boolean };
 
 type Dialog =
     | { kind: "confirmCancel"; order: Order; routeLabel: string }
+    | { kind: "confirmBulkCancel"; plan: BulkPlan }
     | { kind: "confirmDate"; lines: string[] }
     | { kind: "info"; title: string; message: string; items?: string[] };
+
+// Qué pasa con cada pedido seleccionado al cancelar o restaurar en lote
+type BulkPlan = {
+    // Los que se van a cambiar
+    orders: Order[];
+    // Los que se cancelan y salen de una ruta que todavía no salió
+    leavingRoute: string[];
+    // Los seleccionados que no se pueden cambiar, con el motivo
+    skipped: string[];
+};
 
 function describeRoute(order: Order) {
     const route = getOrderLiveRoute(order);
     return route ? `Ruta #${route.route_number}` : "";
+}
+
+function clientLabel(order: Order) {
+    return order.client?.name ?? "Pedido";
+}
+
+// Mismas reglas que el botón de cada pedido (y que valida la base)
+function planBulkCancel(orders: Order[], today: Date): BulkPlan {
+    const plan: BulkPlan = { orders: [], leavingRoute: [], skipped: [] };
+
+    for (const order of orders) {
+        if (order.state === "Cancelada") continue;
+
+        if (order.state === "Completada") {
+            plan.skipped.push(`${clientLabel(order)} · ya se entregó`);
+            continue;
+        }
+        if (!getOrderPermissions(order, today).canToggleState) {
+            plan.skipped.push(`${clientLabel(order)} · tiene fecha pasada`);
+            continue;
+        }
+
+        const route = getOrderLiveRoute(order);
+        if (route && route.state !== "Pendiente") {
+            plan.skipped.push(
+                `${clientLabel(order)} · la Ruta #${route.route_number} ya está ${(route.state ?? "").toLowerCase()}`,
+            );
+            continue;
+        }
+        if (route) {
+            plan.leavingRoute.push(`${clientLabel(order)} · ${describeRoute(order)}`);
+        }
+        plan.orders.push(order);
+    }
+
+    return plan;
+}
+
+function planBulkRestore(orders: Order[], today: Date): BulkPlan {
+    const plan: BulkPlan = { orders: [], leavingRoute: [], skipped: [] };
+
+    for (const order of orders) {
+        if (order.state !== "Cancelada") continue;
+
+        if (getOrderPermissions(order, today).isOld) {
+            plan.skipped.push(`${clientLabel(order)} · tiene fecha pasada: usá Reprogramar`);
+            continue;
+        }
+        plan.orders.push(order);
+    }
+
+    return plan;
 }
 
 export default function OrdersView({
@@ -432,6 +498,71 @@ export default function OrdersView({
         });
     };
 
+    // --- Cancelar / restaurar en lote ---
+    const cancelPlan = useMemo(() => planBulkCancel(selectedOrders, today), [selectedOrders, today]);
+    const restorePlan = useMemo(() => planBulkRestore(selectedOrders, today), [selectedOrders, today]);
+
+    const runBulkState = (action: "cancel" | "restore", plan: BulkPlan) => {
+        const ids = plan.orders.map((order) => order.id);
+        const names = new Map(plan.orders.map((order) => [order.id, clientLabel(order)]));
+        setUpdatingIds((prev) => [...prev, ...ids]);
+
+        startTransition(async () => {
+            // Al cancelar en lote siempre se confirmó antes: se pueden sacar de su ruta
+            const response = await setOrdersState(ids, action, action === "cancel");
+            setUpdatingIds((prev) => prev.filter((id) => !ids.includes(id)));
+
+            const verb = action === "cancel" ? "cancelar" : "restaurar";
+
+            if ("error" in response) {
+                setDialog({
+                    kind: "info",
+                    title: `No se pudieron ${verb} los pedidos`,
+                    message: response.error,
+                });
+                return;
+            }
+
+            // Lo que no se intentó (ya se sabía que no se podía) + lo que la base rechazó
+            const problems = [
+                ...plan.skipped,
+                ...response.failed.map(
+                    (failure) => `${names.get(failure.orderId) ?? "Pedido"} · ${failure.error}`,
+                ),
+            ];
+
+            if (problems.length > 0) {
+                const done = response.done;
+                const participle = `${action === "cancel" ? "cancelado" : "restaurado"}${done === 1 ? "" : "s"}`;
+                setDialog({
+                    kind: "info",
+                    title:
+                        done > 0
+                            ? `${done} ${done === 1 ? "pedido" : "pedidos"} ${participle}`
+                            : `No se pudo ${verb} ningún pedido`,
+                    message: `Estos no se pudieron ${verb}:`,
+                    items: problems,
+                });
+            } else {
+                setDialog(null);
+            }
+
+            clearSelection();
+            router.refresh();
+        });
+    };
+
+    const handleBulkCancel = () => {
+        if (cancelPlan.orders.length === 0) return;
+        setDialog({ kind: "confirmBulkCancel", plan: cancelPlan });
+    };
+
+    // Restaurar no saca a nadie de una ruta: se aplica sin confirmar
+    const handleBulkRestore = () => {
+        if (restorePlan.orders.length === 0) return;
+        runBulkState("restore", restorePlan);
+    };
+
     const handleToggleOrderState = (order: Order) => {
         if (order.state === "Cancelada") {
             runRestore(order);
@@ -506,11 +637,21 @@ export default function OrdersView({
                 onSortByChange={setSortBy}
                 isPending={isPending}
                 onRefresh={handleRefresh}
-                selectedCount={selectedOrders.length}
-                onBulkEdit={openBulkModal}
                 onNewOrder={() => setIsCreating(true)}
             />
 
+            <SelectionBar
+                selectedCount={selectedOrders.length}
+                visibleCount={filteredOrders.length}
+                cancellableCount={cancelPlan.orders.length}
+                restorableCount={restorePlan.orders.length}
+                isPending={isPending}
+                onSelectAll={() => setSelectedOrderIds(filteredOrders.map((order) => order.id))}
+                onClear={clearSelection}
+                onEditDates={openBulkModal}
+                onCancel={handleBulkCancel}
+                onRestore={handleBulkRestore}
+            />
 
             <div
                 className={`${styles.ordersList} ${isNavigating ? styles.ordersListLoading : ""}`}
@@ -612,6 +753,34 @@ export default function OrdersView({
                         const order = dialog.order;
                         setDialog(null);
                         runCancel(order, true);
+                    }}
+                />
+            )}
+
+            {dialog?.kind === "confirmBulkCancel" && (
+                <ConfirmModal
+                    title={`Cancelar ${dialog.plan.orders.length} ${dialog.plan.orders.length === 1 ? "pedido" : "pedidos"}`}
+                    message={[
+                        dialog.plan.leavingRoute.length > 0
+                            ? "Los que están en una ruta que todavía no salió se sacan de esa ruta."
+                            : "Los pedidos quedan cancelados; después los podés restaurar.",
+                        dialog.plan.skipped.length > 0
+                            ? `${dialog.plan.skipped.length} de los seleccionados no se pueden cancelar y quedan igual.`
+                            : "",
+                    ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    items={[
+                        ...dialog.plan.leavingRoute.map((line) => `Sale de la ruta: ${line}`),
+                        ...dialog.plan.skipped.map((line) => `No se cancela: ${line}`),
+                    ]}
+                    confirmLabel="Cancelar pedidos"
+                    isPending={isPending}
+                    onClose={() => setDialog(null)}
+                    onConfirm={() => {
+                        const plan = dialog.plan;
+                        setDialog(null);
+                        runBulkState("cancel", plan);
                     }}
                 />
             )}
