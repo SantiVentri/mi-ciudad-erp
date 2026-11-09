@@ -8,22 +8,16 @@
 REVOKE ALL ON FUNCTION public.cancel_order(uuid, boolean) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.cancel_route(uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.change_orders_date(uuid[], date, boolean, boolean) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.create_route_with_stops(uuid, uuid, uuid, date, smallint, uuid[]) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.create_routes_batch(date, jsonb) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.move_route_date(uuid, date) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.create_route_with_stops(uuid, uuid, uuid, date, uuid[]) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.release_order_from_route(uuid) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.set_route_stops(uuid, uuid[]) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.update_route_assignment(uuid, uuid, uuid, uuid) FROM PUBLIC, anon;
 
 GRANT EXECUTE ON FUNCTION public.cancel_order(uuid, boolean) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.cancel_route(uuid) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.change_orders_date(uuid[], date, boolean, boolean) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.create_route_with_stops(uuid, uuid, uuid, date, smallint, uuid[]) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.create_routes_batch(date, jsonb) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.move_route_date(uuid, date) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.create_route_with_stops(uuid, uuid, uuid, date, uuid[]) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.release_order_from_route(uuid) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.set_route_stops(uuid, uuid[]) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.update_route_assignment(uuid, uuid, uuid, uuid) TO authenticated, service_role;
 
 UPDATE public.orders SET state = 'Pendiente' WHERE state IS NULL;
 UPDATE public.routes SET state = 'Pendiente' WHERE state IS NULL;

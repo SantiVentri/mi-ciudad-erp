@@ -18,14 +18,6 @@ export type MapStop = {
     longitude: number;
 };
 
-// Ruta activa de un día, para saber qué choferes y vehículos ya están ocupados en cada vuelta
-export type BusySlot = {
-    trip_number: number;
-    driver_id: string;
-    co_driver_id: string | null;
-    vehicle_id: string;
-};
-
 // Opción de los selects del modal de generar ruta
 export type SelectOption = {
     id: string;
@@ -43,7 +35,6 @@ export type RouteGenerationPreview = {
     date: string;
     ordersCount: number;
     excluded: ExcludedOrder[];
-    busySlots: BusySlot[];
 };
 
 export type GenerateRouteInput = {
@@ -55,7 +46,6 @@ export type GenerateRouteInput = {
 
 export type GenerateRouteResult = {
     routeNumber: number | null;
-    tripNumber: number;
     stopsCount: number;
     excludedCount: number;
     optimized: boolean;

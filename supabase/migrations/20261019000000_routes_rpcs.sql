@@ -8,7 +8,6 @@
 -- Columnas
 -- ---------------------------------------------------------------------------
 alter table public.routes add column if not exists co_driver_id uuid;
-alter table public.routes add column if not exists trip_number smallint not null default 1;
 alter table public.routes alter column state set default 'Pendiente';
 
 -- ---------------------------------------------------------------------------
@@ -26,11 +25,6 @@ begin
     alter table public.routes
       add constraint routes_co_driver_differs
       check (co_driver_id is null or co_driver_id <> driver_id);
-  end if;
-
-  if not exists (select 1 from pg_constraint where conname = 'routes_trip_number_check') then
-    alter table public.routes
-      add constraint routes_trip_number_check check (trip_number = any (array[1, 2]));
   end if;
 
   if not exists (select 1 from pg_constraint where conname = 'routes_state_check') then
@@ -57,17 +51,6 @@ end $$;
 -- ---------------------------------------------------------------------------
 create index if not exists orders_arrival_state_idx on public.orders (arrival_date, state);
 create index if not exists routes_route_date_idx on public.routes (route_date);
-
--- Un chofer / acompañante / vehículo no puede estar en dos rutas activas del mismo día y vuelta
-create unique index if not exists routes_driver_trip_uq
-  on public.routes (driver_id, ((route_date at time zone 'UTC')::date), trip_number)
-  where state <> 'Cancelada';
-create unique index if not exists routes_co_driver_trip_uq
-  on public.routes (co_driver_id, ((route_date at time zone 'UTC')::date), trip_number)
-  where co_driver_id is not null and state <> 'Cancelada';
-create unique index if not exists routes_vehicle_trip_uq
-  on public.routes (vehicle_id, ((route_date at time zone 'UTC')::date), trip_number)
-  where state <> 'Cancelada';
 
 -- Un pedido solo puede tener una parada viva
 create unique index if not exists stops_one_live_per_order_uq
@@ -254,45 +237,13 @@ begin
 end;
 $function$;
 
-create or replace function public.assert_route_slot_free(p_date date, p_trip smallint, p_driver_id uuid, p_co_driver_id uuid, p_vehicle_id uuid, p_exclude_route_id uuid default null::uuid)
- returns void
- language plpgsql
- security definer
- set search_path to 'public'
-as $function$
-begin
-  if exists (
-    select 1 from routes r
-    where r.state <> 'Cancelada'
-      and (r.route_date at time zone 'UTC')::date = p_date
-      and r.trip_number = p_trip
-      and (p_exclude_route_id is null or r.id <> p_exclude_route_id)
-      and (r.driver_id in (p_driver_id, p_co_driver_id)
-           or r.co_driver_id in (p_driver_id, p_co_driver_id))
-  ) then
-    raise exception 'Alguno de los choferes ya tiene una ruta en esa vuelta y día';
-  end if;
-
-  if exists (
-    select 1 from routes r
-    where r.state <> 'Cancelada'
-      and (r.route_date at time zone 'UTC')::date = p_date
-      and r.trip_number = p_trip
-      and (p_exclude_route_id is null or r.id <> p_exclude_route_id)
-      and r.vehicle_id = p_vehicle_id
-  ) then
-    raise exception 'El vehículo ya tiene una ruta en esa vuelta y día';
-  end if;
-end;
-$function$;
-
 -- ---------------------------------------------------------------------------
 -- Rutas
 -- ---------------------------------------------------------------------------
 -- Overload viejo sin validaciones (fecha, choferes activos, pedidos libres). Se reemplaza por el de abajo.
 drop function if exists public.create_route_with_stops(uuid, uuid, timestamp with time zone, uuid[]);
 
-create or replace function public.create_route_with_stops(p_driver_id uuid, p_co_driver_id uuid, p_vehicle_id uuid, p_route_date date, p_trip_number smallint, p_order_ids uuid[])
+create or replace function public.create_route_with_stops(p_driver_id uuid, p_co_driver_id uuid, p_vehicle_id uuid, p_route_date date, p_order_ids uuid[])
  returns uuid
  language plpgsql
  security definer
@@ -307,9 +258,6 @@ begin
   end if;
   if p_route_date is null or p_route_date < app_today() then
     raise exception 'La fecha de la ruta no puede ser pasada';
-  end if;
-  if p_trip_number is null or p_trip_number not in (1, 2) then
-    raise exception 'La vuelta debe ser 1 o 2';
   end if;
   if p_order_ids is null or coalesce(cardinality(p_order_ids), 0) = 0 then
     raise exception 'La ruta necesita al menos un pedido';
@@ -333,11 +281,10 @@ begin
   -- Un solo admin a la vez puede armar rutas de un mismo día
   perform pg_advisory_xact_lock(hashtext('routes:' || p_route_date::text));
 
-  perform assert_route_slot_free(p_route_date, p_trip_number, p_driver_id, p_co_driver_id, p_vehicle_id, null);
   perform assert_orders_assignable(p_order_ids, p_route_date, null);
 
-  insert into routes (driver_id, co_driver_id, vehicle_id, route_date, state, trip_number)
-  values (p_driver_id, p_co_driver_id, p_vehicle_id, (p_route_date::timestamp at time zone 'UTC'), 'Pendiente', p_trip_number)
+  insert into routes (driver_id, co_driver_id, vehicle_id, route_date, state)
+  values (p_driver_id, p_co_driver_id, p_vehicle_id, (p_route_date::timestamp at time zone 'UTC'), 'Pendiente')
   returning id, route_number into v_route_id, v_route_number;
 
   insert into stops (route_id, order_id, visit_order, state)
@@ -346,49 +293,10 @@ begin
 
   perform notify_route_drivers(
     v_route_id, 'route_assigned',
-    format('Se te asignó la ruta #%s del %s (vuelta %s)', v_route_number, to_char(p_route_date, 'DD/MM/YYYY'), p_trip_number)
+    format('Se te asignó la ruta #%s del %s', v_route_number, to_char(p_route_date, 'DD/MM/YYYY'))
   );
 
   return v_route_id;
-end;
-$function$;
-
-create or replace function public.create_routes_batch(p_route_date date, p_routes jsonb)
- returns uuid[]
- language plpgsql
- security definer
- set search_path to 'public'
-as $function$
-declare
-  v_item jsonb;
-  v_orders uuid[];
-  v_ids uuid[] := '{}';
-  v_id uuid;
-begin
-  if not is_admin() then
-    raise exception 'No autorizado';
-  end if;
-  if p_routes is null or jsonb_typeof(p_routes) <> 'array' or jsonb_array_length(p_routes) = 0 then
-    raise exception 'No hay rutas para crear';
-  end if;
-
-  for v_item in select value from jsonb_array_elements(p_routes) loop
-    select array_agg(x.value::uuid order by x.ord)
-      into v_orders
-    from jsonb_array_elements_text(v_item -> 'order_ids') with ordinality as x(value, ord);
-
-    v_id := create_route_with_stops(
-      (v_item ->> 'driver_id')::uuid,
-      (v_item ->> 'co_driver_id')::uuid,
-      (v_item ->> 'vehicle_id')::uuid,
-      p_route_date,
-      (v_item ->> 'trip_number')::smallint,
-      v_orders
-    );
-    v_ids := v_ids || v_id;
-  end loop;
-
-  return v_ids;
 end;
 $function$;
 
@@ -548,135 +456,6 @@ begin
 end;
 $function$;
 
-create or replace function public.update_route_assignment(p_route_id uuid, p_driver_id uuid, p_co_driver_id uuid, p_vehicle_id uuid)
- returns void
- language plpgsql
- security definer
- set search_path to 'public'
-as $function$
-declare
-  r routes%rowtype;
-  v_day date;
-  v_old uuid[];
-  v_new uuid[];
-  v_uid uuid;
-begin
-  if not is_admin() then
-    raise exception 'No autorizado';
-  end if;
-
-  select * into r from routes where id = p_route_id for update;
-  if not found then
-    raise exception 'La ruta no existe';
-  end if;
-  if r.state <> 'Pendiente' then
-    raise exception 'Solo se pueden editar rutas pendientes';
-  end if;
-
-  if p_driver_id is null or p_co_driver_id is null then
-    raise exception 'La ruta necesita dos choferes';
-  end if;
-  if p_driver_id = p_co_driver_id then
-    raise exception 'Los dos choferes deben ser distintos';
-  end if;
-  if not is_active_driver(p_driver_id) or not is_active_driver(p_co_driver_id) then
-    raise exception 'Los dos choferes deben ser conductores activos';
-  end if;
-  if not exists (select 1 from vehicles v where v.id = p_vehicle_id and v.is_active is true) then
-    raise exception 'El vehículo no existe o está deshabilitado';
-  end if;
-
-  v_day := (r.route_date at time zone 'UTC')::date;
-  perform pg_advisory_xact_lock(hashtext('routes:' || v_day::text));
-  perform assert_route_slot_free(v_day, r.trip_number, p_driver_id, p_co_driver_id, p_vehicle_id, p_route_id);
-
-  v_old := array_remove(array[r.driver_id, r.co_driver_id], null);
-  v_new := array[p_driver_id, p_co_driver_id];
-
-  update routes
-  set driver_id = p_driver_id, co_driver_id = p_co_driver_id, vehicle_id = p_vehicle_id
-  where id = p_route_id;
-
-  foreach v_uid in array v_old loop
-    if not (v_uid = any(v_new)) then
-      perform notify_user(v_uid, 'route_unassigned',
-        format('Ya no estás asignado a la ruta #%s', r.route_number),
-        jsonb_build_object('route_id', r.id, 'route_number', r.route_number, 'route_date', v_day), null);
-    elsif p_vehicle_id is distinct from r.vehicle_id then
-      perform notify_user(v_uid, 'route_updated',
-        format('Cambió el vehículo de la ruta #%s', r.route_number),
-        jsonb_build_object('route_id', r.id, 'route_number', r.route_number, 'route_date', v_day), null);
-    end if;
-  end loop;
-
-  foreach v_uid in array v_new loop
-    if not (v_uid = any(v_old)) then
-      perform notify_user(v_uid, 'route_assigned',
-        format('Se te asignó la ruta #%s del %s (vuelta %s)', r.route_number, to_char(v_day, 'DD/MM/YYYY'), r.trip_number),
-        jsonb_build_object('route_id', r.id, 'route_number', r.route_number, 'route_date', v_day), null);
-    end if;
-  end loop;
-end;
-$function$;
-
-create or replace function public.move_route_date(p_route_id uuid, p_new_date date)
- returns void
- language plpgsql
- security definer
- set search_path to 'public'
-as $function$
-declare
-  r routes%rowtype;
-  v_old date;
-begin
-  if not is_admin() then
-    raise exception 'No autorizado';
-  end if;
-  if p_new_date is null or p_new_date < app_today() then
-    raise exception 'La nueva fecha no puede ser pasada';
-  end if;
-
-  select * into r from routes where id = p_route_id for update;
-  if not found then
-    raise exception 'La ruta no existe';
-  end if;
-  if r.state <> 'Pendiente' then
-    raise exception 'Solo se puede cambiar la fecha de rutas pendientes';
-  end if;
-
-  v_old := (r.route_date at time zone 'UTC')::date;
-  if v_old = p_new_date then
-    return;
-  end if;
-
-  perform pg_advisory_xact_lock(hashtext('routes:' || p_new_date::text));
-  perform assert_route_slot_free(p_new_date, r.trip_number, r.driver_id, r.co_driver_id, r.vehicle_id, p_route_id);
-
-  perform 1 from orders
-  where id in (select order_id from stops where route_id = p_route_id and state <> 'Cancelada')
-  order by id for update;
-
-  if exists (
-    select 1 from orders o
-    join stops s on s.order_id = o.id
-    where s.route_id = p_route_id and s.state <> 'Cancelada' and o.state <> 'Pendiente'
-  ) then
-    raise exception 'La ruta tiene pedidos que ya no están pendientes';
-  end if;
-
-  update orders
-  set arrival_date = (p_new_date::timestamp at time zone 'UTC')
-  where id in (select order_id from stops where route_id = p_route_id and state <> 'Cancelada');
-
-  update routes set route_date = (p_new_date::timestamp at time zone 'UTC') where id = p_route_id;
-
-  perform notify_route_drivers(
-    p_route_id, 'route_updated',
-    format('La ruta #%s se movió al %s', r.route_number, to_char(p_new_date, 'DD/MM/YYYY'))
-  );
-end;
-$function$;
-
 -- ---------------------------------------------------------------------------
 -- Pedidos
 -- ---------------------------------------------------------------------------
@@ -771,5 +550,4 @@ $function$;
 revoke execute on function public.notify_user(uuid, text, text, jsonb, text) from public, anon, authenticated;
 revoke execute on function public.notify_route_drivers(uuid, text, text) from public, anon, authenticated;
 revoke execute on function public.assert_orders_assignable(uuid[], date, uuid) from public, anon, authenticated;
-revoke execute on function public.assert_route_slot_free(date, smallint, uuid, uuid, uuid, uuid) from public, anon, authenticated;
 revoke execute on function public.is_active_driver(uuid) from public, anon, authenticated;

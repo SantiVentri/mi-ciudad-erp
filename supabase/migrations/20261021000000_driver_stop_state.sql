@@ -328,7 +328,7 @@ end;
 $function$;
 
 create or replace function public.edit_route(p_route_id uuid, p_new_date date, p_driver_id uuid, p_co_driver_id uuid, p_vehicle_id uuid)
- returns smallint
+ returns void
  language plpgsql
  security definer
  set search_path to 'public'
@@ -336,7 +336,6 @@ as $function$
 declare
   r routes%rowtype;
   v_old_date date;
-  v_trip smallint;
   v_date_changed boolean;
   v_vehicle_changed boolean;
   v_old uuid[];
@@ -379,15 +378,6 @@ begin
 
   perform pg_advisory_xact_lock(hashtext('routes:' || p_new_date::text));
 
-  -- Primero la vuelta actual; si está ocupada, la otra
-  if is_route_slot_free(p_new_date, r.trip_number, p_driver_id, p_co_driver_id, p_vehicle_id, p_route_id) then
-    v_trip := r.trip_number;
-  elsif is_route_slot_free(p_new_date, (3 - r.trip_number)::smallint, p_driver_id, p_co_driver_id, p_vehicle_id, p_route_id) then
-    v_trip := 3 - r.trip_number;
-  else
-    raise exception 'Los choferes o el vehículo ya tienen las dos vueltas ocupadas el %', to_char(p_new_date, 'DD/MM/YYYY');
-  end if;
-
   if v_date_changed then
     perform 1 from orders
     where id in (select order_id from stops where route_id = p_route_id and state not in ('Cancelada', 'Entrega fallida'))
@@ -408,7 +398,6 @@ begin
 
   update routes
   set route_date = (p_new_date::timestamp at time zone 'UTC'),
-      trip_number = v_trip,
       driver_id = p_driver_id,
       co_driver_id = p_co_driver_id,
       vehicle_id = p_vehicle_id
@@ -421,7 +410,6 @@ begin
 
   v_changes := concat_ws(', ',
     case when v_date_changed then format('pasó al %s', to_char(p_new_date, 'DD/MM/YYYY')) end,
-    case when v_trip <> r.trip_number then format('ahora es la vuelta %s', v_trip) end,
     case when v_vehicle_changed then 'cambió el vehículo' end
   );
 
@@ -438,12 +426,10 @@ begin
   foreach v_uid in array v_new loop
     if not (v_uid = any(v_old)) then
       perform notify_user(v_uid, 'route_assigned',
-        format('Se te asignó la ruta #%s del %s (vuelta %s)', r.route_number, to_char(p_new_date, 'DD/MM/YYYY'), v_trip),
+        format('Se te asignó la ruta #%s del %s', r.route_number, to_char(p_new_date, 'DD/MM/YYYY')),
         v_meta, null);
     end if;
   end loop;
-
-  return v_trip;
 end;
 $function$;
 

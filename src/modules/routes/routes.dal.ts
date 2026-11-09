@@ -27,7 +27,6 @@ export const getAdminRoutes = cache(async (startDate: string, endDate: string) =
             `
                 id,
                 route_number,
-                trip_number,
                 route_date,
                 state,
                 created_at,

@@ -1,6 +1,5 @@
 import type { AdminRoute, AdminRouteStop, RouteStop } from "@/modules/routes/routes.dal";
-import type { BusySlot, MapStop } from "@/modules/routes/routes.types";
-import { TRIP_NUMBERS } from "@/modules/routes/routes.constants";
+import type { MapStop } from "@/modules/routes/routes.types";
 import { todayKeyAR } from "@/utils/dates/argentina";
 import { DEPOT } from "@/modules/routes/routes.depot";
 
@@ -98,33 +97,6 @@ export function matchesRouteSearch(route: AdminRoute, term: string) {
         .toLowerCase();
 
     return haystack.includes(term.toLowerCase());
-}
-
-/**
- * Primera vuelta del día en la que el conductor, el acompañante y el vehículo
- * están libres. null si están ocupados en todas.
- */
-export function pickFreeTrip(
-    busySlots: BusySlot[],
-    driverId: string,
-    coDriverId: string,
-    vehicleId: string,
-) {
-    const people = [driverId, coDriverId];
-
-    const trip = TRIP_NUMBERS.find(
-        (tripNumber) =>
-            !busySlots.some(
-                (slot) =>
-                    slot.trip_number === tripNumber &&
-                    (people.includes(slot.driver_id) ||
-                        (slot.co_driver_id !== null &&
-                            people.includes(slot.co_driver_id)) ||
-                        slot.vehicle_id === vehicleId),
-            ),
-    );
-
-    return trip ?? null;
 }
 
 // "YYYY-MM-DD" del día siguiente (sin depender de la zona horaria)

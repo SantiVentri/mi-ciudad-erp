@@ -34,9 +34,6 @@ export const MAP_TILE_URL =
 export const MAP_TILE_ATTRIBUTION =
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
-// Vueltas posibles por día (la base solo admite 1 y 2)
-export const TRIP_NUMBERS = [1, 2] as const;
-
 // --- Conductor: ruta del día ---
 
 export const STOP_STATE_STYLES: Record<string, string> = {
