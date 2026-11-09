@@ -60,40 +60,40 @@ export default function ClientFormModal({ client, error, isPending, onClose, onS
                 <form className={styles.clientForm} onSubmit={handleSubmit}>
                     <label className={styles.modalField}>
                         Nombre
-                        <input type="text" value={values.name} onChange={handleChange("name")} required />
+                        <input type="text" value={values.name} onChange={handleChange("name")} placeholder="Juan Pérez" required />
                     </label>
 
                     <label className={styles.modalField}>
                         Email
-                        <input type="email" value={values.email} onChange={handleChange("email")} required />
+                        <input type="email" value={values.email} onChange={handleChange("email")} placeholder="juan.perez@email.com" required />
                     </label>
 
                     <label className={styles.modalField}>
                         Teléfono
-                        <input type="text" value={values.phone} onChange={handleChange("phone")} required />
+                        <input type="text" value={values.phone} onChange={handleChange("phone")} placeholder="011-4567-8901" required />
                     </label>
 
                     <div className={styles.fieldRow}>
                         <label className={styles.modalField}>
                             Calle
-                            <input type="text" value={values.street} onChange={handleChange("street")} required />
+                            <input type="text" value={values.street} onChange={handleChange("street")} placeholder="Av. Rivadavia" required />
                         </label>
 
                         <label className={styles.modalFieldSmall}>
                             Número
-                            <input type="text" value={values.number} onChange={handleChange("number")} required />
+                            <input type="text" value={values.number} onChange={handleChange("number")} placeholder="1234" required />
                         </label>
                     </div>
 
                     <div className={styles.fieldRow}>
                         <label className={styles.modalField}>
                             Ciudad
-                            <input type="text" value={values.city} onChange={handleChange("city")} required />
+                            <input type="text" value={values.city} onChange={handleChange("city")} placeholder="Merlo" required />
                         </label>
 
                         <label className={styles.modalField}>
                             Provincia
-                            <input type="text" value={values.province} onChange={handleChange("province")} required />
+                            <input type="text" value={values.province} onChange={handleChange("province")} placeholder="Buenos Aires" required />
                         </label>
                     </div>
 
