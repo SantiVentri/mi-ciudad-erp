@@ -3,6 +3,7 @@ import { cache } from 'react'
 import { getServerClient } from '@/utils/supabase/getServerClient'
 import { getCurrentUser } from '@/utils/auth/getCurrentUser'
 import { assertNoSupabaseError } from '@/utils/supabase/assertNoError'
+import { todayKeyAR } from '@/utils/dates/argentina'
 
 export const getOrders = cache(async (startDate: string, endDate: string) => {
     const supabase = await getServerClient()
@@ -34,46 +35,110 @@ export const getOrders = cache(async (startDate: string, endDate: string) => {
 export type Orders = NonNullable<Awaited<ReturnType<typeof getOrders>>>
 export type Order = Orders[number]
 
+// Fechas "YYYY-MM-DD" (los pedidos se guardan a medianoche UTC del día de entrega)
+function shiftDayKey(key: string, days: number) {
+    const [year, month, day] = key.split('-').map(Number)
+    return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10)
+}
+
+function firstOfMonthKey(key: string, monthsBack = 0) {
+    const [year, month] = key.split('-').map(Number)
+    return new Date(Date.UTC(year, month - 1 - monthsBack, 1)).toISOString().slice(0, 10)
+}
+
+// Ventas de los pedidos completados con entrega en [start, end): cantidad × precio guardado
+// en cada renglón. Pagina de a 1000 filas (tope de PostgREST).
+async function getCompletedSales(
+    supabase: Awaited<ReturnType<typeof getServerClient>>,
+    start: string,
+    end: string,
+) {
+    const PAGE = 1000
+    let total = 0
+    let unpricedLines = 0
+    const pricedOrders = new Set<string>()
+
+    for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+            .from('order_details')
+            .select('id, order_id, quantity, unit_price, orders!inner ( state, arrival_date )')
+            .eq('orders.state', 'Completada')
+            .gte('orders.arrival_date', start)
+            .lt('orders.arrival_date', end)
+            .order('id', { ascending: true })
+            .range(from, from + PAGE - 1)
+
+        assertNoSupabaseError(error, 'Error trayendo las ventas')
+
+        for (const line of data ?? []) {
+            if (line.unit_price == null) {
+                unpricedLines += 1
+                continue
+            }
+            total += Number(line.quantity) * Number(line.unit_price)
+            pricedOrders.add(line.order_id)
+        }
+
+        if (!data || data.length < PAGE) break
+    }
+
+    return { total, orders: pricedOrders.size, unpricedLines }
+}
+
+// Solo admin: incluye montos de venta
 export const getOrdersMetrics = cache(async () => {
+    const user = await getCurrentUser()
+    if (!user || user.role !== 'admin') return null
+
     const supabase = await getServerClient()
 
-    const user = await getCurrentUser()
-    if (!user) return null
+    const today = todayKeyAR()
+    const tomorrow = shiftDayKey(today, 1)
+    const monthStart = firstOfMonthKey(today)
 
-    const thisYear = new Date().getFullYear()
-    const yearStart = `${thisYear}-01-01`
-    const yearEnd = `${thisYear + 1}-01-01`
+    // Mismo tramo del mes anterior: del 1 al mismo día (sin pasarse del fin de ese mes)
+    const previousStart = firstOfMonthKey(today, 1)
+    const dayOfMonth = Number(today.slice(8, 10))
+    const shiftedEnd = shiftDayKey(previousStart, dayOfMonth)
+    const previousEnd = shiftedEnd < monthStart ? shiftedEnd : monthStart
 
-    const baseQuery = () =>
-        supabase
-            .from('orders')
-            .select('id', { count: 'exact', head: true })
-            .gte('created_at', yearStart)
-            .lt('created_at', yearEnd)
+    // Cumplimiento: pedidos con entrega en los últimos 30 días, sin contar hoy
+    const deliveryStart = shiftDayKey(today, -30)
 
-    const [totalRes, completedRes, pendingRes, canceledRes] = await Promise.all([
-        baseQuery(),
-        baseQuery().eq('state', 'Completada'),
-        baseQuery().eq('state', 'Pendiente'),
-        baseQuery().eq('state', 'Cancelada'),
+    const countOrders = () =>
+        supabase.from('orders').select('id', { count: 'exact', head: true })
+
+    const [sales, previousSales, dueRes, deliveredRes, canceledRes, overdueRes] = await Promise.all([
+        getCompletedSales(supabase, monthStart, tomorrow),
+        getCompletedSales(supabase, previousStart, previousEnd),
+        countOrders().gte('arrival_date', deliveryStart).lt('arrival_date', today).neq('state', 'Cancelada'),
+        countOrders().gte('arrival_date', deliveryStart).lt('arrival_date', today).eq('state', 'Completada'),
+        countOrders().gte('arrival_date', deliveryStart).lt('arrival_date', today).eq('state', 'Cancelada'),
+        // Atrasados: la fecha ya pasó y no se entregaron (sin ruta o en una ruta sin completar)
+        countOrders().lt('arrival_date', today).in('state', ['Pendiente', 'Asignada']),
     ])
 
-    for (const res of [totalRes, completedRes, pendingRes, canceledRes]) {
+    for (const res of [dueRes, deliveredRes, canceledRes, overdueRes]) {
         assertNoSupabaseError(res.error, 'Error trayendo las métricas de pedidos')
     }
 
-    const totalOrders = totalRes.count ?? 0
-    const completedOrders = completedRes.count ?? 0
-    const pendingOrders = pendingRes.count ?? 0
-    const canceledOrders = canceledRes.count ?? 0
-    const completedOrdersPercentage = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0
+    const dueOrders = dueRes.count ?? 0
+    const deliveredOrders = deliveredRes.count ?? 0
 
     return {
-        totalOrders,
-        completedOrders,
-        pendingOrders,
-        canceledOrders,
-        completedOrdersPercentage,
+        monthSales: sales.total,
+        monthSalesOrders: sales.orders,
+        unpricedLines: sales.unpricedLines,
+        avgTicket: sales.orders > 0 ? sales.total / sales.orders : null,
+        previousSales: previousSales.total,
+        previousMonthStart: previousStart,
+        salesChangePct:
+            previousSales.total > 0 ? ((sales.total - previousSales.total) / previousSales.total) * 100 : null,
+        deliveryRate: dueOrders > 0 ? (deliveredOrders / dueOrders) * 100 : null,
+        deliveredOrders,
+        dueOrders,
+        canceledOrders: canceledRes.count ?? 0,
+        overdueOrders: overdueRes.count ?? 0,
     }
 })
 
