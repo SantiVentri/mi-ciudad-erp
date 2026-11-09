@@ -485,9 +485,10 @@ async function main() {
         const dayOrders = orders.filter((order) => order.day === day && order.state !== "Cancelada");
         if (dayOrders.length === 0) continue;
 
-        const routesCount = Math.min(6, Math.ceil(dayOrders.length / MAX_STOPS_PER_ROUTE));
+        const routesCount = Math.ceil(dayOrders.length / MAX_STOPS_PER_ROUTE);
         const groups = splitByZone(depot, dayOrders, routesCount);
-        // 3 duplas y 3 vehículos por día, rotando combinaciones; la vuelta 2 los repite
+        // 3 duplas y 3 vehículos por día, rotando combinaciones. Si hay más rutas que duplas,
+        // la misma dupla sale de nuevo cuando termina la anterior (no hay límite por día)
         const drivers = shuffle(DRIVERS);
         const crews = [0, 1, 2].map((i) => (rng() < 0.5 ? [drivers[2 * i], drivers[2 * i + 1]] : [drivers[2 * i + 1], drivers[2 * i]]));
         const vehicles = shuffle(VEHICLES).slice(0, 3);
@@ -496,7 +497,6 @@ async function main() {
 
         for (let index = 0; index < groups.length; index++) {
             const crewIndex = index % 3;
-            const tripNumber = Math.floor(index / 3) + 1;
             const [driver, coDriver] = crews[crewIndex];
             const vehicle = vehicles[crewIndex];
             const ordered = orderStops(depot, groups[index]);
@@ -518,7 +518,6 @@ async function main() {
                 driverId: driver.id,
                 coDriverId: coDriver.id,
                 vehicleId: vehicle.id,
-                tripNumber,
                 state: isPast ? "Completada" : "Pendiente",
                 distanceKm: metrics.distanceKm,
                 estimatedMin,
@@ -528,8 +527,9 @@ async function main() {
             };
 
             if (isPast) {
-                const plannedStart = tripNumber === 1 ? randInt(7 * 60 + 45, 8 * 60 + 30) : randInt(13 * 60 + 15, 14 * 60);
-                const startMin = crewFreeAt[crewIndex] ? Math.max(plannedStart, crewFreeAt[crewIndex] + 30) : plannedStart;
+                const startMin = crewFreeAt[crewIndex]
+                    ? crewFreeAt[crewIndex] + randInt(30, 60)
+                    : randInt(7 * 60 + 45, 8 * 60 + 30);
                 // Real vs estimado: la mayoría tarda un poco más de lo previsto
                 const actualMin = Math.round(estimatedMin * rand(0.85, 1.35));
                 route.startedAt = atAR(day, startMin);
@@ -644,8 +644,8 @@ BEGIN;
 
     out.push("-- Rutas (en orden cronológico: route_number sale de la identidad)");
     out.push(insert("public.routes",
-        ["id", "driver_id", "co_driver_id", "vehicle_id", "route_date", "state", "trip_number", "estimated_distance_km", "estimated_duration_min", "started_at", "finished_at", "created_at", "updated_at"],
-        routes.map((route) => [route.id, route.driverId, route.coDriverId, route.vehicleId, `${route.day}T00:00:00Z`, route.state, route.tripNumber,
+        ["id", "driver_id", "co_driver_id", "vehicle_id", "route_date", "state", "estimated_distance_km", "estimated_duration_min", "started_at", "finished_at", "created_at", "updated_at"],
+        routes.map((route) => [route.id, route.driverId, route.coDriverId, route.vehicleId, `${route.day}T00:00:00Z`, route.state,
             route.distanceKm, route.estimatedMin, route.startedAt, route.finishedAt, route.createdAt, route.finishedAt ?? route.createdAt])));
     out.push(insert("public.stops", ["id", "route_id", "order_id", "visit_order", "state", "created_at"], stops));
     out.push(insert("public.route_expenses", ["id", "route_id", "type", "amount", "notes", "created_by", "created_at"], expenses));
