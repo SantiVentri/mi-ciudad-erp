@@ -6,6 +6,7 @@ import styles from "./routes.module.css";
 // Components
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import RouteCostCard from "@/modules/costs/components/RouteCostCard";
 
 // Utils
 import {
@@ -25,6 +26,7 @@ import {
     ADMIN_STOP_STATE_STYLES,
 } from "@/modules/routes/routes.constants";
 import type { AdminRoute, AdminRouteStop } from "@/modules/routes/routes.dal";
+import type { RouteCostDetail } from "@/modules/costs/costs.types";
 
 // Icons
 import { ArrowUpRight, ChevronDown, MapPinOff, Pencil, Trash2, X } from "lucide-react";
@@ -37,6 +39,7 @@ const RouteMap = dynamic(() => import("./RouteMap"), {
 
 type RouteCardProps = {
     route: AdminRoute;
+    cost: RouteCostDetail | null;
     isExpanded: boolean;
     isBusy: boolean;
     onToggleExpand: () => void;
@@ -47,6 +50,7 @@ type RouteCardProps = {
 
 export default function RouteCard({
     route,
+    cost,
     isExpanded,
     isBusy,
     onToggleExpand,
@@ -211,6 +215,8 @@ export default function RouteCard({
                             </p>
                         )}
                     </div>
+
+                    <RouteCostCard routeId={route.id} routeState={route.state} cost={cost} />
                 </div>
             )}
         </div>

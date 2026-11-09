@@ -1,5 +1,6 @@
 import { getAdminRoutes, getOrdersStatusByDay, getRoutesMetrics } from "@/modules/routes/routes.dal";
 import { getDrivers, getVehicles } from "@/modules/transports/transports.dal";
+import { getRouteCostDetails } from "@/modules/costs/costs.dal";
 import RoutesView from "@/modules/routes/components/RoutesView";
 import RoutesMetrics from "@/modules/routes/components/routesMetrics/RoutesMetrics";
 import { Suspense } from "react";
@@ -27,11 +28,13 @@ export default async function RoutesPage() {
   const endDate = new Date(today);
   endDate.setDate(endDate.getDate() + DAYS_AFTER);
 
-  const [routes, ordersByDay, drivers, vehicles] = await Promise.all([
+  const [routes, ordersByDay, drivers, vehicles, routeCosts] = await Promise.all([
     getAdminRoutes(dayKey(startDate), dayKey(endDate)),
     getOrdersStatusByDay(dayKey(startDate), dayKey(endDate)),
     getDrivers(),
     getVehicles(),
+    // Valida admin en el servidor: incluye costo laboral, del que se deducen sueldos
+    getRouteCostDetails(dayKey(startDate), dayKey(endDate)),
   ]);
 
   // Solo conductores y vehículos activos se pueden asignar a una ruta nueva
@@ -63,6 +66,7 @@ export default async function RoutesPage() {
         ordersByDay={ordersByDay ?? {}}
         drivers={driverOptions}
         vehicles={vehicleOptions}
+        routeCosts={routeCosts ?? {}}
       />
     </div>
   );

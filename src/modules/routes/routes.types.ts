@@ -59,6 +59,8 @@ export type GenerateRouteResult = {
     stopsCount: number;
     excludedCount: number;
     optimized: boolean;
+    // Qué dato falta para calcular el costo (la ruta se crea igual). null si se calculó.
+    costWarning: string | null;
 };
 
 export type EditRouteInput = {
