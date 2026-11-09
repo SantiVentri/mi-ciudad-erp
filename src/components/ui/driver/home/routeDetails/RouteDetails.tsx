@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 
 // Styles
 import styles from "./routeDetails.module.css";
+import costStyles from "@/modules/costs/components/costs.module.css";
 
 // Hooks
 import { useRouter } from "next/navigation";
@@ -11,6 +12,8 @@ import { useRouter } from "next/navigation";
 // Components
 import dynamic from "next/dynamic";
 import StopCard from "@/components/ui/driver/home/stopCard/StopCard";
+import RouteExpenseForm from "@/modules/costs/components/RouteExpenseForm";
+import RouteExpensesList from "@/modules/costs/components/RouteExpensesList";
 
 // Leaflet necesita `window`, por eso el mapa se carga solo en el navegador
 const RouteMap = dynamic(() => import("@/modules/routes/components/RouteMap"), {
@@ -19,7 +22,7 @@ const RouteMap = dynamic(() => import("@/modules/routes/components/RouteMap"), {
 });
 
 // Actions and utils
-import { setCompletedRoute, setStopState } from "@/modules/routes/routes.actions";
+import { setCompletedRoute, setStopState, startRoute } from "@/modules/routes/routes.actions";
 import {
     sortStopsByVisitOrder,
     formatRouteDate,
@@ -35,12 +38,15 @@ import { Navigation, CheckCircle2 } from "lucide-react";
 // Types
 import type { Route, RouteStop } from "@/modules/routes/routes.dal";
 import type { StopState } from "@/modules/routes/routes.actions";
+import type { RouteExpense } from "@/modules/costs/costs.types";
 
 interface RouteDetailsProps {
     route: Route | null;
+    // Solo tipo, monto y nota: el conductor no recibe sueldos ni costos estimados
+    expenses?: RouteExpense[];
 }
 
-export default function RouteDetails({ route }: RouteDetailsProps) {
+export default function RouteDetails({ route, expenses = [] }: RouteDetailsProps) {
     const [stops, setStops] = useState<RouteStop[]>(
         route ? sortStopsByVisitOrder(route.stops ?? []) : []
     );
@@ -48,6 +54,7 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
     const [isFinishingRoute, setIsFinishingRoute] = useState(false);
+    const [isStartingRoute, setIsStartingRoute] = useState(false);
 
     const router = useRouter();
 
@@ -99,11 +106,33 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
             if (!result.ok) {
                 setStops(previousStops);
                 setErrorMessage(result.error);
+            } else if (route.state === "Pendiente") {
+                // La primera parada marcada pasa la ruta a "En curso": se refresca para
+                // mostrar la carga de gastos
+                router.refresh();
             }
 
             setPendingStopId(null);
         });
     };
+
+    const handleStartRoute = async () => {
+        setIsStartingRoute(true);
+        setErrorMessage(null);
+
+        const result = await startRoute(route.id);
+
+        if (!result.ok) {
+            setErrorMessage(result.error);
+        } else {
+            router.refresh();
+        }
+
+        setIsStartingRoute(false);
+    };
+
+    const canStartRoute = !readOnly && route.state === "Pendiente";
+    const canAddExpenses = !readOnly && route.state === "En curso";
 
     const handleFinishRoute = async () => {
         setIsFinishingRoute(true);
@@ -160,6 +189,23 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
                 </div>
             )}
 
+            {canStartRoute && (
+                <div className={styles.completionContainer}>
+                    <p className={styles.completionText}>
+                        Tocá <strong>Iniciar ruta</strong> cuando salgas de la embotelladora, así se
+                        registra la hora de salida.
+                    </p>
+                    <button
+                        type="button"
+                        className={styles.finishRouteButton}
+                        disabled={isStartingRoute}
+                        onClick={handleStartRoute}
+                    >
+                        {isStartingRoute ? "Iniciando..." : "Iniciar ruta"}
+                    </button>
+                </div>
+            )}
+
             {!readOnly && (
                 <div className={styles.mapsActions}>
                     <a
@@ -202,6 +248,16 @@ export default function RouteDetails({ route }: RouteDetailsProps) {
                         />
                     ))}
                 </ul>
+            )}
+
+            {(canAddExpenses || expenses.length > 0) && (
+                <section className={costStyles.expenseSection} aria-labelledby="route-expenses-title">
+                    <h2 id="route-expenses-title" className={costStyles.expenseSectionTitle}>
+                        Gastos de la ruta
+                    </h2>
+                    {canAddExpenses && <RouteExpenseForm routeId={route.id} />}
+                    <RouteExpensesList expenses={expenses} />
+                </section>
             )}
 
             {isRouteCompleted && (
