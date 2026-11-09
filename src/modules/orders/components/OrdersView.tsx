@@ -53,9 +53,7 @@ type Dialog =
 
 function describeRoute(order: Order) {
     const route = getOrderLiveRoute(order);
-    return route
-        ? `Ruta #${route.route_number} (vuelta ${route.trip_number})`
-        : "";
+    return route ? `Ruta #${route.route_number}` : "";
 }
 
 export default function OrdersView({ orders, newOrderOptions, focusOrderId }: OrdersViewProps) {

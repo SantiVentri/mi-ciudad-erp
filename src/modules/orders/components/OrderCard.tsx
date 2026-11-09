@@ -138,8 +138,7 @@ export default function OrderCard({
                             <h4>Ruta</h4>
                             {liveRoute ? (
                                 <p>
-                                    Ruta #{liveRoute.route_number} · Vuelta{" "}
-                                    {liveRoute.trip_number} ({liveRoute.state})
+                                    Ruta #{liveRoute.route_number} ({liveRoute.state})
                                 </p>
                             ) : (
                                 <p>Sin ruta asignada</p>

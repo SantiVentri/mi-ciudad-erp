@@ -20,7 +20,7 @@ export const getOrders = cache(async (startDate: string, endDate: string) => {
         created_at,
         client:clients ( id, name, email, phone, street, number, city, province ),
         order_details ( id, quantity, product:products ( id, name ) ),
-        stops ( id, state, route:routes ( id, route_number, trip_number, state ) )
+        stops ( id, state, route:routes ( id, route_number, state ) )
     `)
     .gte('arrival_date', startDate)
     .lte('arrival_date', endDate)
