@@ -9,6 +9,8 @@
     padding: 10px;
     max-width: 220px;
     min-width: 220px;
+    /* El valor se mide contra el ancho de la tarjeta (unidades cqi) */
+    container-type: inline-size;
 }
 
 .title {
@@ -21,9 +23,16 @@
     gap: 5px;
 }
 
+/* 30px como máximo; si el valor es largo (ej. "$ 2.926.600") se achica para entrar
+   en la tarjeta. --metric-chars lo pone Metric.tsx; 0.7em por carácter es un poco
+   más que el ancho de una cifra en Inter negrita. Sin soporte de cqi queda en 30px. */
 .value {
     font-weight: bold;
     font-size: 30px;
+    font-size: min(30px, calc(100cqi / (var(--metric-chars, 1) * 0.7)));
+    /* Alto fijo: con el valor achicado, la descripción sigue alineada con las demás tarjetas */
+    line-height: 36px;
+    white-space: nowrap;
 }
 
 .description {

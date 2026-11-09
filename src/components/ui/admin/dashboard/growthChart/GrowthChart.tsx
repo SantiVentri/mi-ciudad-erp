@@ -14,6 +14,9 @@ const PADDING_X = 24;
 const PADDING_TOP = 32;
 const PADDING_BOTTOM = 28;
 
+// Separador de miles con punto: 138104 -> "138.104"
+const valueFormatter = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
+
 export default function GrowthChart({
     title,
     data,
@@ -71,7 +74,7 @@ export default function GrowthChart({
                     <g key={p.label}>
                         <circle cx={p.x} cy={p.y} r={4} fill={color} stroke="#ffffff" strokeWidth="2" />
                         <text x={p.x} y={p.y - 14} textAnchor="middle" className={styles.value}>
-                            {p.value}
+                            {valueFormatter.format(p.value)}
                         </text>
                         <text x={p.x} y={HEIGHT - 8} textAnchor="middle" className={styles.label}>
                             {p.label}

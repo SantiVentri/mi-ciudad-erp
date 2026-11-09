@@ -1,6 +1,9 @@
 // Styles
 import styles from "./metric.module.css";
 
+// Types
+import type { CSSProperties } from "react";
+
 // Props
 type MetricProps = {
     icon: React.ReactNode;
@@ -17,7 +20,12 @@ export default function Metric({ icon, title, value, description }: MetricProps)
                 <h3 className={styles.title}>{title}</h3>
             </div>
             <div className={styles.content}>
-                <p className={styles.value}>{value}</p>
+                <p
+                    className={styles.value}
+                    style={{ "--metric-chars": String(value).length } as CSSProperties}
+                >
+                    {value}
+                </p>
                 {description && <p className={styles.description}>{description}</p>}
             </div>
         </div>

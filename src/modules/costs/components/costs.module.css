@@ -5,32 +5,33 @@
     margin-top: 16px;
 }
 
-/* Mismo layout que las métricas de las demás páginas admin (y que MetricsSkeleton) */
-/* 6 métricas en 3 columnas × 2 filas y el gráfico al lado ocupando el resto.
-   Si no entra (pantallas angostas), el gráfico pasa abajo en vez de aplastarse. */
+/* Mismo layout que las métricas de las demás páginas admin (y que MetricsSkeleton):
+   4 métricas en una grilla fija de 2 × 2 y el gráfico al lado ocupando el resto.
+   Solo en pantallas angostas el gráfico pasa abajo; la grilla sigue siendo 2 × 2. */
 .metricsContainer {
     display: flex;
-    flex-wrap: wrap;
     gap: 10px;
 }
 
 .metricsGrid {
     display: grid;
-    grid-template-columns: repeat(3, auto);
+    grid-template-columns: repeat(2, auto);
     gap: 10px;
     flex-shrink: 0;
 }
 
 .chartSlot {
-    flex: 1 1 320px;
+    flex: 1;
     min-width: 0;
 }
 
 @media (max-width: 760px) {
-    .metricsGrid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        flex-shrink: 1;
-        width: 100%;
+    .metricsContainer {
+        flex-direction: column;
+    }
+
+    .chartSlot {
+        min-height: 220px;
     }
 }
 

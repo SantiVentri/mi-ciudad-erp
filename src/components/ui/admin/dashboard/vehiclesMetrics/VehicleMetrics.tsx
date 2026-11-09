@@ -46,12 +46,9 @@ export default function VehiclesMetrics({ metrics, topVehicles, onViewWithoutRou
                 />
                 <button
                     type="button"
+                    className={styles.metricButton}
                     onClick={onViewWithoutRouteToday}
                     disabled={!onViewWithoutRouteToday}
-                    style={{
-                        all: "unset",
-                        cursor: onViewWithoutRouteToday ? "pointer" : "default",
-                    }}
                 >
                     <Metric
                         icon={<MapPinOff size={15} />}

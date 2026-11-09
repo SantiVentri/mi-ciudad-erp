@@ -8,3 +8,21 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
 }
+
+/* Tarjeta clickeable: el botón se estira con la fila de la grilla y la tarjeta
+   adentro ocupa todo el alto, igual que las demás */
+.metricButton {
+    all: unset;
+    display: flex;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.metricButton:disabled {
+    cursor: default;
+}
+
+.metricButton:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}

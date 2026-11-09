@@ -46,12 +46,9 @@ export default function DriversMetrics({ metrics, topDrivers, onViewWithoutRoute
                 />
                 <button
                     type="button"
+                    className={styles.metricButton}
                     onClick={onViewWithoutRouteToday}
                     disabled={!onViewWithoutRouteToday}
-                    style={{
-                        all: "unset",
-                        cursor: onViewWithoutRouteToday ? "pointer" : "default",
-                    }}
                 >
                     <Metric
                         icon={<MapPinOff size={15} />}
