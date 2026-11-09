@@ -88,6 +88,17 @@ export default function CreateOrderModal({
             return;
         }
 
+        // El stock se descuenta al crear el pedido: la base vuelve a validarlo
+        const short = parsed
+            .map((item) => ({ item, product: options.products.find((p) => p.id === item.productId) }))
+            .find(({ item, product }) => product && item.quantity > product.stock);
+        if (short?.product) {
+            setError(
+                `No hay stock suficiente de ${short.product.name}: hay ${short.product.stock} y pediste ${short.item.quantity}.`,
+            );
+            return;
+        }
+
         setError("");
 
         startTransition(async () => {
@@ -146,7 +157,7 @@ export default function CreateOrderModal({
                 <div className={styles.modalField}>
                     Productos
                     {options.products.length === 0 && (
-                        <p className={styles.modalHint}>No hay productos cargados.</p>
+                        <p className={styles.modalHint}>No hay productos habilitados.</p>
                     )}
 
                     {items.map((item) => (
@@ -164,8 +175,12 @@ export default function CreateOrderModal({
                                             !usedProductIds.includes(product.id),
                                     )
                                     .map((product) => (
-                                        <option key={product.id} value={product.id}>
-                                            {product.name}
+                                        <option
+                                            key={product.id}
+                                            value={product.id}
+                                            disabled={product.stock <= 0 && product.id !== item.productId}
+                                        >
+                                            {product.name} · {product.stock > 0 ? `${product.stock} disponibles` : "sin stock"}
                                         </option>
                                     ))}
                             </select>

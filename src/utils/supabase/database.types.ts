@@ -192,6 +192,7 @@ export type Database = {
           order_id: string
           product_id: string
           quantity: number
+          unit_price: number | null
         }
         Insert: {
           created_at?: string
@@ -199,6 +200,7 @@ export type Database = {
           order_id: string
           product_id: string
           quantity: number
+          unit_price?: number | null
         }
         Update: {
           created_at?: string
@@ -206,6 +208,7 @@ export type Database = {
           order_id?: string
           product_id?: string
           quantity?: number
+          unit_price?: number | null
         }
         Relationships: [
           {
@@ -214,6 +217,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_details_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_order_stats"
+            referencedColumns: ["product_id"]
           },
           {
             foreignKeyName: "order_details_product_id_fkey"
@@ -259,24 +269,91 @@ export type Database = {
           },
         ]
       }
-      products: {
+      product_prices: {
         Row: {
           created_at: string
-          description: string | null
+          created_by: string | null
           id: string
-          name: string
+          previous_price: number | null
+          price: number
+          product_id: string
         }
         Insert: {
           created_at?: string
-          description?: string | null
+          created_by?: string | null
           id?: string
-          name: string
+          previous_price?: number | null
+          price: number
+          product_id: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
+          id?: string
+          previous_price?: number | null
+          price?: number
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_prices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_order_stats"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          min_stock: number
+          name: string
+          price: number
+          stock: number
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
           description?: string | null
           id?: string
+          is_active?: boolean
+          min_stock?: number
+          name: string
+          price?: number
+          stock?: number
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          min_stock?: number
           name?: string
+          price?: number
+          stock?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -518,6 +595,71 @@ export type Database = {
           },
         ]
       }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          order_id: string | null
+          product_id: string
+          quantity: number
+          reason: string | null
+          stock_after: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          order_id?: string | null
+          product_id: string
+          quantity: number
+          reason?: string | null
+          stock_after: number
+          type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          order_id?: string | null
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+          stock_after?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_order_stats"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stops: {
         Row: {
           created_at: string
@@ -599,6 +741,15 @@ export type Database = {
       }
     }
     Views: {
+      product_order_stats: {
+        Row: {
+          committed_units: number | null
+          has_orders: boolean | null
+          product_id: string | null
+          units_last_30d: number | null
+        }
+        Relationships: []
+      }
       route_cost_summary: {
         Row: {
           actual_duration_min: number | null
@@ -618,7 +769,26 @@ export type Database = {
       }
     }
     Functions: {
+      adjust_product_stock: {
+        Args: {
+          p_product_id: string
+          p_quantity: number
+          p_reason?: string
+          p_type: string
+        }
+        Returns: number
+      }
       app_today: { Args: never; Returns: string }
+      apply_stock_movement: {
+        Args: {
+          p_delta: number
+          p_order_id?: string
+          p_product_id: string
+          p_reason?: string
+          p_type: string
+        }
+        Returns: number
+      }
       assert_orders_assignable: {
         Args: { p_date: string; p_order_ids: string[]; p_route_id?: string }
         Returns: undefined
@@ -650,6 +820,16 @@ export type Database = {
         Args: { p_arrival_date: string; p_client_id: string; p_items: Json }
         Returns: string
       }
+      create_product: {
+        Args: {
+          p_description: string
+          p_initial_stock?: number
+          p_min_stock: number
+          p_name: string
+          p_price: number
+        }
+        Returns: string
+      }
       create_route_with_stops: {
         Args: {
           p_co_driver_id: string
@@ -660,6 +840,7 @@ export type Database = {
         }
         Returns: string
       }
+      delete_product: { Args: { p_product_id: string }; Returns: string }
       delete_route: { Args: { p_route_id: string }; Returns: undefined }
       edit_route: {
         Args: {

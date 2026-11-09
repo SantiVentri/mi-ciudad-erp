@@ -1,0 +1,613 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 16px;
+}
+
+/* Mismo layout que las métricas de las demás páginas admin (y que MetricsSkeleton):
+   4 métricas en 2 columnas y el gráfico al lado. Si no entra, el gráfico pasa abajo. */
+.metricsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.chartSlot {
+    flex: 1 1 320px;
+    min-width: 0;
+}
+
+@media (max-width: 760px) {
+    .metricsGrid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        flex-shrink: 1;
+        width: 100%;
+    }
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Foco visible para todo lo interactivo del módulo */
+.tab:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.dangerButton:focus-visible,
+.iconButton:focus-visible,
+.iconButtonDanger:focus-visible,
+.segment:focus-visible,
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible,
+.select:focus-visible,
+.priceInput:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* --- Tabs --- */
+.tabs {
+    display: flex;
+    gap: 18px;
+    border-bottom: 1px solid var(--color-border-light);
+    overflow-x: auto;
+}
+
+.tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 4px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: -1px;
+    white-space: nowrap;
+}
+
+.tab:hover,
+.tab[aria-selected="true"] {
+    color: var(--color-primary);
+}
+
+.tab[aria-selected="true"] {
+    border-bottom-color: var(--color-primary);
+}
+
+.tabCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--color-accent-bg);
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* --- Toolbar --- */
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.searchBox {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0 14px;
+    background: var(--color-surface);
+    color: var(--color-text-subtle);
+}
+
+.searchBox:focus-within {
+    border-color: var(--color-primary);
+}
+
+.searchBox input {
+    flex: 1;
+    height: 46px;
+    border: 0;
+    outline: none;
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+    background: transparent;
+}
+
+.select {
+    height: 48px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0 12px;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: 0.92rem;
+    cursor: pointer;
+}
+
+.resultsInfo {
+    color: var(--color-text-muted);
+    font-size: 0.88rem;
+}
+
+/* --- Botones --- */
+.primaryButton,
+.secondaryButton,
+.dangerButton {
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.primaryButton {
+    background: var(--color-primary);
+    color: var(--color-surface);
+}
+
+.primaryButton:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+}
+
+.secondaryButton {
+    background: var(--color-surface);
+    color: var(--color-primary);
+    border: 1px solid var(--color-border);
+}
+
+.secondaryButton:hover:not(:disabled) {
+    background: var(--color-accent-bg);
+    border-color: var(--color-primary);
+}
+
+.dangerButton {
+    background: var(--color-danger);
+    color: var(--color-surface);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.smallButton {
+    height: 40px;
+    padding: 0 12px;
+    font-size: 0.85rem;
+}
+
+/* --- Tablas --- */
+.tableWrapper {
+    overflow-x: auto;
+    border: 1px solid var(--color-border-light);
+    border-radius: 14px;
+    background: var(--color-surface);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.table th {
+    text-align: left;
+    padding: 12px 14px;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--color-border-light);
+    white-space: nowrap;
+}
+
+.table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-bg-muted);
+    color: var(--color-text-primary);
+    vertical-align: top;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.inactiveRow td {
+    background: var(--color-bg-subtle);
+}
+
+.inactiveRow .productName {
+    color: var(--color-text-muted);
+}
+
+.numeric {
+    text-align: right !important;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.productName {
+    font-weight: 600;
+}
+
+.muted {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.dateCell {
+    white-space: nowrap;
+}
+
+.cellStack {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.stockValue {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 30px 16px;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+}
+
+.quantityIn {
+    color: var(--color-success-text);
+    font-weight: 700;
+}
+
+.quantityOut {
+    color: var(--color-danger-text);
+    font-weight: 700;
+}
+
+/* --- Badges --- */
+.badge {
+    display: inline-flex;
+    justify-content: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--color-border-light);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.badgeSuccess {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.badgeWarning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.badgeDanger {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+}
+
+.badgeInfo {
+    background: var(--color-accent-bg);
+    color: var(--color-primary);
+}
+
+/* --- Acciones por fila --- */
+.rowActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.iconButton,
+.iconButtonDanger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--color-border-muted);
+    border-radius: 10px;
+    background: var(--color-surface);
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.iconButton:hover:not(:disabled) {
+    background: var(--color-accent-bg);
+    border-color: var(--color-primary);
+}
+
+.iconButton:disabled,
+.iconButtonDanger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.iconButtonDanger {
+    color: var(--color-danger);
+}
+
+.iconButtonDanger:hover:not(:disabled) {
+    background: var(--color-danger-bg);
+    border-color: var(--color-danger);
+}
+
+/* --- Mensajes --- */
+.error,
+.success,
+.warning {
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+}
+
+.error {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+}
+
+.success {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+/* --- Modales --- */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+}
+
+.modal {
+    width: min(100%, 560px);
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border-radius: 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+    padding: 20px;
+}
+
+.modalWide {
+    width: min(100%, 720px);
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--color-text-heading);
+}
+
+.modalHeader p {
+    margin: 6px 0 0;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    align-items: start;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--color-text-secondary);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+    height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 0 12px;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 400;
+}
+
+.field textarea {
+    height: auto;
+    min-height: 72px;
+    padding: 10px 12px;
+    resize: vertical;
+}
+
+.hint {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* --- Tipo de movimiento (selector segmentado) --- */
+.segmented {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--color-bg-muted);
+}
+
+.segment {
+    height: 38px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.segment[aria-checked="true"] {
+    background: var(--color-surface);
+    color: var(--color-primary);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.stockPreview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border-light);
+    font-size: 0.92rem;
+}
+
+.stockPreview strong {
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- Actualizar precios --- */
+.bulkIncrease {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border-light);
+}
+
+.bulkIncrease .field {
+    width: 150px;
+}
+
+.priceInput {
+    width: 130px;
+    height: 40px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 0 10px;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: 0.92rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.priceInput[aria-invalid="true"] {
+    border-color: var(--color-danger);
+}
+
+.changedRow td {
+    background: var(--color-accent-bg);
+}
+
+@media (max-width: 720px) {
+    .modalActions {
+        flex-direction: column-reverse;
+    }
+
+    .modalActions > button,
+    .toolbar > button {
+        width: 100%;
+    }
+
+    .segmented {
+        grid-template-columns: 1fr;
+    }
+}

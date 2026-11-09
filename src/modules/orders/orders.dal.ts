@@ -117,7 +117,7 @@ export const getMonthlyOrdersGrowth = cache(async (months: number = 6) => {
 
 export type MonthlyOrdersGrowth = NonNullable<Awaited<ReturnType<typeof getMonthlyOrdersGrowth>>>
 
-// Clientes activos y productos para el formulario de nuevo pedido
+// Clientes activos y productos habilitados (con su stock) para el formulario de nuevo pedido
 export const getNewOrderOptions = cache(async () => {
     const supabase = await getServerClient()
 
@@ -130,9 +130,12 @@ export const getNewOrderOptions = cache(async () => {
             .select('id, name, street, number, city')
             .or('is_active.is.null,is_active.eq.true')
             .order('name', { ascending: true }),
+        // Solo los que se pueden pedir: habilitados y no eliminados
         supabase
             .from('products')
-            .select('id, name')
+            .select('id, name, stock')
+            .eq('is_active', true)
+            .is('archived_at', null)
             .order('name', { ascending: true }),
     ])
 

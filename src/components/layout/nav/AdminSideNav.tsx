@@ -14,7 +14,7 @@ import SignOutButton from "@/modules/auth/components/signOutButton/SignOutButton
 import InviteUserButton from "@/modules/invitations/components/InviteUserButton";
 
 // Icons
-import { CircleDollarSign, Package, ReceiptText, Route, Truck, Users } from "lucide-react";
+import { CircleDollarSign, Package, ReceiptText, Route, Truck, Users, Warehouse } from "lucide-react";
 
 type NavProps = {
     avatarUrl?: string;
@@ -50,6 +50,11 @@ export default function AdminSideNav({
             href: "/admin/transports",
             label: "Vehículos y conductores",
             icon: <Truck />
+        },
+        {
+            href: "/admin/stock",
+            label: "Stock",
+            icon: <Warehouse />
         },
         {
             href: "/admin/facturation",
