@@ -465,6 +465,23 @@
 }
 
 /* --- Mapa --- */
+/* Aviso sobre el mapa (abajo a la izquierda: la atribución va a la derecha).
+   z-index por encima de los paneles de Leaflet (400) */
+.mapNotice {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 1000;
+    max-width: calc(100% - 16px);
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    font-size: 0.78rem;
+    font-weight: 600;
+    pointer-events: none;
+}
+
 .map {
     width: 100%;
     height: 380px;

@@ -1,6 +1,6 @@
 import "server-only";
 import { DEPOT } from "@/modules/routes/routes.depot";
-import { getRouteMetrics, type GeoPoint } from "@/modules/routes/routes.optimizer";
+import { getRouteMetrics, type GeoPoint, type OrsFailure } from "@/modules/routes/routes.optimizer";
 import { STOP_SERVICE_MINUTES } from "@/modules/costs/costs.constants";
 import type { DbClient } from "@/modules/costs/costs.types";
 
@@ -131,6 +131,15 @@ export async function saveRouteEstimateWithClient(
  * Calcula km y minutos por calles (depósito → paradas → depósito) con el proveedor
  * de ruteo, suma el tiempo de descarga por parada y guarda la estimación.
  */
+const RETRY_HINT = "Probá más tarde con Recalcular costo en Costos › Rutas.";
+
+const ORS_FAILURE_MESSAGES: Record<OrsFailure, string> = {
+    quota: `Se agotó el cupo gratuito de OpenRouteService, así que no se pudo calcular la distancia por calles. El cupo se renueva solo. ${RETRY_HINT}`,
+    missing_key:
+        "Falta configurar ORS_API_KEY en el servidor, así que no se puede calcular la distancia por calles.",
+    unavailable: `OpenRouteService no respondió y no se pudo calcular la distancia por calles. ${RETRY_HINT}`,
+};
+
 export async function refreshRouteEstimate(
     supabase: DbClient,
     routeId: string,
@@ -171,13 +180,11 @@ export async function refreshRouteEstimate(
         return { error: "La ruta no tiene paradas con ubicación, así que no se puede estimar su recorrido." };
     }
 
-    const metrics = await getRouteMetrics([DEPOT, ...points, DEPOT]);
-    if (!metrics) {
-        return {
-            error:
-                "OpenRouteService no respondió y no se pudo calcular la distancia por calles. Probá más tarde con Recalcular costo en Costos › Rutas.",
-        };
+    const result = await getRouteMetrics([DEPOT, ...points, DEPOT]);
+    if ("failure" in result) {
+        return { error: ORS_FAILURE_MESSAGES[result.failure] };
     }
+    const { metrics } = result;
 
     const durationMin = metrics.durationMin + STOP_SERVICE_MINUTES * activeStops.length;
 

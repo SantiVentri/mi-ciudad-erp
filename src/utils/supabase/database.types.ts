@@ -484,6 +484,48 @@ export type Database = {
           },
         ]
       }
+      route_paths: {
+        Row: {
+          distance_m: number | null
+          duration_s: number | null
+          points_key: string
+          polyline: string
+          route_id: string
+          updated_at: string
+        }
+        Insert: {
+          distance_m?: number | null
+          duration_s?: number | null
+          points_key: string
+          polyline: string
+          route_id: string
+          updated_at?: string
+        }
+        Update: {
+          distance_m?: number | null
+          duration_s?: number | null
+          points_key?: string
+          polyline?: string
+          route_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_paths_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: true
+            referencedRelation: "route_cost_summary"
+            referencedColumns: ["route_id"]
+          },
+          {
+            foreignKeyName: "route_paths_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: true
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routes: {
         Row: {
           co_driver_id: string | null
@@ -898,6 +940,16 @@ export type Database = {
       release_order_from_route: {
         Args: { p_order_id: string }
         Returns: string
+      }
+      save_route_path: {
+        Args: {
+          p_distance_m?: number
+          p_duration_s?: number
+          p_points_key: string
+          p_polyline: string
+          p_route_id: string
+        }
+        Returns: undefined
       }
       set_route_stops: {
         Args: { p_order_ids: string[]; p_route_id: string }

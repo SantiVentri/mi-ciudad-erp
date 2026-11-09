@@ -99,6 +99,12 @@ export default function RouteMap({ routeId, stops, height, disableDragging = fal
             ? roadPath.path
             : (roadPathCache.get(cacheKey) ?? null);
 
+    // Ya se consultó y no hay recorrido por calles (ni guardado ni de OpenRouteService)
+    const isApproximate =
+        stops.length > 0 &&
+        currentRoadPath === null &&
+        (roadPath?.key === cacheKey || roadPathCache.has(cacheKey));
+
     const viewProps =
         stops.length > 0
             ? {
@@ -116,6 +122,12 @@ export default function RouteMap({ routeId, stops, height, disableDragging = fal
             {...viewProps}
         >
             <TileLayer url={MAP_TILE_URL} attribution={MAP_TILE_ATTRIBUTION} />
+
+            {isApproximate && (
+                <p className={styles.mapNotice} role="status">
+                    Recorrido aproximado: no se pudo obtener el camino por calles
+                </p>
+            )}
 
             {currentRoadPath ? (
                 <Polyline

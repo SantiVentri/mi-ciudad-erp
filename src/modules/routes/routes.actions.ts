@@ -6,10 +6,8 @@ import { revalidatePath } from "next/cache";
 import { getServerClient } from "@/utils/supabase/getServerClient";
 import { todayKeyAR } from "@/utils/dates/argentina";
 import { DEPOT } from "@/modules/routes/routes.depot";
-import {
-    getRoadPath,
-    optimizeStopOrder,
-} from "@/modules/routes/routes.optimizer";
+import { optimizeStopOrder } from "@/modules/routes/routes.optimizer";
+import { resolveRoutePath, routePathPoints, saveRoutePathSafely } from "@/modules/routes/routes.paths";
 import { nextDayKey } from "@/modules/routes/routes.utils";
 import { refreshRouteEstimateSafely } from "@/modules/costs/costs.estimate";
 import { COSTS_PATH } from "@/modules/costs/costs.constants";
@@ -195,6 +193,10 @@ export async function generateRoute(
     // la ruta queda creada igual y se avisa qué cargar
     const costWarning = await refreshRouteEstimateSafely(supabase, routeId);
 
+    // El recorrido queda guardado para el mapa. Son los mismos puntos que el costo,
+    // así que sale de la caché de recorridos sin otra consulta a OpenRouteService
+    await saveRoutePathSafely(supabase, routeId);
+
     revalidatePath("/admin/routes");
     revalidatePath("/admin/orders");
     revalidatePath(COSTS_PATH);
@@ -212,7 +214,9 @@ export async function generateRoute(
 
 /**
  * Recorrido por calles de una ruta: depósito → paradas en orden → depósito.
- * path es null si OpenRouteService no respondió (el mapa dibuja líneas rectas).
+ * Sale del guardado en la base; si no hay (o cambiaron las paradas) se pide a
+ * OpenRouteService y se guarda. path es null si no hay guardado y ORS no respondió
+ * (el mapa dibuja líneas rectas).
  */
 export async function getRoutePath(
     routeId: string,
@@ -248,23 +252,7 @@ export async function getRoutePath(
         return { error: "No se encontró la ruta." };
     }
 
-    const stopPoints = [...(route.stops ?? [])]
-        .sort((a, b) => a.visit_order - b.visit_order)
-        .map((stop) => stop.order?.client)
-        .filter(
-            (client): client is { latitude: number; longitude: number } =>
-                client?.latitude != null && client?.longitude != null,
-        )
-        .map((client) => ({
-            latitude: Number(client.latitude),
-            longitude: Number(client.longitude),
-        }));
-
-    if (stopPoints.length === 0) {
-        return { path: null };
-    }
-
-    const path = await getRoadPath([DEPOT, ...stopPoints, DEPOT]);
+    const path = await resolveRoutePath(supabase, routeId, routePathPoints(route.stops ?? []));
 
     return { path };
 }

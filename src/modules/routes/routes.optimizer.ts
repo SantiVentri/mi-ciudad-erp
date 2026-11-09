@@ -29,14 +29,20 @@ type OptimizationResponse = {
     unassigned?: { id: number }[];
 };
 
+// /directions/.../geojson trae el trazado y también la distancia y el tiempo:
+// una sola consulta sirve para el mapa y para el costo
 type DirectionsResponse = {
-    features?: { geometry: { coordinates: [number, number][] } }[];
+    features?: {
+        geometry: { coordinates: [number, number][] };
+        // ORS omite distance/duration cuando valen 0
+        properties?: { summary?: { distance?: number; duration?: number } };
+    }[];
 };
 
-type DirectionsSummaryResponse = {
-    // ORS omite distance/duration cuando valen 0
-    routes?: { summary?: { distance?: number; duration?: number } }[];
-};
+// Por qué no se pudo usar OpenRouteService
+export type OrsFailure = "missing_key" | "quota" | "unavailable";
+
+type OrsResult<T> = { data: T } | { failure: OrsFailure };
 
 // Distancia y tiempo de manejo por calles (sin tiempo de descarga en las paradas)
 export type RouteMetrics = {
@@ -45,17 +51,19 @@ export type RouteMetrics = {
 };
 
 // Contrato del proveedor de ruteo: si se cambia de API, solo se reemplaza la implementación
-export type RouteMetricsProvider = (points: GeoPoint[]) => Promise<RouteMetrics | null>;
+export type RouteMetricsProvider = (
+    points: GeoPoint[],
+) => Promise<{ metrics: RouteMetrics } | { failure: OrsFailure }>;
 
 function toLonLat(point: GeoPoint): [number, number] {
     return [point.longitude, point.latitude];
 }
 
-async function orsPost<T>(path: string, body: unknown): Promise<T | null> {
+async function orsPost<T>(path: string, body: unknown): Promise<OrsResult<T>> {
     const apiKey = process.env.ORS_API_KEY;
     if (!apiKey) {
         console.error("Falta ORS_API_KEY: no se puede usar OpenRouteService");
-        return null;
+        return { failure: "missing_key" };
     }
 
     try {
@@ -72,18 +80,61 @@ async function orsPost<T>(path: string, body: unknown): Promise<T | null> {
         });
 
         if (!response.ok) {
-            console.error(
-                `OpenRouteService ${path} respondió ${response.status}:`,
-                await response.text(),
-            );
-            return null;
+            const text = await response.text();
+            console.error(`OpenRouteService ${path} respondió ${response.status}:`, text);
+            // 403 "Quota exceeded": cupo diario agotado; 429: demasiadas consultas por minuto
+            const quota = response.status === 429 || (response.status === 403 && /quota/i.test(text));
+            return { failure: quota ? "quota" : "unavailable" };
         }
 
-        return (await response.json()) as T;
+        return { data: (await response.json()) as T };
     } catch (error) {
         console.error(`Error llamando a OpenRouteService ${path}:`, error);
-        return null;
+        return { failure: "unavailable" };
     }
+}
+
+// --- Recorridos por calles (con caché) ---
+
+type Directions = {
+    path: [number, number][]; // [lat, lng]
+    meters: number;
+    seconds: number;
+};
+
+// Recorridos ya calculados, por coordenadas: el trazado de una ruta no cambia mientras
+// no cambien sus paradas. Así abrir el mapa o recalcular el costo no gasta el cupo
+// diario de ORS. Vive en memoria del proceso del servidor.
+const MAX_CACHED_DIRECTIONS = 500;
+const directionsCache = new Map<string, Directions>();
+
+async function getDirections(points: GeoPoint[]): Promise<{ data: Directions } | { failure: OrsFailure }> {
+    const key = points.map((point) => `${point.latitude},${point.longitude}`).join(";");
+    const cached = directionsCache.get(key);
+    if (cached) return { data: cached };
+
+    const result = await orsPost<DirectionsResponse>(`/v2/directions/${ORS_PROFILE}/geojson`, {
+        coordinates: points.map(toLonLat),
+        instructions: false,
+    });
+    if ("failure" in result) return result;
+
+    const feature = result.data.features?.[0];
+    if (!feature) return { failure: "unavailable" };
+
+    const directions: Directions = {
+        path: feature.geometry.coordinates.map(([lon, lat]) => [lat, lon]),
+        meters: feature.properties?.summary?.distance ?? 0,
+        seconds: feature.properties?.summary?.duration ?? 0,
+    };
+
+    if (directionsCache.size >= MAX_CACHED_DIRECTIONS) {
+        // El más viejo afuera (Map conserva el orden de inserción)
+        directionsCache.delete(directionsCache.keys().next().value as string);
+    }
+    directionsCache.set(key, directions);
+
+    return { data: directions };
 }
 
 // --- Orden local (respaldo) ---
@@ -184,7 +235,7 @@ export async function optimizeStopOrder<T extends GeoPoint>(
         ],
     });
 
-    const steps = result?.routes?.[0]?.steps;
+    const steps = "data" in result ? result.data.routes?.[0]?.steps : undefined;
     if (!steps) {
         return { ordered: orderLocally(depot, stops), optimized: false };
     }
@@ -224,31 +275,28 @@ function chunkWaypoints(points: GeoPoint[]): GeoPoint[][] {
 
 /**
  * Kilómetros y minutos de manejo por calles recorriendo los puntos en el orden dado.
- * Devuelve null si OpenRouteService no respondió: nunca se usa la distancia en
+ * Si OpenRouteService no responde devuelve el motivo: nunca se usa la distancia en
  * línea recta, porque subestimaría el costo.
  */
 export const getRouteMetrics: RouteMetricsProvider = async (points) => {
-    if (points.length < 2) return null;
+    if (points.length < 2) return { metrics: { distanceKm: 0, durationMin: 0 } };
 
     let meters = 0;
     let seconds = 0;
 
     for (const chunk of chunkWaypoints(points)) {
-        const result = await orsPost<DirectionsSummaryResponse>(
-            `/v2/directions/${ORS_PROFILE}`,
-            { coordinates: chunk.map(toLonLat), instructions: false },
-        );
+        const result = await getDirections(chunk);
+        if ("failure" in result) return result;
 
-        const summary = result?.routes?.[0]?.summary;
-        if (!summary) return null;
-
-        meters += summary.distance ?? 0;
-        seconds += summary.duration ?? 0;
+        meters += result.data.meters;
+        seconds += result.data.seconds;
     }
 
     return {
-        distanceKm: Math.round(meters / 10) / 100,
-        durationMin: Math.round(seconds / 60),
+        metrics: {
+            distanceKm: Math.round(meters / 10) / 100,
+            durationMin: Math.round(seconds / 60),
+        },
     };
 };
 
@@ -261,30 +309,12 @@ export async function getRoadPath(
 ): Promise<[number, number][] | null> {
     if (points.length < 2) return null;
 
-    // Tramos de hasta MAX_DIRECTIONS_WAYPOINTS puntos que comparten el punto de unión
-    const chunks: GeoPoint[][] = [];
-    for (
-        let start = 0;
-        start < points.length - 1;
-        start += MAX_DIRECTIONS_WAYPOINTS - 1
-    ) {
-        chunks.push(points.slice(start, start + MAX_DIRECTIONS_WAYPOINTS));
-    }
-
     const path: [number, number][] = [];
 
-    for (const chunk of chunks) {
-        const result = await orsPost<DirectionsResponse>(
-            `/v2/directions/${ORS_PROFILE}/geojson`,
-            { coordinates: chunk.map(toLonLat) },
-        );
-
-        const coordinates = result?.features?.[0]?.geometry.coordinates;
-        if (!coordinates) return null;
-
-        for (const [lon, lat] of coordinates) {
-            path.push([lat, lon]);
-        }
+    for (const chunk of chunkWaypoints(points)) {
+        const result = await getDirections(chunk);
+        if ("failure" in result) return null;
+        path.push(...result.data.path);
     }
 
     return path;
