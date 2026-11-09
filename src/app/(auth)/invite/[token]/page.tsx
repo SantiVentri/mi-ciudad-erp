@@ -49,16 +49,7 @@ export default async function InvitePage({
                 </div>
                 <RegisterForm email={data.email} token={token} />
             </main>
-            <aside>
-                <Image
-                    src={backgroundImage}
-                    className={styles.image}
-                    height={900}
-                    width={900}
-                    alt="auth background"
-                    priority
-                />
-            </aside>
+            <aside />
         </div>
     )
 }

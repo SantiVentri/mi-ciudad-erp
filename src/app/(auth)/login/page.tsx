@@ -16,16 +16,7 @@ export default function RegisterPage() {
                 </div>
                 <LoginForm />
             </main>
-            <aside>
-                <Image
-                    src={backgroundImage}
-                    className={styles.image}
-                    height={900}
-                    width={900}
-                    alt="auth background"
-                    priority
-                />
-            </aside>
+            <aside />
         </div>
     )
 }
