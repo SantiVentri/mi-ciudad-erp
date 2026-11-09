@@ -420,7 +420,6 @@ export type Database = {
           route_number: number
           started_at: string | null
           state: string
-          trip_number: number
           updated_at: string
           vehicle_id: string
         }
@@ -436,7 +435,6 @@ export type Database = {
           route_number?: number
           started_at?: string | null
           state?: string
-          trip_number?: number
           updated_at?: string
           vehicle_id: string
         }
@@ -452,7 +450,6 @@ export type Database = {
           route_number?: number
           started_at?: string | null
           state?: string
-          trip_number?: number
           updated_at?: string
           vehicle_id?: string
         }
@@ -626,17 +623,6 @@ export type Database = {
         Args: { p_date: string; p_order_ids: string[]; p_route_id?: string }
         Returns: undefined
       }
-      assert_route_slot_free: {
-        Args: {
-          p_co_driver_id: string
-          p_date: string
-          p_driver_id: string
-          p_exclude_route_id?: string
-          p_trip: number
-          p_vehicle_id: string
-        }
-        Returns: undefined
-      }
       cancel_order: {
         Args: { p_order_id: string; p_release?: boolean }
         Returns: undefined
@@ -670,14 +656,9 @@ export type Database = {
           p_driver_id: string
           p_order_ids: string[]
           p_route_date: string
-          p_trip_number: number
           p_vehicle_id: string
         }
         Returns: string
-      }
-      create_routes_batch: {
-        Args: { p_route_date: string; p_routes: Json }
-        Returns: string[]
       }
       delete_route: { Args: { p_route_id: string }; Returns: undefined }
       edit_route: {
@@ -688,7 +669,7 @@ export type Database = {
           p_route_id: string
           p_vehicle_id: string
         }
-        Returns: number
+        Returns: undefined
       }
       estimate_route_cost: {
         Args: {
@@ -719,21 +700,6 @@ export type Database = {
       is_active_driver: { Args: { p_user_id: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_driver: { Args: never; Returns: boolean }
-      is_route_slot_free: {
-        Args: {
-          p_co_driver_id: string
-          p_date: string
-          p_driver_id: string
-          p_exclude_route_id?: string
-          p_trip: number
-          p_vehicle_id: string
-        }
-        Returns: boolean
-      }
-      move_route_date: {
-        Args: { p_new_date: string; p_route_id: string }
-        Returns: undefined
-      }
       notify_route_drivers: {
         Args: { p_message: string; p_route_id: string; p_type: string }
         Returns: undefined
@@ -762,15 +728,6 @@ export type Database = {
       }
       start_route_by_driver: {
         Args: { p_route_id: string }
-        Returns: undefined
-      }
-      update_route_assignment: {
-        Args: {
-          p_co_driver_id: string
-          p_driver_id: string
-          p_route_id: string
-          p_vehicle_id: string
-        }
         Returns: undefined
       }
       validate_invitation: {

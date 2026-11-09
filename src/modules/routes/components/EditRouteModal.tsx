@@ -105,8 +105,7 @@ export default function EditRouteModal({
                 <div className={styles.modalHeader}>
                     <h3 id="edit-route-title">Editar ruta #{route.route_number}</h3>
                     <p>
-                        Vuelta {route.trip_number} · {stopsCount}{" "}
-                        {stopsCount === 1 ? "parada" : "paradas"}
+                        {stopsCount} {stopsCount === 1 ? "parada" : "paradas"}
                     </p>
                 </div>
 
@@ -177,8 +176,7 @@ export default function EditRouteModal({
                     <p className={styles.modalInfo}>
                         {stopsCount === 1
                             ? "El pedido de la ruta se mueve a la fecha nueva."
-                            : `Los ${stopsCount} pedidos de la ruta se mueven a la fecha nueva.`}{" "}
-                        Si la vuelta {route.trip_number} está ocupada ese día, se usa la otra.
+                            : `Los ${stopsCount} pedidos de la ruta se mueven a la fecha nueva.`}
                     </p>
                 )}
 

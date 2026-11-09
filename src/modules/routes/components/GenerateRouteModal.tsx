@@ -13,7 +13,6 @@ import {
 } from "@/modules/routes/routes.actions";
 
 // Utils and constants
-import { pickFreeTrip } from "@/modules/routes/routes.utils";
 import { WEEKDAY_LABELS } from "@/modules/routes/routes.constants";
 import { parseDateOnly } from "@/modules/orders/orders.utils";
 
@@ -80,17 +79,12 @@ export default function GenerateRouteModal({
     const preview =
         previewState.status === "ready" ? previewState.preview : null;
     const hasSelection = Boolean(driverId && coDriverId && vehicleId);
-    const tripNumber =
-        preview && hasSelection
-            ? pickFreeTrip(preview.busySlots, driverId, coDriverId, vehicleId)
-            : null;
 
     const canGenerate =
         !!preview &&
         preview.ordersCount > 0 &&
         hasSelection &&
         driverId !== coDriverId &&
-        tripNumber !== null &&
         !isPending;
 
     const handleGenerate = () => {
@@ -142,7 +136,7 @@ export default function GenerateRouteModal({
                                         ? `ruta #${result.routeNumber}`
                                         : "ruta"}
                                 </strong>{" "}
-                                (vuelta {result.tripNumber}) con {result.stopsCount}{" "}
+                                con {result.stopsCount}{" "}
                                 {result.stopsCount === 1 ? "parada" : "paradas"}.
                             </p>
                             {!result.optimized && (
@@ -279,17 +273,6 @@ export default function GenerateRouteModal({
                                     </p>
                                 )}
 
-                                {hasSelection &&
-                                    (tripNumber !== null ? (
-                                        <p className={styles.modalInfo}>
-                                            Se asigna a la vuelta {tripNumber}.
-                                        </p>
-                                    ) : (
-                                        <p className={styles.modalWarning}>
-                                            Los choferes o el vehículo ya tienen las dos vueltas
-                                            ocupadas este día.
-                                        </p>
-                                    ))}
                             </>
                         )}
 

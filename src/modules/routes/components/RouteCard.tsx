@@ -73,7 +73,7 @@ export default function RouteCard({
                 aria-expanded={isExpanded}
             >
                 <span className={styles.routeNumber}>
-                    Ruta #{route.route_number} · V{route.trip_number}
+                    Ruta #{route.route_number}
                 </span>
                 <span className={styles.routeDriver}>{getRouteCrew(route)}</span>
                 <span className={styles.routeVehicle}>

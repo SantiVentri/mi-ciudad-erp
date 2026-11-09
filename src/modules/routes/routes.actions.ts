@@ -10,11 +10,10 @@ import {
     getRoadPath,
     optimizeStopOrder,
 } from "@/modules/routes/routes.optimizer";
-import { nextDayKey, pickFreeTrip } from "@/modules/routes/routes.utils";
+import { nextDayKey } from "@/modules/routes/routes.utils";
 import { refreshRouteEstimateSafely } from "@/modules/costs/costs.estimate";
 import { COSTS_PATH } from "@/modules/costs/costs.constants";
 import type {
-    BusySlot,
     EditRouteInput,
     ExcludedOrder,
     GenerateRouteInput,
@@ -42,46 +41,35 @@ function validateRouteDate(date: string) {
 
 /**
  * Pedidos pendientes del día que no están en ninguna ruta, separados en los que
- * se pueden rutear y los que no tienen coordenadas, más las vueltas ocupadas.
+ * se pueden rutear y los que no tienen coordenadas.
  * Las fechas se guardan a medianoche UTC (igual que en las funciones de la base).
  */
 async function loadDayData(supabase: AdminClient, date: string) {
     const dayStart = `${date}T00:00:00Z`;
     const dayEnd = `${nextDayKey(date)}T00:00:00Z`;
 
-    const [ordersRes, routesRes] = await Promise.all([
-        supabase
-            .from("orders")
-            .select(
-                `
-                    id,
-                    client:clients ( name, street, number, city, latitude, longitude ),
-                    stops ( id, state )
-                `,
-            )
-            .eq("state", "Pendiente")
-            .gte("arrival_date", dayStart)
-            .lt("arrival_date", dayEnd),
-        supabase
-            .from("routes")
-            .select("trip_number, driver_id, co_driver_id, vehicle_id")
-            .neq("state", "Cancelada")
-            .gte("route_date", dayStart)
-            .lt("route_date", dayEnd),
-    ]);
+    const { data: dayOrders, error } = await supabase
+        .from("orders")
+        .select(
+            `
+                id,
+                client:clients ( name, street, number, city, latitude, longitude ),
+                stops ( id, state )
+            `,
+        )
+        .eq("state", "Pendiente")
+        .gte("arrival_date", dayStart)
+        .lt("arrival_date", dayEnd);
 
-    if (ordersRes.error || routesRes.error) {
-        console.error(
-            "Error cargando los datos del día:",
-            ordersRes.error ?? routesRes.error,
-        );
+    if (error) {
+        console.error("Error cargando los pedidos del día:", error);
         return null;
     }
 
     const routable: RoutableOrder[] = [];
     const excluded: ExcludedOrder[] = [];
 
-    for (const order of ordersRes.data ?? []) {
+    for (const order of dayOrders ?? []) {
         // Mismo criterio que la base: una parada no cancelada ni fallida significa que ya tiene ruta
         const hasRoute = (order.stops ?? []).some(
             (stop) => stop.state !== "Cancelada" && stop.state !== "Entrega fallida",
@@ -106,9 +94,7 @@ async function loadDayData(supabase: AdminClient, date: string) {
         }
     }
 
-    const busySlots: BusySlot[] = routesRes.data ?? [];
-
-    return { routable, excluded, busySlots };
+    return { routable, excluded };
 }
 
 export async function getRouteGenerationPreview(
@@ -134,7 +120,6 @@ export async function getRouteGenerationPreview(
             date,
             ordersCount: dayData.routable.length,
             excluded: dayData.excluded,
-            busySlots: dayData.busySlots,
         },
     };
 }
@@ -177,25 +162,12 @@ export async function generateRoute(
         };
     }
 
-    const tripNumber = pickFreeTrip(
-        dayData.busySlots,
-        driverId,
-        coDriverId,
-        vehicleId,
-    );
-    if (tripNumber === null) {
-        return {
-            error:
-                "Los choferes o el vehículo ya tienen las dos vueltas ocupadas ese día.",
-        };
-    }
-
     const { ordered, optimized } = await optimizeStopOrder(
         DEPOT,
         dayData.routable,
     );
 
-    // La base valida permisos, fecha, choferes activos, vuelta libre y pedidos libres
+    // La base valida permisos, fecha, choferes activos y pedidos libres
     const { data: routeId, error } = await supabase.rpc(
         "create_route_with_stops",
         {
@@ -203,19 +175,13 @@ export async function generateRoute(
             p_co_driver_id: coDriverId,
             p_vehicle_id: vehicleId,
             p_route_date: date,
-            p_trip_number: tripNumber,
             p_order_ids: ordered.map((order) => order.orderId),
         },
     );
 
     if (error || !routeId) {
-        // 23505: otro admin creó una ruta con los mismos choferes/vehículo al mismo tiempo
         return {
-            error:
-                error?.code === "23505"
-                    ? "Los choferes o el vehículo ya tienen una ruta en esa vuelta. Volvé a intentar."
-                    : "No se pudo generar la ruta: " +
-                        (error?.message ?? "error desconocido"),
+            error: "No se pudo generar la ruta: " + (error?.message ?? "error desconocido"),
         };
     }
 
@@ -236,7 +202,6 @@ export async function generateRoute(
     return {
         result: {
             routeNumber: route?.route_number ?? null,
-            tripNumber,
             stopsCount: ordered.length,
             excludedCount: dayData.excluded.length,
             optimized,
@@ -312,11 +277,11 @@ function revalidateRoutesAndOrders() {
 
 /**
  * Cambia fecha, choferes y vehículo de una ruta pendiente. Si cambia la fecha,
- * la base mueve todos sus pedidos al día nuevo (y elige otra vuelta si hace falta).
+ * la base mueve todos sus pedidos al día nuevo.
  */
 export async function editRoute(
     input: EditRouteInput,
-): Promise<{ tripNumber: number } | { error: string }> {
+): Promise<{ ok: true } | { error: string }> {
     const supabase = await requireAdmin();
     if (!supabase) {
         return { error: "No tenés permisos para editar rutas." };
@@ -337,7 +302,7 @@ export async function editRoute(
         return { error: "El conductor y el acompañante deben ser distintos." };
     }
 
-    const { data: tripNumber, error } = await supabase.rpc("edit_route", {
+    const { error } = await supabase.rpc("edit_route", {
         p_route_id: routeId,
         p_new_date: date,
         p_driver_id: driverId,
@@ -345,13 +310,8 @@ export async function editRoute(
         p_vehicle_id: vehicleId,
     });
 
-    if (error || tripNumber == null) {
-        return {
-            error:
-                error?.code === "23505"
-                    ? "Los choferes o el vehículo ya tienen una ruta en esa vuelta. Volvé a intentar."
-                    : "No se pudo editar la ruta: " + (error?.message ?? "error desconocido"),
-        };
+    if (error) {
+        return { error: "No se pudo editar la ruta: " + error.message };
     }
 
     // Cambiaron choferes, vehículo o fecha: el costo anterior ya no corresponde
@@ -362,7 +322,7 @@ export async function editRoute(
 
     revalidateRoutesAndOrders();
 
-    return { tripNumber };
+    return { ok: true };
 }
 
 // Borra una ruta pendiente: sus pedidos vuelven a "Pendiente"
