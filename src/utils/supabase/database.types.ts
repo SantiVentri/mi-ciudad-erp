@@ -90,6 +90,30 @@ export type Database = {
         }
         Relationships: []
       }
+      fuel_prices: {
+        Row: {
+          created_at: string
+          id: string
+          price_per_liter: number
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          price_per_liter: number
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          price_per_liter?: number
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           created_at: string
@@ -295,14 +319,106 @@ export type Database = {
         }
         Relationships: []
       }
+      route_costs: {
+        Row: {
+          created_at: string
+          estimated_fuel_cost: number
+          estimated_labor_cost: number
+          route_id: string
+        }
+        Insert: {
+          created_at?: string
+          estimated_fuel_cost: number
+          estimated_labor_cost: number
+          route_id: string
+        }
+        Update: {
+          created_at?: string
+          estimated_fuel_cost?: number
+          estimated_labor_cost?: number
+          route_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_costs_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: true
+            referencedRelation: "route_cost_summary"
+            referencedColumns: ["route_id"]
+          },
+          {
+            foreignKeyName: "route_costs_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: true
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      route_expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          route_id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          route_id: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          route_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_expenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_expenses_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "route_cost_summary"
+            referencedColumns: ["route_id"]
+          },
+          {
+            foreignKeyName: "route_expenses_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routes: {
         Row: {
           co_driver_id: string | null
           created_at: string
           driver_id: string
+          estimated_distance_km: number | null
+          estimated_duration_min: number | null
+          finished_at: string | null
           id: string
           route_date: string
           route_number: number
+          started_at: string | null
           state: string
           trip_number: number
           updated_at: string
@@ -312,9 +428,13 @@ export type Database = {
           co_driver_id?: string | null
           created_at?: string
           driver_id: string
+          estimated_distance_km?: number | null
+          estimated_duration_min?: number | null
+          finished_at?: string | null
           id?: string
           route_date: string
           route_number?: number
+          started_at?: string | null
           state?: string
           trip_number?: number
           updated_at?: string
@@ -324,9 +444,13 @@ export type Database = {
           co_driver_id?: string | null
           created_at?: string
           driver_id?: string
+          estimated_distance_km?: number | null
+          estimated_duration_min?: number | null
+          finished_at?: string | null
           id?: string
           route_date?: string
           route_number?: number
+          started_at?: string | null
           state?: string
           trip_number?: number
           updated_at?: string
@@ -352,6 +476,47 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salaries: {
+        Row: {
+          created_at: string
+          id: string
+          monthly_hours: number
+          monthly_salary: number
+          profile_id: string
+          social_charges_pct: number
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          monthly_hours?: number
+          monthly_salary: number
+          profile_id: string
+          social_charges_pct?: number
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          monthly_hours?: number
+          monthly_salary?: number
+          profile_id?: string
+          social_charges_pct?: number
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salaries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -393,6 +558,13 @@ export type Database = {
             foreignKeyName: "stops_route_id_fkey"
             columns: ["route_id"]
             isOneToOne: false
+            referencedRelation: "route_cost_summary"
+            referencedColumns: ["route_id"]
+          },
+          {
+            foreignKeyName: "stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
             referencedRelation: "routes"
             referencedColumns: ["id"]
           },
@@ -403,6 +575,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean | null
+          km_per_liter: number | null
           model: string | null
           patent: string
           updated_at: string
@@ -411,6 +584,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          km_per_liter?: number | null
           model?: string | null
           patent: string
           updated_at?: string
@@ -419,6 +593,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          km_per_liter?: number | null
           model?: string | null
           patent?: string
           updated_at?: string
@@ -427,7 +602,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      route_cost_summary: {
+        Row: {
+          actual_duration_min: number | null
+          duration_variance_min: number | null
+          estimated_cost_plus_expenses: number | null
+          estimated_distance_km: number | null
+          estimated_duration_min: number | null
+          estimated_fuel_cost: number | null
+          estimated_labor_cost: number | null
+          route_date: string | null
+          route_id: string | null
+          route_number: number | null
+          state: string | null
+          total_expenses: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       app_today: { Args: never; Returns: string }
@@ -451,10 +642,6 @@ export type Database = {
         Returns: undefined
       }
       cancel_route: { Args: { p_route_id: string }; Returns: string }
-      complete_route_by_driver: {
-        Args: { p_route_id: string }
-        Returns: undefined
-      }
       change_orders_date: {
         Args: {
           p_new_date: string
@@ -464,31 +651,30 @@ export type Database = {
         }
         Returns: undefined
       }
+      complete_route_by_driver: {
+        Args: { p_route_id: string }
+        Returns: undefined
+      }
+      cost_is_admin: { Args: never; Returns: boolean }
+      cost_is_route_participant: {
+        Args: { p_only_in_progress?: boolean; p_route_id: string }
+        Returns: boolean
+      }
       create_order: {
         Args: { p_arrival_date: string; p_client_id: string; p_items: Json }
         Returns: string
       }
-      create_route_with_stops:
-        | {
-            Args: {
-              p_co_driver_id: string
-              p_driver_id: string
-              p_order_ids: string[]
-              p_route_date: string
-              p_trip_number: number
-              p_vehicle_id: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_driver_id: string
-              p_order_ids: string[]
-              p_route_date: string
-              p_vehicle_id: string
-            }
-            Returns: string
-          }
+      create_route_with_stops: {
+        Args: {
+          p_co_driver_id: string
+          p_driver_id: string
+          p_order_ids: string[]
+          p_route_date: string
+          p_trip_number: number
+          p_vehicle_id: string
+        }
+        Returns: string
+      }
       create_routes_batch: {
         Args: { p_route_date: string; p_routes: Json }
         Returns: string[]
@@ -504,6 +690,20 @@ export type Database = {
         }
         Returns: number
       }
+      estimate_route_cost: {
+        Args: {
+          p_co_driver_id: string
+          p_distance_km: number
+          p_driver_id: string
+          p_duration_min: number
+          p_on_date?: string
+          p_vehicle_id: string
+        }
+        Returns: {
+          fuel_cost: number
+          labor_cost: number
+        }[]
+      }
       get_drivers: {
         Args: never
         Returns: {
@@ -517,6 +717,8 @@ export type Database = {
         }[]
       }
       is_active_driver: { Args: { p_user_id: string }; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      is_driver: { Args: never; Returns: boolean }
       is_route_slot_free: {
         Args: {
           p_co_driver_id: string
@@ -528,8 +730,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: { Args: never; Returns: boolean }
-      is_driver: { Args: never; Returns: boolean }
       move_route_date: {
         Args: { p_new_date: string; p_route_id: string }
         Returns: undefined
@@ -552,12 +752,16 @@ export type Database = {
         Args: { p_order_id: string }
         Returns: string
       }
+      set_route_stops: {
+        Args: { p_order_ids: string[]; p_route_id: string }
+        Returns: undefined
+      }
       set_stop_state: {
         Args: { p_state: string; p_stop_id: string }
         Returns: string
       }
-      set_route_stops: {
-        Args: { p_order_ids: string[]; p_route_id: string }
+      start_route_by_driver: {
+        Args: { p_route_id: string }
         Returns: undefined
       }
       update_route_assignment: {
