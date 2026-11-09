@@ -11,6 +11,8 @@ export type Driver = Database['public']['Functions']['get_drivers']['Returns'][n
 
 export type VehicleFormValues = {
   patent: string
+  model: string
+  kmPerLiter: string
 }
 
 export type DriverInviteFormValues = {

@@ -6,6 +6,7 @@ import styles from "./transports.module.css";
 // Utils and constants
 import { getVehicleAssignmentLabel, getVehicleStatus } from "@/modules/transports/transports.utils";
 import { VEHICLE_STATUS_STYLES } from "@/modules/transports/transports.constants";
+import { formatNumber } from "@/modules/costs/costs.utils";
 
 // Types
 import { Driver } from "@/modules/transports/transports.types";
@@ -44,6 +45,8 @@ export default function VehiclesTable({
                 <thead>
                     <tr>
                         <th>Patente</th>
+                        <th>Modelo</th>
+                        <th>Rendimiento</th>
                         <th>Última asignación</th>
                         <th>Estado</th>
                         <th className={styles.actionsHeader}>Acciones</th>
@@ -57,6 +60,14 @@ export default function VehiclesTable({
                         return (
                             <tr key={vehicle.id}>
                                 <td className={styles.primaryCell}>{vehicle.patent}</td>
+                                <td className={vehicle.model ? undefined : styles.muted}>
+                                    {vehicle.model || "Sin modelo"}
+                                </td>
+                                <td className={vehicle.km_per_liter != null ? undefined : styles.muted}>
+                                    {vehicle.km_per_liter != null
+                                        ? `${formatNumber(Number(vehicle.km_per_liter))} km/l`
+                                        : "Sin cargar"}
+                                </td>
                                 <td className={styles.muted}>
                                     {getVehicleAssignmentLabel(vehicle, assignmentMaps, drivers)}
                                 </td>

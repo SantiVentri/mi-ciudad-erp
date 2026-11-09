@@ -6,6 +6,7 @@ import styles from "./transports.module.css";
 // Utils and constants
 import {
     canToggleDriverStatus,
+    getDriverAssignedVehicle,
     getDriverAssignmentLabel,
     getDriverName,
     getDriverStatus,
@@ -49,6 +50,7 @@ export default function DriversTable({
                         <th>Nombre</th>
                         <th>Contacto</th>
                         <th>Última asignación</th>
+                        <th>Modelo</th>
                         <th>Estado</th>
                         <th className={styles.actionsHeader}>Acciones</th>
                     </tr>
@@ -58,6 +60,7 @@ export default function DriversTable({
                         const status = getDriverStatus(driver);
                         const canToggle = canToggleDriverStatus(driver);
                         const isInactive = status === "Inactivo";
+                        const assignedVehicle = getDriverAssignedVehicle(driver, assignmentMaps, vehicles);
 
                         return (
                             <tr key={driver.id}>
@@ -68,6 +71,11 @@ export default function DriversTable({
                                 </td>
                                 <td className={styles.muted}>
                                     {getDriverAssignmentLabel(driver, assignmentMaps, vehicles)}
+                                </td>
+                                <td className={assignedVehicle?.model ? undefined : styles.muted}>
+                                    {assignedVehicle
+                                        ? assignedVehicle.model || "Sin modelo"
+                                        : "—"}
                                 </td>
                                 <td>
                                     <span className={`${styles.statusBadge} ${DRIVER_STATUS_STYLES[status] ?? ""}`}>
