@@ -276,6 +276,20 @@
     font-weight: 600;
 }
 
+/* Nombre del cliente que lleva a su fila en Clientes */
+.clientLink {
+    justify-self: start;
+    border-radius: 4px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.clientLink:hover,
+.clientLink:focus-visible {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
 .editButton {
     display: inline-flex;
     align-items: center;

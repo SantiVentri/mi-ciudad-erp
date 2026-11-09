@@ -15,12 +15,16 @@ export const metadata = {
   description: "Consultá y administrá los clientes registrados en el sistema.",
 };
 
-export default async function ClientsPage() {
-  const [clients, topClients, withoutRecentOrders] = await Promise.all([
+export default async function ClientsPage({ searchParams }: PageProps<"/admin/clients">) {
+  const [clients, topClients, withoutRecentOrders, { cliente }] = await Promise.all([
     getClients(),
     getTopClientsByOrders(6),
     getClientsWithoutRecentOrders(),
+    searchParams,
   ]);
+
+  // ?cliente=<id> llega desde Pedidos: se abre la página de la tabla donde está y se resalta
+  const focusClientId = typeof cliente === "string" ? cliente : undefined;
 
   return (
     <div>
@@ -33,7 +37,7 @@ export default async function ClientsPage() {
         topClients={topClients ?? []}
         withoutRecentOrders={withoutRecentOrders}
       />
-      <ClientsView clients={clients ?? []} />
+      <ClientsView clients={clients ?? []} focusClientId={focusClientId} />
     </div>
   );
 }

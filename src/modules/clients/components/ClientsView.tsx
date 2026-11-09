@@ -4,7 +4,7 @@
 import styles from "./clients.module.css";
 
 // Hooks
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useResetOnChange } from "@/utils/hooks/useResetOnChange";
 import { useRouter } from "next/navigation";
 
@@ -25,6 +25,8 @@ import PaginationControl from "@/components/ui/admin/pagination/PaginationContro
 
 type ClientsViewProps = {
     clients: Client[];
+    // Cliente a mostrar al entrar (viene de ?cliente=<id>)
+    focusClientId?: string;
 };
 
 type FormModalState = {
@@ -33,16 +35,36 @@ type FormModalState = {
 
 const ROWS_PER_PAGE = 10;
 
-export default function ClientsView({ clients }: ClientsViewProps) {
+export default function ClientsView({ clients, focusClientId }: ClientsViewProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
-    const [currentPage, setCurrentPage] = useState(1);
+
+    // Al entrar sin filtros la tabla muestra todos los clientes en este orden,
+    // así que la página del cliente enfocado sale de su posición en la lista
+    const focusIndex = clients.findIndex((client) => client.id === focusClientId);
+    const [currentPage, setCurrentPage] = useState(() =>
+        focusIndex >= 0 ? Math.floor(focusIndex / ROWS_PER_PAGE) + 1 : 1,
+    );
+    const focusedId = focusIndex >= 0 ? clients[focusIndex].id : undefined;
+    const [highlightedId, setHighlightedId] = useState(focusedId);
+
+    // Lleva la vista hasta el cliente enfocado (solo al entrar, no en cada refresh)
+    useEffect(() => {
+        if (!focusedId) return;
+        document
+            .getElementById(`cliente-${focusedId}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, [focusedId]);
 
     // --- Filtros ---
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("Todos");
 
-    useResetOnChange([search, statusFilter], () => setCurrentPage(1));
+    // Al filtrar se vuelve a la primera página y se apaga el resaltado para que no se repita
+    useResetOnChange([search, statusFilter], () => {
+        setCurrentPage(1);
+        setHighlightedId(undefined);
+    });
 
     const filteredClients = useMemo(() => {
         return clients.filter((client) => {
@@ -153,6 +175,7 @@ export default function ClientsView({ clients }: ClientsViewProps) {
 
             <ClientsTable
                 clients={paginatedClients}
+                highlightedId={highlightedId}
                 isRestoring={isRestoring}
                 onEdit={openEditModal}
                 onDelete={openDeleteDialog}
@@ -169,7 +192,10 @@ export default function ClientsView({ clients }: ClientsViewProps) {
 
                     <PaginationControl
                         currentPage={currentPage}
-                        setCurrentPage={setCurrentPage}
+                        setCurrentPage={(page) => {
+                            setCurrentPage(page);
+                            setHighlightedId(undefined);
+                        }}
                         totalPages={totalPages}
                     />
                 </>

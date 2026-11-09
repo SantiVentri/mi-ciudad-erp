@@ -127,6 +127,22 @@
     font-weight: 600;
 }
 
+/* Fila del cliente al que se llegó desde Pedidos (?cliente=<id>) */
+.rowHighlighted td {
+    animation: highlightClient 2.5s ease-out;
+}
+
+@keyframes highlightClient {
+    0%,
+    40% {
+        background: var(--color-accent-bg);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
 .muted {
     color: var(--color-text-muted);
     font-size: 0.88rem;

@@ -13,8 +13,29 @@ import {
 import { STATE_STYLES } from "@/modules/orders/orders.constants";
 import type { Order } from "@/modules/orders/orders.dal";
 
+// Components
+import Link from "next/link";
+
 // Icons
 import { ChevronDown } from "lucide-react";
+
+// Nombre del cliente que lleva a su fila en Clientes. Corta la propagación para
+// que el click (o Enter) no expanda el pedido: la fila entera es un botón.
+function ClientName({ client }: { client: Order["client"] }) {
+    if (!client) return <span className={styles.orderClient}>Cliente eliminado</span>;
+
+    return (
+        <Link
+            href={`/admin/clients?cliente=${client.id}`}
+            className={`${styles.orderClient} ${styles.clientLink}`}
+            title="Ver el cliente"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+        >
+            {client.name}
+        </Link>
+    );
+}
 
 type OrderCardProps = {
     order: Order;
@@ -87,7 +108,7 @@ export default function OrderCard({
                     />
                     <span />
                 </label>
-                <span className={styles.orderClient}>{order.client?.name}</span>
+                <ClientName client={order.client} />
                 <span className={styles.orderAddress}>
                     {order.client?.street} {order.client?.number}, {order.client?.city}
                 </span>
@@ -110,7 +131,9 @@ export default function OrderCard({
                     <div className={styles.orderDetail}>
                         <div className={styles.detailSection}>
                             <h4>Cliente</h4>
-                            <p>{order.client?.name}</p>
+                            <p>
+                                <ClientName client={order.client} />
+                            </p>
                             <p>{order.client?.email}</p>
                             <p>{order.client?.phone}</p>
                             <p>

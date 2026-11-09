@@ -15,6 +15,8 @@ import { Ban, Clock, PencilLine, RotateCcw } from "lucide-react";
 
 type ClientsTableProps = {
     clients: Client[];
+    // Cliente al que se llegó desde otra pantalla: su fila se resalta un momento
+    highlightedId?: string;
     isRestoring: (client: Client) => boolean;
     onEdit: (client: Client) => void;
     onDelete: (client: Client) => void;
@@ -24,6 +26,7 @@ type ClientsTableProps = {
 
 export default function ClientsTable({
     clients,
+    highlightedId,
     isRestoring,
     onEdit,
     onDelete,
@@ -52,7 +55,11 @@ export default function ClientsTable({
                         const isInactive = status === "Inactivo";
 
                         return (
-                            <tr key={client.id}>
+                            <tr
+                                key={client.id}
+                                id={`cliente-${client.id}`}
+                                className={client.id === highlightedId ? styles.rowHighlighted : undefined}
+                            >
                                 <td className={styles.clientName}>{client.name}</td>
                                 <td>
                                     <div>{client.email}</div>
