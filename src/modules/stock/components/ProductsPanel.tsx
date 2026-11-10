@@ -28,7 +28,7 @@ import {
 import type { Product, ProductStatusFilter } from "@/modules/stock/stock.types";
 
 // Icons
-import { ArrowDownUp, Ban, PencilLine, Plus, RotateCcw, Search, Tags, Trash2 } from "lucide-react";
+import { Ban, Diff, PencilLine, Plus, RotateCcw, Search, Tags, Trash2 } from "lucide-react";
 
 type ProductsPanelProps = {
     products: Product[];
@@ -229,7 +229,7 @@ export default function ProductsPanel({ products }: ProductsPanelProps) {
                                                     title="Mover stock"
                                                     aria-label={`Mover stock de ${product.name}`}
                                                 >
-                                                    <ArrowDownUp size={16} />
+                                                    <Diff size={16} />
                                                 </button>
                                                 <button
                                                     type="button"
