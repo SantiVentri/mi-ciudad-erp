@@ -342,7 +342,7 @@
 .orderRow {
     width: 100%;
     display: grid;
-    grid-template-columns: 40px 1.2fr 1.6fr 110px 120px 20px;
+    grid-template-columns: 40px 1.2fr 1.6fr 100px 120px 120px 20px;
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
@@ -447,6 +447,26 @@
     font-size: 0.85rem;
 }
 
+.orderAmount {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Cancelado: se ve cuánto valía, pero no cuenta */
+.orderAmountCanceled {
+    color: var(--color-text-subtle);
+    font-weight: 600;
+    text-decoration: line-through;
+}
+
+.orderAmountMissing {
+    color: var(--color-text-subtle);
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
 .stateBadge {
     display: inline-flex;
     justify-content: center;
@@ -542,6 +562,39 @@
     background: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: 8px;
+}
+
+.itemPricing {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.itemQuantity {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+}
+
+.itemSubtotal {
+    min-width: 80px;
+    text-align: right;
+    font-weight: 600;
+}
+
+.itemsTotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 8px;
+    padding: 0 10px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.itemsTotalAmount {
+    font-variant-numeric: tabular-nums;
 }
 
 .toggleStateButton {
@@ -750,6 +803,10 @@
     .orderRow {
         grid-template-columns: 1fr;
         gap: 4px;
+    }
+
+    .orderAmount {
+        text-align: left;
     }
 
     .editButton {

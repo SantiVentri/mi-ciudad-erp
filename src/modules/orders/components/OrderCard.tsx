@@ -7,7 +7,9 @@ import styles from "./orders.module.css";
 import {
     getOrderLiveRoute,
     getOrderPermissions,
+    getOrderTotal,
 } from "@/modules/orders/orders.utils";
+import { formatCurrency } from "@/modules/costs/costs.utils";
 
 // Constants and types
 import { STATE_STYLES } from "@/modules/orders/orders.constants";
@@ -34,6 +36,45 @@ function ClientName({ client }: { client: Order["client"] }) {
         >
             {client.name}
         </Link>
+    );
+}
+
+// Total del pedido. Si a algunos renglones les falta el precio, el total es parcial y se
+// marca con un asterisco; si no hay ninguno con precio, se dice "Sin precio".
+function OrderAmount({
+    order,
+    className,
+}: {
+    order: Order;
+    className: string;
+}) {
+    const { total, unpricedLines } = getOrderTotal(order);
+    const isCanceled = order.state === "Cancelada";
+
+    if (total == null) {
+        const hasLines = (order.order_details?.length ?? 0) > 0;
+        return (
+            <span className={`${className} ${styles.orderAmountMissing}`}>
+                {hasLines ? "Sin precio" : "—"}
+            </span>
+        );
+    }
+
+    const titles = [
+        isCanceled ? "Pedido cancelado: no suma a las ventas" : null,
+        unpricedLines > 0
+            ? `Total parcial: ${unpricedLines} ${unpricedLines === 1 ? "producto no tiene" : "productos no tienen"} precio guardado`
+            : null,
+    ].filter(Boolean);
+
+    return (
+        <span
+            className={`${className} ${isCanceled ? styles.orderAmountCanceled : ""}`}
+            title={titles.length > 0 ? titles.join(". ") : undefined}
+        >
+            {formatCurrency(total)}
+            {unpricedLines > 0 && "*"}
+        </span>
     );
 }
 
@@ -115,6 +156,7 @@ export default function OrderCard({
                 <span className={styles.orderItems}>
                     {itemsCount} {itemsCount === 1 ? "unidad" : "unidades"}
                 </span>
+                <OrderAmount order={order} className={styles.orderAmount} />
                 <span
                     className={`${styles.stateBadge} ${STATE_STYLES[order.state ?? ""] ?? ""}`}
                 >
@@ -148,13 +190,33 @@ export default function OrderCard({
                                 {order.order_details?.map((detail) => (
                                     <li key={detail.id}>
                                         <span>{detail.product?.name}</span>
-                                        <span>x{detail.quantity}</span>
+                                        <span className={styles.itemPricing}>
+                                            <span className={styles.itemQuantity}>
+                                                {detail.unit_price == null
+                                                    ? `x${detail.quantity}`
+                                                    : `${detail.quantity} × ${formatCurrency(Number(detail.unit_price))}`}
+                                            </span>
+                                            <span className={styles.itemSubtotal}>
+                                                {detail.unit_price == null
+                                                    ? "Sin precio"
+                                                    : formatCurrency(
+                                                          Number(detail.quantity ?? 0) *
+                                                              Number(detail.unit_price),
+                                                      )}
+                                            </span>
+                                        </span>
                                     </li>
                                 ))}
                                 {(order.order_details?.length ?? 0) === 0 && (
                                     <li>Sin productos cargados</li>
                                 )}
                             </ul>
+                            {(order.order_details?.length ?? 0) > 0 && (
+                                <div className={styles.itemsTotal}>
+                                    <span>Total</span>
+                                    <OrderAmount order={order} className={styles.itemsTotalAmount} />
+                                </div>
+                            )}
                         </div>
 
                         <div className={styles.detailSection}>

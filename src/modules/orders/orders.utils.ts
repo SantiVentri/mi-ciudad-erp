@@ -72,6 +72,29 @@ export function getOrderPermissions(order: Order, today: Date) {
     };
 }
 
+// Valor del pedido: cantidad × precio guardado en cada renglón (el precio del producto al
+// momento de cargarlo). Los renglones sin precio no suman: el total queda parcial.
+export function getOrderTotal(order: Order) {
+    let total = 0;
+    let pricedLines = 0;
+    let unpricedLines = 0;
+
+    for (const detail of order.order_details ?? []) {
+        if (detail.unit_price == null) {
+            unpricedLines += 1;
+            continue;
+        }
+        total += Number(detail.quantity ?? 0) * Number(detail.unit_price);
+        pricedLines += 1;
+    }
+
+    return {
+        // null: ningún renglón tiene precio (o el pedido no tiene productos)
+        total: pricedLines > 0 ? total : null,
+        unpricedLines,
+    };
+}
+
 // Ruta viva del pedido (ignora rutas canceladas y paradas canceladas o fallidas).
 // null si no está en ninguna.
 export function getOrderLiveRoute(order: Order) {
