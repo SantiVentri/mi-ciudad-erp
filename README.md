@@ -93,6 +93,8 @@ returning id;
 
 Después entrá a `http://localhost:3000/invite/<id>` y completá el registro. A partir de ahí, los demás usuarios se invitan desde **Admin › Invitaciones**.
 
+Para una base nueva (por ejemplo, producción) está `supabase/bootstrap/primer-admin-y-productos.sql`: crea la invitación del primer admin y carga los productos, que no se pueden crear desde la app. Se corre una sola vez en el SQL Editor y devuelve el id de la invitación.
+
 ## Variables de entorno
 
 | Variable | Alcance | Descripción |
@@ -166,6 +168,21 @@ Las migraciones siguen el formato `YYYYMMDDHHMMSS_descripcion.sql`. Después de 
 npx supabase gen types typescript --linked > src/utils/supabase/database.types.ts
 ```
 
+### Datos de prueba (seed)
+
+`supabase/seed.sql` carga datos ficticios después de las migraciones en cada `db reset`: un admin, 6 conductores, clientes, vehículos, productos, 3 meses de rutas completadas, las rutas de hoy y pedidos pendientes hasta fin de mes. Todos los usuarios usan la contraseña `MiCiudad2026!`, así que es solo para desarrollo o demos: no lo cargues en una base con usuarios reales.
+
+Las fechas son relativas al día en que se generó el archivo. Para refrescarlas:
+
+```bash
+npm run seed:generate        # regenera supabase/seed.sql
+npx supabase db reset        # local; contra el proyecto remoto: npx supabase db reset --linked
+```
+
+El generador (`scripts/seed/generate-seed.mjs`) no usa servicios externos: arma las rutas por zona y las ordena en línea recta. Los clientes salen de `scripts/seed/data/clients.sql`.
+
+> `db reset --linked` borra todos los datos del proyecto remoto. Usalo solo en un entorno de desarrollo.
+
 ## Scripts
 
 | Comando | Descripción |
@@ -174,6 +191,7 @@ npx supabase gen types typescript --linked > src/utils/supabase/database.types.t
 | `npm run build` | Build de producción |
 | `npm run start` | Sirve el build de producción |
 | `npm run lint` | ESLint |
+| `npm run seed:generate` | Regenera `supabase/seed.sql` con datos ficticios |
 
 ## Convenciones
 
